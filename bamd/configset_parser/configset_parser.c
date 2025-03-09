@@ -21,6 +21,7 @@
 #include "configset.states.h"
 
 #include "pattern_parser.h"
+#include "pattern_parser.internal.h"
 #include "config.h"
 #include "zcat.h"
 
@@ -82,8 +83,25 @@ int configset_parser_parse(
 {
   int r;
 
+  parser->pattern_parser->yyu = 0;
+
   parser->cfg = cfg;
   r = yyu_parse(&parser->yyu, buf, size, path, YYU_INPLACE, init_loc, 0);
+
+  /* error aggregation */
+  if(r == 0) {
+    parser->error = 0;
+    parser->error_len = 0;
+  } else if(parser->bacon_parser->error) {
+    parser->error = parser->bacon_parser->error;
+    parser->error_len = parser->bacon_parser->error_len;
+  } else if(parser->pattern_parser->error) {
+    parser->error = parser->pattern_parser->error;
+    parser->error_len = parser->pattern_parser->error_len;
+  } else {
+    parser->error = parser->yyu.error_str;
+    parser->error_len = parser->yyu.error_len;
+  }
 
   return r;
 }
@@ -96,10 +114,10 @@ static int config_fstree_mapping_key_cmp(void * restrict _key, const rbnode * re
   key = _key;
   fsm = containerof(rbn, typeof(*fsm), rbn);
 
-  return pattern_cmp(key->key.v, fsm->key.v);
+  return pattern_cmp(&key->key.v->pattern, &fsm->key.v->pattern);
 }
 
-void configset_parser_fsm_alloc(configset_parser * restrict parser, struct pattern * restrict key)
+void configset_parser_fsm_alloc(configset_parser * restrict parser, struct include_pattern * restrict key)
 {
   struct config_fstree_mapping *fsm;
   rbtree_search_context ctx;
@@ -110,13 +128,89 @@ void configset_parser_fsm_alloc(configset_parser * restrict parser, struct patte
 
   if((rbn = rbtree_search(&parser->cfg->filesystem.fstrees.set, &ctx, fsm, config_fstree_mapping_key_cmp))) {
     free(fsm);
-    pattern_free(key);
+    pattern_free(&key->pattern);
     parser->fsm = containerof(rbn, typeof(*fsm), rbn);
     return;
   }
   parser->fsm = fsm;
   parser->fsm->key.v = key;
   rbtree_insert(&parser->cfg->filesystem.fstrees.set, &ctx, &fsm->rbn);
+}
+
+static int config_namespace_key_cmp(void * restrict _key, const rbnode * restrict rbn)
+{
+  const struct config_namespace_entry *key;
+  const struct config_namespace_entry *nse;
+
+  key = _key;
+  nse = containerof(rbn, typeof(*nse), rbn);
+
+  return bacon_value_cmp(key->name, nse->name);
+}
+
+void configset_parser_namespace_alloc(configset_parser * restrict parser, bacon_value * restrict name)
+{
+  struct config_namespace_entry *nse;
+  rbtree_search_context ctx;
+  rbnode *rbn;
+
+  xmalloc(&nse, sizeof(*nse));
+  nse->name = name;
+
+  if((rbn = rbtree_search(&parser->cfg->namespaces.set, &ctx, nse, config_namespace_key_cmp))) {
+    free(nse);
+    bacon_value_free(parser->bacon_parser, name);
+    return;
+  }
+  nse->name = name;
+  rbtree_insert(&parser->cfg->namespaces.set, &ctx, &nse->rbn);
+}
+
+static int config_specials_key_cmp(void * restrict _key, const rbnode * restrict rbn)
+{
+  const struct config_specials_entry *key;
+  const struct config_specials_entry *nse;
+
+  key = _key;
+  nse = containerof(rbn, typeof(*nse), rbn);
+
+  return bacon_value_cmp(key->name, nse->name);
+}
+
+void configset_parser_varsets_alloc(configset_parser * restrict parser, bacon_value * restrict name)
+{
+  struct config_specials_entry *entry;
+  rbtree_search_context ctx;
+  rbnode *rbn;
+
+  xmalloc(&entry, sizeof(*entry));
+  entry->name = name;
+
+  if((rbn = rbtree_search(&parser->cfg->modules.varsets.set, &ctx, entry, config_specials_key_cmp))) {
+    free(entry);
+    bacon_value_free(parser->bacon_parser, name);
+    return;
+  }
+  entry->name = name;
+  rbtree_insert(&parser->cfg->modules.varsets.set, &ctx, &entry->rbn);
+}
+
+void configset_parser_rulesets_alloc(configset_parser * restrict parser, bacon_value * restrict name)
+{
+  struct config_specials_entry *entry;
+  rbtree_search_context ctx;
+  rbnode *rbn;
+
+  xmalloc(&entry, sizeof(*entry));
+  entry->name = name;
+
+  if((rbn = rbtree_search(&parser->cfg->modules.rulesets.set, &ctx, entry, config_specials_key_cmp))) {
+    free(entry);
+    bacon_value_free(parser->bacon_parser, name);
+    return;
+  }
+  entry->name = name;
+  rbtree_insert(&parser->cfg->modules.rulesets.set, &ctx, &entry->rbn);
 }
 
 config_plugin_entry *configset_parser_plugin_alloc(configset_parser * restrict parser)
@@ -133,116 +227,29 @@ void configset_parser_plugin_put(configset_parser * restrict parser, struct conf
   llist_push(&parser->cfg->plugins.list, &pe->lln);
 }
 
-void configset_parser_plugin_arg_put(configset_parser * restrict parser, bacon_value * restrict string)
+void configset_parser_wse_put(configset_parser * restrict parser, match_pattern * restrict pat)
 {
-  yyu_location loc;
-
-  loc.fname = string->loc->fname;
-  loc.f_lin = string->loc->f_lin;
-  loc.f_col = string->loc->f_col;
-  loc.l_lin = string->loc->l_lin;
-  loc.l_col = string->loc->l_col;
-  loc.s = string->loc->s;
-  loc.e = string->loc->e;
-  loc.l = string->loc->l;
-
-  bacon_list_mkv(parser->bacon_parser, &loc, parser->pe->args.list, &parser->pe->args.list, string);
-}
-
-static int config_special_key_cmp(void * restrict _key, const rbnode * restrict rbn)
-{
-  const struct bacon_value *key;
-  const struct config_special_entry *wse;
-
-  key = _key;
-  wse = containerof(rbn, typeof(*wse), rbn);
-
-  return memncmp(key->s, key->len, wse->s, wse->len);
-}
-
-void configset_parser_wse_alloc(configset_parser * restrict parser, struct bacon_value *string)
-{
-  struct config_special_entry *wse;
+  struct config_specials_entry *entry;
   rbtree_search_context ctx;
   rbnode *rbn;
+  char text[512];
+  uint16_t text_len;
+  bacon_value *name;
 
-  if((rbn = rbtree_search(&parser->cfg->filesystem.special.set, &ctx, string, config_special_key_cmp))) {
-    wse = containerof(rbn, typeof(*wse), rbn);
-    bacon_value_free(parser->bacon_parser, string);
+  text_len = pattern_cat(text, sizeof(text), &pat->pattern);
+  bacon_string_mkw(parser->bacon_parser, &pat->pattern.loc, 0, &name, text, text_len);
+  pattern_free(&pat->pattern);
+
+  xmalloc(&entry, sizeof(*entry));
+  entry->name = name;
+
+  if((rbn = rbtree_search(&parser->cfg->filesystem.special.set, &ctx, entry, config_specials_key_cmp))) {
+    free(entry);
+    bacon_value_free(parser->bacon_parser, name);
     return;
   }
-  xmalloc(&wse, sizeof(*wse));
-  llist_init(&wse->lln);
-  rbnode_init(&wse->rbn);
-  rbtree_insert(&parser->cfg->filesystem.special.set, &ctx, &wse->rbn);
-
-  wse->v = string;
-  wse->s = string->s;
-  wse->len = string->len;
-}
-
-static int config_formula_path_dirs_key_cmp(void * restrict _key, const rbnode * restrict rbn)
-{
-  const struct bacon_value *key;
-  const struct config_formula_path_dirs_entry *fpde;
-
-  key = _key;
-  fpde = containerof(rbn, typeof(*fpde), rbn);
-
-  return memncmp(key->s, key->len, fpde->s, fpde->len);
-}
-
-void configset_parser_fpde_alloc(configset_parser * restrict parser, struct bacon_value *string)
-{
-  struct config_formula_path_dirs_entry *fpde;
-  rbtree_search_context ctx;
-  rbnode *rbn;
-
-  if((rbn = rbtree_search(&parser->cfg->formula.path.dirs.set, &ctx, string, config_formula_path_dirs_key_cmp))) {
-    fpde = containerof(rbn, typeof(*fpde), rbn);
-    bacon_value_free(parser->bacon_parser, string);
-    return;
-  }
-  xmalloc(&fpde, sizeof(*fpde));
-  llist_init(&fpde->lln);
-  rbnode_init(&fpde->rbn);
-  rbtree_insert(&parser->cfg->formula.path.dirs.set, &ctx, &fpde->rbn);
-
-  fpde->v = string;
-  fpde->s = string->s;
-  fpde->len = string->len;
-}
-
-static int config_plugin_path_dirs_key_cmp(void * restrict _key, const rbnode * restrict rbn)
-{
-  const struct bacon_value *key;
-  const struct config_plugin_path_dirs_entry *fpde;
-
-  key = _key;
-  fpde = containerof(rbn, typeof(*fpde), rbn);
-
-  return memncmp(key->s, key->len, fpde->s, fpde->len);
-}
-
-void configset_parser_ppde_alloc(configset_parser * restrict parser, struct bacon_value *string)
-{
-  struct config_plugin_path_dirs_entry *fpde;
-  rbtree_search_context ctx;
-  rbnode *rbn;
-
-  if((rbn = rbtree_search(&parser->cfg->plugins.path.dirs.set, &ctx, string, config_plugin_path_dirs_key_cmp))) {
-    fpde = containerof(rbn, typeof(*fpde), rbn);
-    bacon_value_free(parser->bacon_parser, string);
-    return;
-  }
-  xmalloc(&fpde, sizeof(*fpde));
-  llist_init(&fpde->lln);
-  rbnode_init(&fpde->rbn);
-  rbtree_insert(&parser->cfg->plugins.path.dirs.set, &ctx, &fpde->rbn);
-
-  fpde->v = string;
-  fpde->s = string->s;
-  fpde->len = string->len;
+  entry->name = name;
+  rbtree_insert(&parser->cfg->filesystem.special.set, &ctx, &entry->rbn);
 }
 
 static int config_pattern_key_cmp(void * restrict _key, const rbnode * restrict rbn)
@@ -256,16 +263,16 @@ static int config_pattern_key_cmp(void * restrict _key, const rbnode * restrict 
   return pattern_cmp(key, pat);
 }
 
-void configset_parser_we_put(configset_parser * restrict parser, pattern * restrict pat)
+void configset_parser_we_put(configset_parser * restrict parser, match_pattern * restrict pat)
 {
   rbtree_search_context ctx;
   rbnode *rbn;
 
   if((rbn = rbtree_search(&parser->cfg->filesystem.exclude.set, &ctx, pat, config_pattern_key_cmp))) {
-    rbtree_replace(&parser->cfg->filesystem.exclude.set, rbn, &pat->rbn);
-    pat = containerof(rbn, typeof(*pat), rbn);
-    pattern_free(pat);
+    rbtree_replace(&parser->cfg->filesystem.exclude.set, rbn, &pat->pattern.rbn);
+    pat = containerof(rbn, typeof(*pat), pattern.rbn);
+    pattern_free(&pat->pattern);
   } else {
-    rbtree_insert(&parser->cfg->filesystem.exclude.set, &ctx, &pat->rbn);
+    rbtree_insert(&parser->cfg->filesystem.exclude.set, &ctx, &pat->pattern.rbn);
   }
 }

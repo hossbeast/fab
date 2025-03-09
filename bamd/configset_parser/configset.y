@@ -21,9 +21,11 @@
   #include "build.h"
   #include "macros.h"
   #include "pattern.h"
+  #include "exec_value.h"
 
   struct pattern;
   struct bacon_value;
+  struct lookup_pattern;
 }
 
 %code top {
@@ -55,15 +57,22 @@
 %union {
   yyu_lval  yyu;
 
-  struct pattern *pattern;
-  struct bacon_value *val;
-  struct pattern *pattern_owned;
+  struct include_pattern *include_pattern;
+  struct lookup_pattern *lookup_pattern;
+  struct match_pattern *match_pattern;
+  struct bacon_value *value;
+  struct include_pattern *pattern_owned;
 
   // enums
   struct {
     struct bacon_value *v;
     invalidation_type e;
   } invalidation_type;
+
+  struct {
+    struct bacon_value *v;
+    readlink_type e;
+  } readlink_type;
 }
 
 /* tokens */
@@ -82,10 +91,10 @@
 %token <yyu.umax> UINTMAX16     307
 %token <yyu.umax> UINTMAX32     308
 %token <yyu.umax> UINTMAX64     309
-%token <yyu.imax> HEX8          310
-%token <yyu.imax> HEX16         311
-%token <yyu.imax> HEX32         312
-%token <yyu.imax> HEX64         313
+%token <yyu.umax> HEX8          310
+%token <yyu.umax> HEX16         311
+%token <yyu.umax> HEX32         312
+%token <yyu.umax> HEX64         313
 %token <yyu.imax> INTMIN8       314
 %token <yyu.imax> INTMIN16      315
 %token <yyu.imax> INTMIN32      316
@@ -95,18 +104,25 @@
 %token <yyu.imax> INTMAX32      320
 %token <yyu.imax> INTMAX64      321
 
-%type <yyu.imax>  uint16_igroup int64_igroup
-%type <yyu.umax>  uint16_ugroup int64_ugroup
+ /* global sysvars */
+%token BM_BASEDIR               322 "bm_basedir"
+%token BM_HOMEDIR               323 "bm_homedir"
+%token BM_IPCDIR                324 "bm_ipcdir"
+%token BM_BAMD_ID               325 "bm_bamd_id"
+%token BM_BAMD_PID              326 "bm_bamd_pid"
+
+%type <yyu.imax> uint16_igroup uint32_igroup int64_igroup
+%type <yyu.umax> uint16_ugroup
+
+%type <yyu.umax> posint_ugroup
+%type <yyu.imax> posint_igroup
+%type <yyu.imax> negint_igroup
 
 %token
  BUILD                    "build"
  CONCURRENCY              "concurrency"
  FILESYSTEM               "filesystem"
- FORMULA                  "formula"
  INVALIDATION             "invalidation"
- PATH                     "path"
- COPY_FROM_ENV            "copy-from-env"
- DIRS                     "dirs"
  STAT                     "stat"
  CONTENT                  "content"
  NOTIFY                   "notify"
@@ -117,32 +133,62 @@
  SPECIAL                  "special"
  INCLUDE                  "include"
  MKDIR                    "mkdir"
+ UNLINK                   "unlink"
  READLINK                 "readlink"
- INDEX                    "index"
+ YES                      "yes"
+ NO                       "no"
+ REQUIRED                 "required"
  MOUNT                    "mount"
  TIMEOUT                  "timeout"
- INTERVAL                 "interval"
+ INTERVAL_MSEC            "interval-msec"
+ INTERVAL_SEC             "interval-sec"
  PLUGINS                  "plugins"
+ MODULES                  "modules"
+ VARSETS                  "varsets"
+ RULESETS                 "rulesets"
+ NAME                     "name"
+ FILETOKEN                "file"
  ARGS                     "args"
  ENVS                     "envs"
+ LOOKUP                   "lookup"
+ PATTERN                  "pattern"
+ NAMESPACE                "namespace"
+ NAMESPACES               "namespaces"
  REFRESH_ON_REQUEST       "refresh-on-request"
  REFRESH_ON_AUTOBUILD     "refresh-on-autobuild"
+ STDIN_BUFFER_SIZE        "stdin-buffer-size"
+ STDOUT_BUFFER_SIZE       "stdout-buffer-size"
+ STDERR_BUFFER_SIZE       "stderr-buffer-size"
+ AUXOUT_BUFFER_SIZE       "auxout-buffer-size"
+ RETENTION                "retention"
+ MAX_ENTRIES              "max-entries"
 
 %token
- <pattern> INCLUDE_PATTERN  "include-pattern"
- <pattern> MATCH_PATTERN    "match-pattern"
+ <include_pattern> INCLUDE_PATTERN     "include-pattern"
+ <match_pattern> MATCH_PATTERN         "match-pattern"
+ <lookup_pattern> LOOKUP_PATTERN       "lookup-pattern"
 
 /* nonterminals */
-%type <val> quote_words quote_word quoted_string unquoted_string
-%type <val> bool uint16 int64 string
+%type <value> quote_words quote_word quoted_string unquoted_string
+%type <value> uint16 uint32 int64 string
+%type <value> namespaces
+
+%type <value> primitive boolean float negint posint variable
+%type <value> exec-value exec-value-lookup
+%type <value> plugin-entry-args
+%type <value> plugin-entry-envs
+%type <value> plugin-entry-env
 
 /* enums */
 %type <invalidation_type> invalidation-type
+%type <readlink_type> readlink-type
 
 %type <pattern_owned> fstree-entry-key
 
-%destructor { pattern_free($$); } <pattern>
-%destructor { bacon_value_free(PARSER->bacon_parser, $$); } <val>
+%destructor { pattern_free(&$$->pattern); } <match_pattern>
+%destructor { pattern_free(&$$->pattern); } <include_pattern>
+%destructor { pattern_free(&$$->pattern); } <lookup_pattern>
+%destructor { bacon_value_free(PARSER->bacon_parser, $$); } <value>
 
 %%
 utterance
@@ -170,22 +216,24 @@ sections
 section
   : build-section
   | filesystem-section
-  | formula-section
   | timeout-section
   | plugins-section
+  | modules-section
+  | notify-section
+  | namespaces-section
   ;
 
 build-section
-  : BUILD ':' '{' build-mappings-epsilon '}'
-  ;
-
-build-mappings-epsilon
-  : build-mappings
-  | %empty
+  : BUILD ':' '{' build-mappings '}'
   ;
 
 build-mappings
-  : build-mappings build-mapping
+  : build-mappings-list
+  | %empty
+  ;
+
+build-mappings-list
+  : build-mappings-list build-mapping
   | build-mapping
   ;
 
@@ -195,51 +243,39 @@ build-mapping
     replace(PARSER, &PARSER->cfg->build.concurrency.v, $3);
     PARSER->cfg->build.concurrency.u16 = $3->i;
   }
-  ;
-
-formula-section
-  : FORMULA ':' '{' formula-mappings '}'
-  | FORMULA ':' '{' '}'
-  ;
-
-formula-mappings
-  : formula-mappings formula-mapping
-  | formula-mapping
-  ;
-
-formula-mapping
-  : formula-path
-  ;
-
-formula-path
-  : PATH ':' '{' formula-path-mappings '}'
-  | PATH ':' '{' '}'
-  ;
-
-formula-path-mappings
-  : formula-path-mappings formula-path-mapping
-  | formula-path-mapping
-  ;
-
-formula-path-mapping
-  : COPY_FROM_ENV ':' bool
+  | STDOUT_BUFFER_SIZE ':' uint32
   {
-    PARSER->cfg->formula.path.copy_from_env.v = $3;
-    PARSER->cfg->formula.path.copy_from_env.b = $3->b;
+    replace(PARSER, &PARSER->cfg->build.stdout_buffer_size.v, $3);
+    PARSER->cfg->build.stdout_buffer_size.u32 = $3->i;
   }
-  | DIRS ':' '{' formula-path-dirs '}'
-  | DIRS ':' '{' '}'
-  ;
-
-formula-path-dirs
-  : formula-path-dirs formula-path-dir
-  | formula-path-dir
-  ;
-
-formula-path-dir
-  : string
+  | STDERR_BUFFER_SIZE ':' uint32
   {
-    configset_parser_fpde_alloc(PARSER, $1);
+    replace(PARSER, &PARSER->cfg->build.stderr_buffer_size.v, $3);
+    PARSER->cfg->build.stderr_buffer_size.u32 = $3->i;
+  }
+  | AUXOUT_BUFFER_SIZE ':' uint32
+  {
+    replace(PARSER, &PARSER->cfg->build.auxout_buffer_size.v, $3);
+    PARSER->cfg->build.auxout_buffer_size.u32 = $3->i;
+  }
+  | RETENTION ':' '{' build-retention-mappings '}'
+  ;
+
+build-retention-mappings
+  : build-retention-mappings-list
+  | %empty
+  ;
+
+build-retention-mappings-list
+  : build-retention-mappings-list build-retention-mapping
+  | build-retention-mapping
+  ;
+
+build-retention-mapping
+  : MAX_ENTRIES ':' uint32
+  {
+    replace(PARSER, &PARSER->cfg->build.retention.max_entries.v, $3);
+    PARSER->cfg->build.retention.max_entries.u32 = $3->i;
   }
   ;
 
@@ -308,25 +344,80 @@ fstree-entry-mapping
     replace(PARSER, &PARSER->fsm->val.invalidation.v, $3.v);
     PARSER->fsm->val.invalidation.e = $3.e;
   }
-  | MKDIR ':' bool
+  | MKDIR ':' boolean
   {
     replace(PARSER, &PARSER->fsm->val.mkdir.v, $3);
     PARSER->fsm->val.mkdir.b = $3->b;
   }
-  | READLINK ':' bool
+  | UNLINK ':' boolean
   {
-    replace(PARSER, &PARSER->fsm->val.readlink.v, $3);
-    PARSER->fsm->val.readlink.b = $3->b;
+    replace(PARSER, &PARSER->fsm->val.unlink.v, $3);
+    PARSER->fsm->val.unlink.b = $3->b;
   }
-  | INDEX ':' bool
+  | READLINK ':' readlink-type
   {
-    replace(PARSER, &PARSER->fsm->val.index.v, $3);
-    PARSER->fsm->val.index.b = $3->b;
+    replace(PARSER, &PARSER->fsm->val.readlink.v, $3.v);
+    PARSER->fsm->val.readlink.e = $3.e;
   }
-  | MOUNT ':' bool
+  | MOUNT ':' boolean
   {
     replace(PARSER, &PARSER->fsm->val.mount.v, $3);
     PARSER->fsm->val.mount.b = $3->b;
+  }
+  | NAMESPACES ':' '{' namespaces '}'
+  {
+    replace(PARSER, &PARSER->fsm->val.namespaces.list, $4);
+  }
+  ;
+
+readlink-type
+  : YES
+  {
+    bacon_string_mkw(PARSER->bacon_parser, &@$, 0, &$$.v, @1.s, @1.l);
+    $$.e = READLINK_YES;
+  }
+  | NO
+  {
+    bacon_string_mkw(PARSER->bacon_parser, &@$, 0, &$$.v, @1.s, @1.l);
+    $$.e = READLINK_NO;
+  }
+  | REQUIRED
+  {
+    bacon_string_mkw(PARSER->bacon_parser, &@$, 0, &$$.v, @1.s, @1.l);
+    $$.e = READLINK_REQUIRED;
+  }
+  ;
+
+namespaces
+  : namespaces unquoted_string
+  {
+    bacon_list_mkv(PARSER->bacon_parser, &@$, $1, &$$, $2);
+  }
+  | unquoted_string
+  {
+    bacon_list_mkv(PARSER->bacon_parser, &@$, 0, &$$, $1);
+  }
+  ;
+
+notify-section
+  : NOTIFY ':' '{' notify-settings-set '}'
+  ;
+
+notify-settings-set
+  : notify-settings
+  | %empty
+  ;
+
+notify-settings
+  : notify-settings notify-setting
+  | notify-setting
+  ;
+
+notify-setting
+  : INTERVAL_MSEC ':' uint32
+  {
+    replace(PARSER, &PARSER->cfg->notify.interval.v, $3);
+    PARSER->cfg->notify.interval.u32 = $3->i;
   }
   ;
 
@@ -377,27 +468,30 @@ plugin-sections
   ;
 
 plugin-section
-  : plugin-path-section
-  | plugin-list-section
+  : plugin-list-section
+  | plugin-mapping
   ;
 
-plugin-path-section
-  : PATH ':' '{' plugin-path-settings '}'
-  ;
-
-plugin-path-settings
-  : DIRS ':' '{' plugin-path-dirs '}'
-  ;
-
-plugin-path-dirs
-  : plugin-path-dirs plugin-path-dir
-  | plugin-path-dir
-  ;
-
-plugin-path-dir
-  : string
+plugin-mapping
+  : STDIN_BUFFER_SIZE ':' uint32
   {
-    configset_parser_ppde_alloc(PARSER, $1);
+    replace(PARSER, &PARSER->cfg->plugins.stdin_buffer_size.v, $3);
+    PARSER->cfg->plugins.stdin_buffer_size.u32 = $3->i;
+  }
+  | STDOUT_BUFFER_SIZE ':' uint32
+  {
+    replace(PARSER, &PARSER->cfg->plugins.stdout_buffer_size.v, $3);
+    PARSER->cfg->plugins.stdout_buffer_size.u32 = $3->i;
+  }
+  | STDERR_BUFFER_SIZE ':' uint32
+  {
+    replace(PARSER, &PARSER->cfg->plugins.stderr_buffer_size.v, $3);
+    PARSER->cfg->plugins.stderr_buffer_size.u32 = $3->i;
+  }
+  | AUXOUT_BUFFER_SIZE ':' uint32
+  {
+    replace(PARSER, &PARSER->cfg->plugins.auxout_buffer_size.v, $3);
+    PARSER->cfg->plugins.auxout_buffer_size.u32 = $3->i;
   }
   ;
 
@@ -429,25 +523,152 @@ plugin-entry-mappings
   ;
 
 plugin-entry-mapping
-  : PATH ':' string
+  : NAME ':' string
   {
-    replace(PARSER, &PARSER->pe->path.v, $3);
-    PARSER->pe->path.s = $3->s;
-    PARSER->pe->path.len = $3->len;
+    bacon_value_free(PARSER->bacon_parser, PARSER->pe->name);
+    PARSER->pe->name= $3;
+  }
+  | FILETOKEN ':' '{' exec-value-lookup '}'
+  {
+    bacon_value_free(PARSER->bacon_parser, PARSER->pe->file.lookup);
+    PARSER->pe->file.lookup = $4;
   }
   | ARGS ':' '[' plugin-entry-args ']'
+  {
+    PARSER->pe->args = $4;
+  }
+  | ENVS ':' '{' plugin-entry-envs '}'
+  {
+    PARSER->pe->envs = $4;
+  }
   ;
 
 plugin-entry-args
-  : plugin-entry-args plugin-entry-arg
-  | plugin-entry-arg
+  : plugin-entry-args exec-value
+  {
+    bacon_list_mkv(PARSER->bacon_parser, &@$, $1, &$$, $2);
+  }
+  | exec-value
+  {
+    bacon_list_mkv(PARSER->bacon_parser, &@$, 0, &$$, $1);
+  }
   ;
 
-plugin-entry-arg
+plugin-entry-envs
+  : plugin-entry-envs plugin-entry-env
+  {
+    bacon_set_mkv(PARSER->bacon_parser, &@$, $1, &$$, $2);
+  }
+  | plugin-entry-env
+  {
+    bacon_set_mkv(PARSER->bacon_parser, &@$, 0, &$$, $1);
+  }
+  ;
+
+plugin-entry-env
+  : unquoted_string ':' exec-value
+  {
+    bacon_mapping_mk(PARSER->bacon_parser, &@$, &$$, $1, $3);
+  }
+  ;
+
+modules-section
+  : MODULES ':' '{' module-sections '}'
+  ;
+
+module-sections
+  : module-section-list
+  | %empty
+  ;
+
+module-section-list
+  : module-section-list module-section
+  | module-section
+  ;
+
+module-section
+  : module-varsets-section
+  | module-rulesets-section
+  ;
+
+module-varsets-section
+  : VARSETS ':' '{' module-varsets '}'
+  ;
+
+module-varsets
+  : module-varset-list
+  | %empty
+  ;
+
+module-varset-list
+  : module-varset-list module-varset
+  | module-varset
+  ;
+
+module-varset
   : string
   {
-    configset_parser_plugin_arg_put(PARSER, $1);
+    configset_parser_varsets_alloc(PARSER, $1);
   }
+  ;
+
+module-rulesets-section
+  : RULESETS ':' '{' module-rulesets '}'
+  ;
+
+module-rulesets
+  : module-ruleset-list
+  | %empty
+  ;
+
+module-ruleset-list
+  : module-ruleset-list module-ruleset
+  | module-ruleset
+  ;
+
+module-ruleset
+  : string
+  {
+    configset_parser_rulesets_alloc(PARSER, $1);
+  }
+  ;
+
+exec-value
+  : primitive
+  | exec-value-lookup
+  ;
+
+exec-value-lookup
+  : LOOKUP ':' '{' PATTERN ':' LOOKUP_PATTERN NAMESPACE ':' strtoken '}'
+  {
+    exec_value_lookup_mk(PARSER->bacon_parser, &@$, &$$, $6, @9.s, @9.l);
+  }
+  | LOOKUP ':' '{' NAMESPACE ':' strtoken PATTERN ':' LOOKUP_PATTERN '}'
+  {
+    exec_value_lookup_mk(PARSER->bacon_parser, &@$, &$$, $9, @6.s, @6.l);
+  }
+  | LOOKUP ':' '{' PATTERN ':' LOOKUP_PATTERN '}'
+  {
+    exec_value_lookup_mk(PARSER->bacon_parser, &@$, &$$, $6, 0, 0);
+  }
+  ;
+
+namespaces-section
+  : NAMESPACES ':' '{' namespace-sections-list '}'
+  ;
+
+namespace-sections-list
+  : namespace-sections
+  | %empty
+  ;
+
+namespace-sections
+  : namespace-sections namespace-section
+  | namespace-section
+  ;
+
+namespace-section
+  : unquoted_string { configset_parser_namespace_alloc(PARSER, $1); }
   ;
 
 exclude-entries
@@ -477,10 +698,13 @@ special-entry-list
   | special-entry
   ;
 
+/*
+specified as pattern so that the same character quoting rules are in effect
+*/
 special-entry
-  : string
+  : MATCH_PATTERN
   {
-    configset_parser_wse_alloc(PARSER, $1);
+    configset_parser_wse_put(PARSER, $1);
   }
   ;
 
@@ -512,23 +736,103 @@ invalidation-type
   }
   ;
 
-bool
+primitive
+  : boolean
+  | float
+  | negint
+  | posint
+  | variable
+  | string
+  ;
+
+boolean
   : BOOL
   {
     bacon_boolean_mk(PARSER->bacon_parser, &@$, &$$, $1);
   }
   ;
 
+float
+  : FLOAT
+  {
+    bacon_float_mk(PARSER->bacon_parser, &@$, &$$, $1);
+  }
+  ;
+
+posint
+  : posint_ugroup
+  {
+    bacon_integer_mk(PARSER->bacon_parser, &@$, &$$, $1);
+  }
+  | posint_igroup
+  {
+    bacon_integer_mk(PARSER->bacon_parser, &@$, &$$, $1);
+  }
+  ;
+
+posint_ugroup
+  : UINTMAX8
+  | UINTMAX16
+  | UINTMAX32
+  | UINTMAX64
+  | HEX8
+  | HEX16
+  | HEX32
+  | HEX64
+  ;
+
+posint_igroup
+  : INTMAX8
+  | INTMAX16
+  | INTMAX32
+  | INTMAX64
+  ;
+
+negint
+  : negint_igroup
+  {
+    bacon_integer_mk(PARSER->bacon_parser, &@$, &$$, $1);
+  }
+  ;
+
+negint_igroup
+  : INTMIN8
+  | INTMIN16
+  | INTMIN32
+  | INTMIN64
+  ;
+
 int64
-  : uint16
+  : uint32
+  {
+    $$ = $1;
+  }
   | int64_igroup
   {
     bacon_integer_mk(PARSER->bacon_parser, &@$, &$$, $1);
   }
-  | int64_ugroup
+  ;
+
+int64_igroup
+  : INTMIN64 { $$ = $1; }
+  | INTMAX64 { $$ = $1; }
+  ;
+
+uint32
+  : uint32_igroup
   {
     bacon_integer_mk(PARSER->bacon_parser, &@$, &$$, $1);
   }
+  | UINTMAX32
+  {
+    bacon_integer_mk(PARSER->bacon_parser, &@$, &$$, $1);
+  }
+  | uint16
+  ;
+
+uint32_igroup
+  : INTMIN32 { $$ = $1; }
+  | INTMAX32 { $$ = $1; }
   ;
 
 uint16
@@ -554,15 +858,19 @@ uint16_ugroup
   | UINTMAX16
   ;
 
-int64_igroup
-  : INTMIN32 { $$ = $1; }
-  | INTMAX32 { $$ = $1; }
-  | INTMIN64 { $$ = $1; }
-  | INTMAX64 { $$ = $1; }
+variable
+  : global-sysvar-token
+  {
+    bacon_variable_mkw(PARSER->bacon_parser, &@$, &$$, @1.s + 1, @1.l - 1);
+  }
   ;
 
-int64_ugroup
-  : UINTMAX32
+global-sysvar-token
+  : BM_BASEDIR
+  | BM_HOMEDIR
+  | BM_IPCDIR
+  | BM_BAMD_ID
+  | BM_BAMD_PID
   ;
 
 string
@@ -572,19 +880,26 @@ string
 
 /* must be a single token because strings can appear repeatedly together */
 unquoted_string
-  : word
+  : strtoken
+  {
+    bacon_string_mkw(PARSER->bacon_parser, &@$, 0, &$$, @1.s, @1.l);
+  }
+  | wordtoken
   {
     bacon_string_mkw(PARSER->bacon_parser, &@$, 0, &$$, @1.s, @1.l);
   }
   ;
 
-word
-  : STR
-  | '/'
+wordtoken
+  : '/'
   | '-'
   | '+'
   | '='
   | ','
+  | '@'
+  | PATTERN
+  | BUILD
+  | MODULES
   ;
 
 quoted_string
@@ -608,7 +923,7 @@ quote_words
   ;
 
 quote_word
-  : STR
+  : strtoken
   {
     bacon_string_mkw(PARSER->bacon_parser, &@$, 0, &$$, @1.s, @1.l);
   }
@@ -620,4 +935,9 @@ quote_word
   {
     bacon_string_mkc(PARSER->bacon_parser, &@$, 0, &$$, $1);
   }
+  ;
+
+strtoken
+  : STR
+  | PLUGINS
   ;

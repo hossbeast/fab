@@ -19,6 +19,9 @@ struct configset_parser;
 struct moria_vertex;
 struct channel;
 struct pattern;
+struct exec_value;
+struct request_handler;
+struct include_pattern;
 
 /* fstree properties */
 typedef struct config_fstree_value {
@@ -33,15 +36,18 @@ typedef struct config_fstree_value {
   struct {
     struct bacon_value *v;
     bool b;
+  } unlink;
+  struct {
+    struct bacon_value *v;
+    readlink_type e;
   } readlink;
   struct {
     struct bacon_value *v;
     bool b;
-  } index;
-  struct {
-    struct bacon_value *v;
-    bool b;
   } mount;
+  struct {
+    struct bacon_value *list;   // list of namespaces
+  } namespaces;
 } config_fstree_value;
 
 /* fstree entry */
@@ -50,49 +56,39 @@ typedef struct config_fstree_mapping {
   rbnode rbn;
 
   struct {
-    struct pattern *v;
+    struct include_pattern *v;
   } key;
 
   config_fstree_value val;
 } config_fstree_mapping;
 
-typedef struct config_special_entry {
+typedef struct config_namespace_entry {
   llist lln;
   rbnode rbn;
-  struct bacon_value *v;
-  char *s;
-  uint16_t len;
-} config_special_entry;
 
-typedef struct config_formula_path_dirs_entry {
-  llist lln;
-  rbnode rbn;
-  struct bacon_value *v;
-  char *s;
-  uint16_t len;
-} config_formula_path_dirs_entry;
-
-typedef struct config_plugin_path_dirs_entry {
-  llist lln;
-  rbnode rbn;
-  struct bacon_value *v;
-  char *s;
-  uint16_t len;
-} config_plugin_path_dirs_entry;
+  struct bacon_value *name;
+} config_namespace_entry;
 
 typedef struct config_plugin_entry {
   llist lln;
 
-  struct {
-    struct bacon_value *v;
-    char *s;
-    uint16_t len;
-  } path;
+  /* optional */
+  struct bacon_value *name;
 
   struct {
-    struct bacon_value *list;
-  } args;
+    struct bacon_value *lookup;
+  } file;
+
+  struct bacon_value *args;
+  struct bacon_value *envs;
 } config_plugin_entry;
+
+typedef struct config_specials_entry {
+  llist lln;
+  rbnode rbn;
+
+  struct bacon_value *name;
+} config_specials_entry;
 
 typedef struct config {
   llist owner;
@@ -102,9 +98,27 @@ typedef struct config {
       struct bacon_value *v;
       uint16_t u16;
     } concurrency;
+    struct {
+      struct bacon_value *v;
+      uint32_t u32;
+    } stdout_buffer_size;
+    struct {
+      struct bacon_value *v;
+      uint32_t u32;
+    } stderr_buffer_size;
+    struct {
+      struct bacon_value *v;
+      uint32_t u32;
+    } auxout_buffer_size;
+    struct {
+      struct {
+        struct bacon_value *v;
+        uint32_t u32;
+      } max_entries;
+    } retention;
   } build;
 
-  struct config_filesystem {
+  struct {
     struct {
       rbtree set;     // config_fstree_mapping
     } fstrees;
@@ -114,21 +128,9 @@ typedef struct config {
     } exclude;
 
     struct {
-      rbtree set;     // config_special_entry
+      rbtree set;     // config_specials_entry
     } special;
   } filesystem;
-
-  struct {
-    struct {
-      struct {
-        struct bacon_value *v;
-        bool b;
-      } copy_from_env;
-      struct {
-        rbtree set;           // config_formula_path_dirs_entry
-      } dirs;
-    } path;
-  } formula;
 
   struct {
     struct {
@@ -147,13 +149,48 @@ typedef struct config {
 
   struct {
     struct {
-      struct {
-        rbtree set;           // config_plugin_path_dirs_entry
-      } dirs;
-    } path;
+      struct bacon_value *v;
+      uint32_t u32;           // milliseconds
+    } interval;
+  } notify;
 
+  struct {
+    rbtree set;               // config_namespace_entry
+  } namespaces;
+
+  struct {
     llist list;               // config_plugin_entry
+
+    struct {
+      struct bacon_value *v;
+      uint32_t u32;
+    } stdin_buffer_size;
+
+    struct {
+      struct bacon_value *v;
+      uint32_t u32;
+    } stdout_buffer_size;
+
+    struct {
+      struct bacon_value *v;
+      uint32_t u32;
+    } stderr_buffer_size;
+
+    struct {
+      struct bacon_value *v;
+      uint32_t u32;
+    } auxout_buffer_size;
   } plugins;
+
+  struct {
+    struct {
+      rbtree set;     // config_specials_entry
+    } varsets;
+
+    struct {
+      rbtree set;     // config_specials_entry
+    } rulesets;
+  } modules;
 } config;
 
 extern struct config *config_active;
@@ -182,11 +219,12 @@ void config_compare(const config * restrict prev, config * restrict next)
 void config_setup(void);
 void config_cleanup(void);
 
-void config_vertex_describe(struct bacon_writer * restrict builder_writer)
-  __attribute__((nonnull));
+typedef struct config_param {
+  const struct bacon_value *val;
+  uint64_t min;
+  uint64_t max;
+  const char *config_path;
+} config_param;
 
-void config_vertex_tell(struct channel * restrict chan)
-  __attribute__((nonnull));
-
-void config_vertex_stats_build(bool reset, struct bacon_writer * restrict builder_writer)
+void config_validate(const config_param * restrict param)
   __attribute__((nonnull));

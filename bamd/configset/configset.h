@@ -20,7 +20,7 @@ struct configset_parser;
 struct graph_invalidation_context;
 struct fsedge;
 
-/* global VERTEX_CONFIGSET_FILE | VERTEX_PROTECT_BIT nodes */
+/* global VERTEX_CONFIGSET_FILE nodes */
 extern struct fsent *system_configset_node;
 extern struct fsent *user_configset_node;
 
@@ -29,12 +29,12 @@ extern llist configset_list;
 
 extern descriptor_type descriptor_stats_configset;
 
-/* BAM_FSENT_TYPE_CONFIGSET_FILE - config.bam file */
+/* VERTEX_CONFIGSET - config.bam file */
 typedef union stats_configset {
   struct {
     /* event counters */
-    uint16_t parse;          /* parse attempted */
     uint16_t parse_ok;       /* parsed successfully */
+    uint16_t parse_err;      /* parse failed */
   };
 
   stats_record record;
@@ -50,9 +50,6 @@ typedef struct configset {
   char id[40];
   uint16_t id_len;
 
-  /* shadow link */
-  struct fsedge *link;
-
   /* regarding the corresponding VERTEX_CONFIGSET_FILE */
   struct fsent *self_node;
   char self_node_abspath[PATH_MAX];
@@ -66,7 +63,7 @@ void configset_create(configset ** restrict cfg)
   __attribute__((nonnull));
 
 /* free a config struct with free semantics */
-void configset_release(configset * restrict cfg, struct graph_invalidation_context * restrict invalidation);
+void configset_release(configset * restrict cfg);
 
 /* mark sections of a new config struct as different from those of another config struct */
 bool configset_compare(configset * restrict new, configset * restrict old)
@@ -99,10 +96,7 @@ void configset_describe(const struct configset * restrict configset, struct baco
 void configset_file_describe(const struct fsent * restrict fse, struct bacon_writer * restrict builder_writer)
   __attribute__((nonnull));
 
-void configset_identity_say(const struct configset * restrict configset, struct narrator * restrict N)
-  __attribute__((nonnull));
-
-void configset_file_identity_say(const struct fsent * restrict fse, struct narrator * restrict N)
+void configset_identity_describe(const struct configset * restrict configset, struct bacon_writer * restrict)
   __attribute__((nonnull));
 
 void configset_stats_build(configset * restrict, bool reset, struct bacon_writer * restrict)
@@ -110,3 +104,14 @@ void configset_stats_build(configset * restrict, bool reset, struct bacon_writer
 
 void configset_file_stats_build(struct fsent * restrict, bool reset, struct bacon_writer * restrict)
   __attribute__((nonnull));
+
+void configset_hash(const configset * restrict v, const void ** restrict hp, uint16_t * restrict hl)
+  __attribute__((nonnull));
+
+void configset_id(const configset * restrict v, const char ** restrict idp, uint16_t * restrict idl)
+  __attribute__((nonnull));
+
+void configset_compute_id(const struct configset * restrict v, struct identity_ctx * restrict id)
+  __attribute__((nonnull));
+
+void configsets_show(void);

@@ -373,3 +373,6 @@ void fsent_mappings(const fsent * restrict fse, struct bacon_writer * restrict b
 
 void fsent_stats_build(fsent * restrict, bool reset, struct bacon_writer * restrict)
   __attribute__((nonnull));
+
+struct configset *fsent_is_configset_file(const fsent * restrict fse)
+  __attribute__((nonnull));

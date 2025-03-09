@@ -1326,3 +1326,16 @@ void fsent_describe(fsent * restrict fse, bacon_writer * restrict builder_writer
     }
   }
 }
+
+configset *fsent_is_configset_file(const fsent * restrict fse)
+{
+  struct moria_edge *edge;
+  struct configset *cfg;
+
+  if((edge = edges_check_up(&fse->vertex, EDGE_FSENT_CONFIGSET))) {
+    cfg = containerof(edge->A, typeof(*cfg), vertex);
+    return cfg;
+  }
+
+  return 0;
+}

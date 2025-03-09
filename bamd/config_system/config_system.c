@@ -17,13 +17,14 @@ config keys that should *only* be legal in the global/user config files
 #include "xlinux/xstdlib.h"
 #include "xlinux/xunistd.h"
 #include "narrator.h"
+#include "bam/config_tell.h"
 #include "narrator/fixed.h"
+#include "narrator/growing.h"
 #include "valyria/hashtable.h"
 #include "valyria/llist.h"
 #include "bacon/writer.h"
 #include "bacon/builder.h"
 #include "common/snarf.h"
-#include "common/hash.h"
 #include "common/attrs.h"
 #include "lorien/path_normalize.h"
 
@@ -33,27 +34,35 @@ config keys that should *only* be legal in the global/user config files
 #include "build.h"
 #include "params.h"
 #include "fsent.h"
-#include "path_cache.h"
 #include "walker.h"
+#include "shadow.h"
 #include "args.h"
 #include "zcat.h"
 #include "channel.h"
 #include "pattern.h"
 #include "stats.h"
 #include "system.h"
-#include "events.h"
+#include "events/events.h"
 #include "reconcile.h"
 #include "module_system.h"
 #include "vertex.h"
 #include "vertex/probes.h"
 #include "config_system.h"
 #include "special_edge.h"
+#include "request_handler.h"
 #include "fsedge.h"
 #include "timeout_thread.h"
+#include "sweeper_thread.h"
 #include "plugin_system.h"
+#include "edges.h"
+#include "vertices.h"
+#include "subsys.h"
+#include "disintegrate.h"
 
 #include "macros.h"
 #include "marshal.h"
+
+union stats_sys_config config_sys_stats;
 
 static configset_parser *parser;
 static bool invalidated = true;
@@ -72,6 +81,8 @@ config *config_active;
 fsent *system_config_dirnode;
 fsent *user_config_dirnode;
 
+subsys sys_config;
+
 //
 // static
 //
@@ -82,8 +93,8 @@ static uint16_t render_pathspec(char path[PATH_MAX], const char * restrict paths
 
   ctx.home = g_params.homedir;
   ctx.home_len = g_params.homedir_len;
-  ctx.base = g_base_dir;
-  ctx.base_len = g_base_dir_len;
+  ctx.base = g_basedir;
+  ctx.base_len = g_basedir_len;
 
   return path_normalize(&ctx, path, PATH_MAX, pathspec, strlen(pathspec));
 }
@@ -95,6 +106,9 @@ static uint16_t render_pathspec(char path[PATH_MAX], const char * restrict paths
 void config_system_setup(void)
 {
   char *c;
+
+  subsys_init(&sys_config, VERTEX_SYS_CONFIG);
+  shadow_mkref(g_shadow_bm, sys_config.vertex.label, sys_config.vertex.label_len, &sys_config.vertex);
 
   configset_parser_create(&parser);
 
@@ -142,6 +156,9 @@ void config_system_reconcile(bool * restrict work, graph_invalidation_context * 
   llist unused, *T;
   configset *cfg;
   config *config_next;
+  struct edges edges;
+  struct vertices unlinking;
+  struct vertices releasing;
 
   /* global system config */
   if((v = moria_vertex_downw(&system_config_dirnode->vertex, system_config_name, system_config_name_len))) {
@@ -163,7 +180,7 @@ void config_system_reconcile(bool * restrict work, graph_invalidation_context * 
   dirv = &g_base->vertex;
   while(dirv)
   {
-    if((v = moria_vertex_downw(dirv, MMS(fsent_name_config))))
+    if((v = moria_vertex_downw(dirv, MMS(FSENT_NAME_CONFIG))))
     {
       n = containerof(v, fsent, vertex);
       fsent_configset_bootstrap(n, invalidation);
@@ -173,6 +190,7 @@ void config_system_reconcile(bool * restrict work, graph_invalidation_context * 
   }
 
   if(!invalidated) {
+    config_sys_stats.reconfigure_no_work++;
     *work = false;
     return;
   }
@@ -186,15 +204,14 @@ void config_system_reconcile(bool * restrict work, graph_invalidation_context * 
   dirv = &g_base->vertex;
   while(dirv)
   {
-    if((v = moria_vertex_downw(dirv, MMS(fsent_name_config))))
+    if((v = moria_vertex_downw(dirv, MMS(FSENT_NAME_CONFIG))))
     {
-      RUNTIME_ASSERT(vertex_type_get(v) == VERTEX_CONFIGSET_FILE);
+      RUNTIME_ASSERT(vertex_kind_get(v) == VERTEX_KIND_FSENT);
       if(!vertex_exists_get(v)) {
         goto next;
       }
-
       n = containerof(v, fsent, vertex);
-      cfg = n->self_configset;
+      cfg = fsent_is_configset_file(n);
       llist_delete(&cfg->vertex.owner);
       llist_prepend(&configset_list, &cfg->vertex.owner);
     }
@@ -205,20 +222,25 @@ void config_system_reconcile(bool * restrict work, graph_invalidation_context * 
 
   /* global config nodes */
   if(system_configset_node) {
-    llist_delete(&system_configset_node->self_configset->vertex.owner);
-    llist_prepend(&configset_list, &system_configset_node->self_configset->vertex.owner);
+    cfg = fsent_is_configset_file(system_configset_node);
+    llist_delete(&cfg->vertex.owner);
+    llist_prepend(&configset_list, &cfg->vertex.owner);
   }
 
   if(user_configset_node) {
-    llist_delete(&user_configset_node->self_configset->vertex.owner);
-    llist_prepend(&configset_list, &user_configset_node->self_configset->vertex.owner);
+    cfg = fsent_is_configset_file(user_configset_node);
+    llist_delete(&cfg->vertex.owner);
+    llist_prepend(&configset_list, &cfg->vertex.owner);
   }
 
   /* config nodes not seen by the above loop are now unused */
+  edges_init(&edges);
+  vertices_init(&unlinking);
+  vertices_init(&releasing);
   llist_foreach_safe(&unused, cfg, vertex.owner, T) {
-    n = cfg->self_node;
-    configset_release(cfg, invalidation);
+    vertices_push(&unlinking, &cfg->vertex);
   }
+  graph_disintegrate(&edges, &unlinking, &releasing, invalidation);
 
   /* parse active config files onto a new config */
   config_alloc(&config_next);
@@ -230,12 +252,16 @@ void config_system_reconcile(bool * restrict work, graph_invalidation_context * 
     }
   }
 
-  // validate the new config
-  fstree_reconfigure(config_next, true);
+  /* validate the new config */
+  namespace_reconfigure(config_next, true, invalidation);
   if(system_has_error) {
     goto err;
   }
-  fsent_reconfigure(config_next, true);
+  module_system_reconfigure(config_next, true, invalidation);
+  if(system_has_error) {
+    goto err;
+  }
+  fstree_reconfigure(config_next, true);
   if(system_has_error) {
     goto err;
   }
@@ -247,11 +273,11 @@ void config_system_reconcile(bool * restrict work, graph_invalidation_context * 
   if(system_has_error) {
     goto err;
   }
-  path_cache_reconfigure(config_next, true);
+  timeout_thread_reconfigure(config_next, true);
   if(system_has_error) {
     goto err;
   }
-  timeout_thread_reconfigure(config_next, true);
+  sweeper_thread_reconfigure(config_next, true);
   if(system_has_error) {
     goto err;
   }
@@ -260,18 +286,23 @@ void config_system_reconcile(bool * restrict work, graph_invalidation_context * 
     goto err;
   }
 
+  config_sys_stats.reconfigure_ok++;
+
   /* flip */
   config_free(config_active, parser);
   config_active = config_next;
   config_next = 0;
 
+//config_show(config_active);
+
   // reconfigure subsystems
+  namespace_reconfigure(config_active, false, invalidation);
+  module_system_reconfigure(config_active, false, invalidation);
   fstree_reconfigure(config_active, false);
-  fsent_reconfigure(config_active, false);
   walker_system_reconfigure(config_active, false);
   build_reconfigure(config_active, false);
-  path_cache_reconfigure(config_active, false);
   timeout_thread_reconfigure(config_active, false);
+  sweeper_thread_reconfigure(config_active, false);
   plugin_system_reconfigure(config_active, false, invalidation);
 
   llist_foreach(&configset_list, cfg, vertex.owner) {
@@ -282,10 +313,111 @@ void config_system_reconcile(bool * restrict work, graph_invalidation_context * 
   return;
 
 err:
+  config_sys_stats.reconfigure_err++;
   config_free(config_next, parser);
 }
 
 void config_system_invalidate()
 {
   invalidated = true;
+}
+
+void config_sys_tell(const moria_vertex * restrict v, struct request_handler * restrict handler)
+{
+  bamipc_message *msg;
+  narrator_growing growing;
+  narrator * N;
+  int x;
+  configset *cfgn;
+  size_t z;
+  size_t list_size;
+  size_t list_size_off;
+  size_t list_len_off;
+  char *dst;
+  size_t sz;
+
+  msg = request_handler_tx(handler, BAMIPC_MSG_RESULT, descriptor_bam_config_tell_result.id, 0);
+  dst = msg->text;
+  sz = msg->size;
+  z = 0;
+  z += marshal_u32(dst + z, sz - z, descriptor_bam_config_tell_result.id);
+
+  /* list each contributing config file */
+  z += align(z, 4);
+  list_size_off = z;
+  z += marshal_u32(dst + z, sz - z, 0);            /* size of the list blob */
+  z += align(z, 2);
+  list_len_off = z;
+  z += marshal_u16(dst + z, sz - z, 0);            /* items in the list blob */
+
+  x = 0;
+  llist_foreach(&configset_list, cfgn, vertex.owner) {
+    z += marshal_u32(dst + z, sz - z, descriptor_bam_config_tell_item.id);
+
+    /* id */
+    z += marshal_u16(dst + z, sz - z, cfgn->id_len);
+    z += zcatw(dst + z, sz - z, cfgn->id, cfgn->id_len);
+
+    /* abspath */
+    z += marshal_u16(dst + z, sz - z, cfgn->self_node_abspath_len);
+    z += zcatw(dst + z, sz - z, cfgn->self_node_abspath, cfgn->self_node_abspath_len);
+    x++;
+  }
+
+  list_size = z - list_size_off;
+  marshal_u32(dst + list_size_off, sz - list_size_off, list_size);
+  marshal_u16(dst + list_len_off, sz - list_len_off, x);
+
+  msg->len = z;
+  request_handler_post(handler, msg);
+
+  N = narrator_growing_init(&growing);
+  if(config_active) {
+    config_say(config_active, N);
+  }
+
+  x = 0;
+  while(x < growing.l)
+  {
+    msg = request_handler_tx(handler, BAMIPC_MSG_RESULT, BAMIPC_MSG_BACON, 0);
+
+    msg->len = MIN(growing.l - x, msg->size);
+    memcpy(msg->text, growing.s + x, msg->len);
+
+    request_handler_post(handler, msg);
+    x += msg->len;
+  }
+
+  narrator_growing_destroy(&growing);
+}
+
+void config_sys_stats_build(const moria_vertex * restrict v, bool reset, bacon_writer * restrict builder_writer)
+{
+  stats_build(&config_sys_stats.record, &descriptor_stats_sys_config, builder_writer);
+}
+
+void config_sys_describe(const moria_vertex * restrict v, struct bacon_writer * restrict builder_writer)
+{
+  { MAPPING
+    vertex_path_describe(v, builder_writer);
+    { SET
+      vertex_mappings(v, builder_writer);
+      { MAPPING STRING("active")
+        if(config_active) {
+          { SET
+            config_describe(config_active, builder_writer);
+          }
+        } else {
+          SET
+        }
+      }
+      { MAPPING
+        STRING("stats")
+        { SET
+          config_sys_stats_build(v, false, builder_writer);
+        }
+      }
+      vertex_relations_describe(v, builder_writer);
+    }
+  }
 }

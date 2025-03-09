@@ -16,6 +16,7 @@
 #include "config.h"
 #include "request.h"
 #include "fsent.h"
+#include "exec_value.h"
 
 typedef struct {
   XUNITTEST;
@@ -28,6 +29,7 @@ typedef struct {
 static void configset_parser_test_unit_setup(xunit_unit * unit)
 {
   bacon_load();
+  exec_value_setup();
 }
 
 static void configset_parser_test_unit_cleanup(xunit_unit * unit)
@@ -45,7 +47,7 @@ static void configset_parser_test_entry(xunit_test * _test)
   narrator_growing * N1 = 0;
   size_t len;
   char **text;
-  const char *names[] = { "(first)", "(second)", "(third)" };
+  const char *names[] = { "-first-", "-second-", "-third-" };
   const char **name;
 
   // arrange
@@ -118,7 +120,7 @@ static xunit_unit xunit = {
         }
         , expected : ""
               "build : {\n"
-              "  concurrency : 0                                            # @ (first) [1,25 1,26]\n"
+              "  concurrency : 0                                            # @ -first- [1,25 1,26]\n"
               "}"
       }}
     , (configset_parser_test[]) {{
@@ -139,7 +141,7 @@ static xunit_unit xunit = {
         }
         , expected : ""
               "build : {\n"
-              "  concurrency : 0                                            # @ (second) [1,25 1,26]\n"
+              "  concurrency : 0                                            # @ -second- [1,25 1,26]\n"
               "}"
       }}
     , (configset_parser_test[]) {{
@@ -154,26 +156,77 @@ static xunit_unit xunit = {
          }
         , expected : ""
               "build : {\n"
-              "  concurrency : 42                                           # @ (first) [1,25 1,27]\n"
+              "  concurrency : 42                                           # @ -first- [1,25 1,27]\n"
               "}"
       }}
     , (configset_parser_test[]) {{
           texts : (char*[]) {
             (char[]) {
-              "filesystem : {"
-              "  fstrees : {"
-              "    /usr/lib/fab/builtin"
-              "    /home/todd/my"
-              " }"
-              "}\0\0"
+              "filesystem : {\n"
+              " fstrees : {\n"
+              "   /usr/lib/fab/builtin : {\n"
+              "     invalidation : stat\n"
+              "     namespaces : {\n"
+              "       modules\n"
+              "     }\n"
+              "   }\n"
+              " }\n"
+              "}\n"
+              "\0\0"
             }
           , 0
         }
         , expected : ""
               "filesystem : {\n"
               "  fstrees : {\n"
-              "    /home/todd/my                                            # @ (first) [1,56 1,69]\n"
-              "    /usr/lib/fab/builtin                                     # @ (first) [1,32 1,52]\n"
+              "    /usr/lib/fab/builtin : {\n"
+              "      invalidation : stat                                    # @ -first- [4,21 4,25]\n"
+              "      namespaces : {\n"
+              "        modules                                              # @ -first- [6,8 6,15]\n"
+              "      }\n"
+              "    }\n"
+              "  }\n"
+              "}"
+          , 0
+      }}
+    , (configset_parser_test[]) {{
+          texts : (char*[]) {
+            (char[]) {
+              "filesystem : {\n"
+              " fstrees : {\n"
+              "   /usr/lib/fab/builtin : {\n"
+              "     mkdir : false\n"
+              "     mount : true\n"
+              "     namespaces : {\n"
+              "       modules\n"
+              "     }\n"
+              "   }\n"
+              "   /home/todd/fab: {\n"
+              "     namespaces : {\n"
+              "       formulas\n"
+              "     }\n"
+              "   }\n"
+              " }\n"
+              "}\n"
+              "\0\0"
+            }
+          , 0
+        }
+        , expected : ""
+              "filesystem : {\n"
+              "  fstrees : {\n"
+              "    /home/todd/fab : {\n"
+              "      namespaces : {\n"
+              "        formulas                                             # @ -first- [12,8 12,16]\n"
+              "      }\n"
+              "    }\n"
+              "    /usr/lib/fab/builtin : {\n"
+              "      mkdir : false                                          # @ -first- [4,14 4,19]\n"
+              "      mount : true                                           # @ -first- [5,14 5,18]\n"
+              "      namespaces : {\n"
+              "        modules                                              # @ -first- [7,8 7,15]\n"
+              "      }\n"
+              "    }\n"
               "  }\n"
               "}"
           , 0
@@ -183,9 +236,14 @@ static xunit_unit xunit = {
             (char[]) {
               "filesystem : {"
               "  fstrees : {"
-              "    /usr/lib/fab/builtin"
-              "    /home/todd/my"
-              " }"
+              "    /usr/lib/fab/builtin : {"
+              "      namespaces : {"
+              "        modules"
+              "        formulas"
+              "        plugins"
+              "      }"
+              "    }"
+              "  }"
               "}\0\0"
             }
           , (char[]) {
@@ -198,15 +256,20 @@ static xunit_unit xunit = {
           , 0
         }
         , expected : ""
-            "filesystem : {\n"
-            "  fstrees : {\n"
-            "    /home/todd/my                                            # @ (first) [1,56 1,69]\n"
-            "    /usr/lib/fab/builtin                                     # @ (first) [1,32 1,52]\n"
-            "  }\n"
-            "  exclude : {\n"
-            "    build                                                    # @ (second) [1,32 1,37]\n"
-            "  }\n"
-            "}"
+              "filesystem : {\n"
+              "  fstrees : {\n"
+              "    /usr/lib/fab/builtin : {\n"
+              "      namespaces : {\n"
+              "        modules                                              # @ -first- [1,84 1,91]\n"
+              "        formulas                                             # @ -first- [1,99 1,107]\n"
+              "        plugins                                              # @ -first- [1,115 1,122]\n"
+              "      }\n"
+              "    }\n"
+              "  }\n"
+              "  exclude : {\n"
+              "    build                                                    # @ -second- [1,32 1,37]\n"
+              "  }\n"
+              "}"
           , 0
       }}
     , (configset_parser_test[]) {{
@@ -223,7 +286,7 @@ static xunit_unit xunit = {
         , expected : ""
               "filesystem : {\n"
               "  exclude : {\n"
-              "    .git                                                     # @ (first) [1,32 1,36]\n"
+              "    .git                                                     # @ -first- [1,32 1,36]\n"
               "  }\n"
               "}"
       }}
@@ -255,9 +318,9 @@ static xunit_unit xunit = {
         , expected : ""
               "filesystem : {\n"
               "  exclude : {\n"
-              "    .git                                                     # @ (first) [1,32 1,36]\n"
-              "    .svn                                                     # @ (second) [1,32 1,36]\n"
-              "    .hg                                                      # @ (third) [1,32 1,35]\n"
+              "    .git                                                     # @ -first- [1,32 1,36]\n"
+              "    .svn                                                     # @ -second- [1,32 1,36]\n"
+              "    .hg                                                      # @ -third- [1,32 1,35]\n"
               "  }\n"
               "}"
       }}
@@ -291,9 +354,9 @@ static xunit_unit xunit = {
         , expected : ""
               "filesystem : {\n"
               "  exclude : {\n"
-              "    .git                                                     # @ (third) [1,32 1,36]\n"
-              "    .svn                                                     # @ (third) [1,40 1,44]\n"
-              "    .hg                                                      # @ (third) [1,48 1,51]\n"
+              "    .git                                                     # @ -third- [1,32 1,36]\n"
+              "    .svn                                                     # @ -third- [1,40 1,44]\n"
+              "    .hg                                                      # @ -third- [1,48 1,51]\n"
               "  }\n"
               "}"
       }}
@@ -314,10 +377,30 @@ static xunit_unit xunit = {
         , expected : ""
               "filesystem : {\n"
               "  special : {\n"
-              "    var.bam.debug                                            # @ (first) [1,32 1,45]\n"
-              "    var.bam.trace                                            # @ (first) [1,83 1,96]\n"
-              "    var.bam.final                                            # @ (first) [1,66 1,79]\n"
-              "    var.bam.devel                                            # @ (first) [1,49 1,62]\n"
+              "    var.bam.debug                                            # @ -first- [1,32 1,45]\n"
+              "    var.bam.trace                                            # @ -first- [1,83 1,96]\n"
+              "    var.bam.final                                            # @ -first- [1,66 1,79]\n"
+              "    var.bam.devel                                            # @ -first- [1,49 1,62]\n"
+              "  }\n"
+              "}"
+      }}
+    , (configset_parser_test[]) {{
+          texts : (char*[]) {
+            (char[]) {
+              "filesystem : {"
+              "  special : {"
+              "    var.bam%debug"
+              "    var.bam%trace"
+              " }"
+              "}\0\0"
+            }
+          , 0
+        }
+        , expected : ""
+              "filesystem : {\n"
+              "  special : {\n"
+              "    var.bam%trace                                            # @ -first- [1,49 1,62]\n"
+              "    var.bam%debug                                            # @ -first- [1,32 1,45]\n"
               "  }\n"
               "}"
       }}
@@ -341,10 +424,10 @@ static xunit_unit xunit = {
               "filesystem : {\n"
               "  fstrees : {\n"
               "    /home : {\n"
-              "      invalidation : stat                                    # @ (first) [1,103 1,107]\n"
+              "      invalidation : stat                                    # @ -first- [1,103 1,107]\n"
               "    }\n"
               "    / : {\n"
-              "      invalidation : notify                                  # @ (first) [1,58 1,64]\n"
+              "      invalidation : notify                                  # @ -first- [1,58 1,64]\n"
               "    }\n"
               "  }\n"
               "}"
@@ -356,7 +439,7 @@ static xunit_unit xunit = {
               "  fstrees : {"
               "    / : {"
               "      invalidation : notify"
-              "      readlink : true"
+              "      readlink : required"
               "    }"
               "    /home : {"
               "      invalidation : stat"
@@ -372,16 +455,16 @@ static xunit_unit xunit = {
         }
         , expected : ""
             "build : {\n"
-            "  concurrency : 0                                            # @ (first) [1,162 1,163]\n"
+            "  concurrency : 0                                            # @ -first- [1,166 1,167]\n"
             "}\n"
             "filesystem : {\n"
             "  fstrees : {\n"
             "    /home : {\n"
-            "      invalidation : stat                                    # @ (first) [1,124 1,128]\n"
+            "      invalidation : stat                                    # @ -first- [1,128 1,132]\n"
             "    }\n"
             "    / : {\n"
-            "      invalidation : notify                                  # @ (first) [1,58 1,64]\n"
-            "      readlink : true                                        # @ (first) [1,81 1,85]\n"
+            "      invalidation : notify                                  # @ -first- [1,58 1,64]\n"
+            "      readlink : required                                    # @ -first- [1,81 1,89]\n"
             "    }\n"
             "  }\n"
             "}"
@@ -414,91 +497,10 @@ static xunit_unit xunit = {
             "filesystem : {\n"
             "  fstrees : {\n"
             "    / : {\n"
-            "      invalidation : notify                                  # @ (second) [1,58 1,64]\n"
+            "      invalidation : notify                                  # @ -second- [1,58 1,64]\n"
             "    }\n"
             "  }\n"
             "}"
-      }}
-    , (configset_parser_test[]) {{
-          texts : (char*[]) {
-            (char[]) {
-              "formula : {"
-              "  path : {"
-              "    dirs : {"
-              "      /usr/bin"
-              "    }"
-              "  }"
-              "}"
-              "\0\0"
-            }
-          , 0
-        }
-        , expected : ""
-              "formula : {\n"
-              "  path : {\n"
-              "    dirs : {\n"
-              "      /usr/bin                                               # @ (first) [1,40 1,48]\n"
-              "    }\n"
-              "  }\n"
-              "}"
-      }}
-    , (configset_parser_test[]) {{
-          texts : (char*[]) {
-            (char[]) {
-              "formula : {"
-              "  path : {"
-              "    dirs : {"
-              "    }"
-              "  }"
-              "}"
-              "\0\0"
-            }
-          , 0
-        }
-        , expected : ""
-      }}
-    , (configset_parser_test[]) {{
-          texts : (char*[]) {
-            (char[]) {
-              "formula : {"
-              "  path : {"
-              "  }"
-              "}"
-              "\0\0"
-            }
-          , 0
-        }
-        , expected : ""
-      }}
-    , (configset_parser_test[]) {{
-          texts : (char*[]) {
-            (char[]) {
-              "formula : {"
-              "}"
-              "\0\0"
-            }
-          , 0
-        }
-        , expected : ""
-      }}
-    , (configset_parser_test[]) {{
-          texts : (char*[]) {
-            (char[]) {
-              "formula : {"
-              "  path : {"
-              "    copy-from-env : true"
-              "  }"
-              "}"
-              "\0\0"
-            }
-          , 0
-        }
-        , expected : ""
-              "formula : {\n"
-              "  path : {\n"
-              "    copy-from-env : true                                     # @ (first) [1,42 1,46]\n"
-              "  }\n"
-              "}"
       }}
     , (configset_parser_test[]) {{
           texts : (char*[]) {
@@ -511,23 +513,110 @@ static xunit_unit xunit = {
           , (char[]) {
               "build : {"
               "}"
-              "formula : {"
-              "  path : {"
-              "    copy-from-env : true"
-              "  }"
-              "}"
               "\0\0"
             }
           , 0
         }
         , expected : ""
             "build : {\n"
-            "  concurrency : 42                                           # @ (first) [1,25 1,27]\n"
-            "}\n"
-            "formula : {\n"
-            "  path : {\n"
-            "    copy-from-env : true                                     # @ (second) [1,52 1,56]\n"
-            "  }\n"
+            "  concurrency : 42                                           # @ -first- [1,25 1,27]\n"
+            "}"
+      }}
+
+    , (configset_parser_test[]) {{
+          texts : (char*[]) {
+            (char[]) {
+              "plugins : {\n"
+              "  [\n"
+              "    {\n"
+              "      file : {\n"
+              "        lookup : {\n"
+              "          pattern : bin/invalidator\n"
+              "        }\n"
+              "      }\n"
+              "    }\n"
+              "  ]\n"
+              "}\n"
+              "\0\0"
+            }
+          , 0
+        }
+        , expected : ""
+            "plugins : {\n"
+            "  [\n"
+            "    {\n"
+            "      file : {\n"
+            "        lookup : {\n"
+            "          pattern : bin/invalidator\n"
+            "        }\n"
+            "      }                                                      # @ -first- [5,9 7,10]\n"
+            "    }\n"
+            "  ]\n"
+            "}"
+      }}
+    , (configset_parser_test[]) {{
+          texts : (char*[]) {
+            (char[]) {
+              "plugins : {\n"
+              "  [\n"
+              "    {\n"
+              "      file : {\n"
+              "        lookup : {\n"
+              "          pattern : bin/invalidator\n"
+              "        }\n"
+              "      }\n"
+              "      args : [\n"
+              "        foo\n"
+              "      ]\n"
+              "    }\n"
+              "  ]\n"
+              "}\n"
+              "\0\0"
+            }
+          , 0
+        }
+        , expected : ""
+            "plugins : {\n"
+            "  [\n"
+            "    {\n"
+            "      file : {\n"
+            "        lookup : {\n"
+            "          pattern : bin/invalidator\n"
+            "        }\n"
+            "      }                                                      # @ -first- [5,9 7,10]\n"
+            "      args : [\n"
+            "        foo                                                  # @ -first- [10,9 10,12]\n"
+            "      ]\n"
+            "    }\n"
+            "  ]\n"
+            "}"
+      }}
+    /* variables - global sysvars - in plugin exec values */
+    , (configset_parser_test[]) {{
+          texts : (char*[]) {
+            (char[]) {
+              "plugins : {\n"
+              "  [\n"
+              "    {\n"
+              "      args : [\n"
+              "        $bm_bamd_pid\n"
+              "      ]\n"
+              "    }\n"
+              "  ]\n"
+              "}\n"
+              "\0\0"
+            }
+          , 0
+        }
+        , expected : ""
+            "plugins : {\n"
+            "  [\n"
+            "    {\n"
+            "      args : [\n"
+            "        $bm_bamd_pid                                         # @ -first- [5,9 5,21]\n"
+            "      ]\n"
+            "    }\n"
+            "  ]\n"
             "}"
       }}
     , 0

@@ -12,6 +12,8 @@ struct pattern_parser;
 struct bacon_parser;
 struct bacon_value;
 struct pattern;
+struct include_pattern;
+struct match_pattern;
 
 typedef struct configset_parser {
   yyu_parser yyu;
@@ -26,6 +28,8 @@ typedef struct configset_parser {
 
   // (returns)
   struct config *cfg; // parsed config
+  const char *error;
+  uint16_t error_len;
 } configset_parser;
 
 /* create a config parser */
@@ -39,22 +43,18 @@ void configset_parser_free(configset_parser * restrict);
 void configset_parser_ifree(configset_parser ** restrict)
   __attribute__((nonnull));
 
-/// configset_parse
-//
-// SUMMARY
-//  parse config text in place
-//
-// PARAMETERS
-//  parser    - reusable parser
-//  buf       - buffer containing config text
-//  size      - size of buffer
-//  [fname]   - filename, for error messages
-//  [used]    - (returns) number of bytes parsed
-//  [rv]      - config object to parse onto
-//
-// REMARKS
-//  this parser uses YYU_INPLACE, so the buffer must have two terminating null bytes
-//
+/* parse config text in place
+ *
+ * parser    - reusable parser
+ * buf       - buffer containing config text
+ * size      - size of buffer
+ * [fname]   - filename, for error messages
+ * [used]    - (returns) number of bytes parsed
+ * [rv]      - config object to parse onto
+ *
+ * REMARKS
+ *  this parser uses YYU_INPLACE, so the buffer must have two terminating null bytes
+ */
 int configset_parser_parse(
     configset_parser * restrict parser
   , char * const restrict buf
@@ -65,7 +65,10 @@ int configset_parser_parse(
 )
   __attribute__((nonnull(1, 2)));
 
-void configset_parser_fsm_alloc(configset_parser * restrict parser, struct pattern * restrict key)
+void configset_parser_fsm_alloc(configset_parser * restrict parser, struct include_pattern * restrict key)
+  __attribute__((nonnull));
+
+void configset_parser_namespace_alloc(configset_parser * restrict parser, struct bacon_value * restrict name)
   __attribute__((nonnull));
 
 struct config_plugin_entry *configset_parser_plugin_alloc(configset_parser * restrict parser)
@@ -73,17 +76,14 @@ struct config_plugin_entry *configset_parser_plugin_alloc(configset_parser * res
 
 void configset_parser_plugin_put(configset_parser * restrict parser, struct config_plugin_entry * restrict pe);
 
-void configset_parser_wse_alloc(configset_parser * restrict parser, struct bacon_value * restrict string)
+void configset_parser_wse_put(configset_parser * restrict parser, struct match_pattern * restrict pat)
   __attribute__((nonnull));
 
-void configset_parser_fpde_alloc(configset_parser * restrict parser, struct bacon_value * restrict string)
+void configset_parser_we_put(configset_parser * restrict parser, struct match_pattern * restrict pat)
   __attribute__((nonnull));
 
-void configset_parser_ppde_alloc(configset_parser * restrict parser, struct bacon_value * restrict string)
+void configset_parser_varsets_alloc(configset_parser * restrict parser, struct bacon_value * restrict name)
   __attribute__((nonnull));
 
-void configset_parser_we_put(configset_parser * restrict parser, struct pattern * restrict pat)
-  __attribute__((nonnull));
-
-void configset_parser_plugin_arg_put(configset_parser * restrict parser, struct bacon_value * restrict string)
+void configset_parser_rulesets_alloc(configset_parser * restrict parser, struct bacon_value * restrict name)
   __attribute__((nonnull));

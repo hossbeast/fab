@@ -14,7 +14,6 @@
 #include "bacon/writer.h"
 #include "bacon/builder.h"
 #include "common/snarf.h"
-#include "common/hash.h"
 #include "common/attrs.h"
 #include "moria/foreach.h"
 #include "moria/connect.h"
@@ -34,10 +33,11 @@
 #include "pattern.h"
 #include "stats.h"
 #include "system.h"
-#include "events.h"
+#include "events/events.h"
 #include "reconcile.h"
 #include "vertex/probes.h"
-#include "entlist.h"
+#include "edges.h"
+#include "vertices.h"
 #include "edge.h"
 #include "special_edge.h"
 #include "fsedge.h"
@@ -53,32 +53,56 @@ static llist configset_freelist = LLIST_INITIALIZER(configset_freelist);  // fre
 fsent *system_configset_node;
 fsent *user_configset_node;
 
+static void configset_parse_error(configset * restrict cfg, configset_parser * restrict parser)
+{
+  bamipc_message *msg;
+  events_context ectx;
+  bacon_writer writer, *builder_writer;
+  narrator_fixed fixed;
+
+  msg = system_error_event(&ectx);
+  narrator_fixed_init(&fixed, msg->text, msg->size);
+  bacon_writer_init(&writer);
+  builder_writer = bacon_writer_open(&writer, &fixed.base);
+
+  MAPPING STRING("configset error")
+  { SET
+    { MAPPING STRING("error")
+      BYTES(parser->error, parser->error_len);
+    }
+  }
+  bacon_writer_close(&writer);
+
+  msg->code = EINVAL;
+  msg->len = fixed.l;
+  events_publish(&ectx);
+}
+
 void configset_parse(configset * restrict cfg, configset_parser * restrict parser, config * restrict cnfg)
 {
   char *text = 0;
   size_t text_len;
   int exit;
-  event_bacon *msg;
-  events_context ectx;
-
-  cfg->configset_stats.parse++;
-  system_stats.configset_parse++;
 
   usnarfs(&text, &text_len, cfg->self_node_abspath);
-  if(text)
-  {
-    if((exit = configset_parser_parse(parser, text, text_len + 2, cfg->self_node_abspath, 0, cnfg)))
-    {
-      msg = system_error_event(&ectx);
-      msg->code = EINVAL;
-      msg->size += zcatw(msg->text + msg->size, sizeof(msg->text) - msg->size, parser->yyu.error_str, parser->yyu.error_len);
-      events_publish(&ectx);
-      goto end;
-    }
+  if(!text_len) {
+    cfg->configset_stats.parse_ok++;
+    system_stats_events.configset_parse_ok++;
+    goto end;
   }
 
-  cfg->configset_stats.parse_ok++;
-  system_stats.configset_parse_ok++;
+  if((exit = configset_parser_parse(parser, text, text_len + 2, cfg->self_node_abspath, 0, cnfg)) == 0)
+  {
+    cfg->configset_stats.parse_ok++;
+    system_stats_events.configset_parse_ok++;
+  }
+  else
+  {
+    cfg->configset_stats.parse_err++;
+    system_stats_events.configset_parse_err++;
+
+    configset_parse_error(cfg, parser);
+  }
 
 end:
   free(text);
@@ -88,9 +112,10 @@ static void configset_dispose(configset * restrict cfg)
 {
   llist_delete(&cfg->vertex.owner);
   llist_append(&configset_freelist, &cfg->vertex.owner);
+  ASAN_TAINT(cfg);
 }
 
-void configset_release(configset * restrict cfg, graph_invalidation_context * restrict invalidation)
+void configset_release(configset * restrict cfg)
 {
   moria_vertex *v;
 
@@ -100,7 +125,6 @@ void configset_release(configset * restrict cfg, graph_invalidation_context * re
   RUNTIME_ASSERT(rbtree_empty(&v->up));
   RUNTIME_ASSERT(rbtree_empty(&v->down));
 
-  vertex_deleted_probe(&cfg->vertex);
   configset_dispose(cfg);
 }
 
@@ -111,13 +135,9 @@ void configset_setup(void)
 void configset_cleanup()
 {
   configset *v;
-  llist *T;
 
-  llist_foreach_safe(&configset_list, v, vertex.owner, T) {
-    configset_dispose(v);
-  }
-
-  llist_foreach_safe(&configset_freelist, v, vertex.owner, T) {
+  while((v = llist_shift(&configset_freelist, typeof(*v), vertex.owner))) {
+    ASAN_CLEAN(v);
     free(v);
   }
 }
@@ -126,17 +146,17 @@ void configset_alloc(configset ** restrict vp)
 {
   struct configset *config;
 
-  if((config = llist_shift(&configset_freelist, typeof(*config), vertex.owner)) == 0) {
-    xmalloc(&config, sizeof(*config));
-  } else {
+  if((config = llist_shift(&configset_freelist, typeof(*config), vertex.owner))) {
+    ASAN_CLEAN(config);
     memset(config, 0, sizeof(*config));
+  } else {
+    xmalloc(&config, sizeof(*config));
   }
 
   moria_vertex_init(&config->vertex, &g_graph, VERTEX_CONFIGSET | VERTEX_OK);
 
   llist_prepend(&configset_list, &config->vertex.owner);
 
-  vertex_protect_set(&config->vertex, true);
   vertex_alloc_probe(&config->vertex);
   *vp = config;
 }
@@ -151,7 +171,7 @@ void configset_stats_collate(configset * restrict config, bool reset)
 
 size_t configset_path_cat(void * restrict dst, size_t sz, const configset * restrict cfg)
 {
-  return zcatf(dst, sz, "//configsets/%.*s", cfg->id_len, cfg->id);
+  return zcatf(dst, sz, "//bm/configsets/%.*s", cfg->id_len, cfg->id);
 }
 
 void configset_stats_build(configset * restrict configset, bool reset, bacon_writer * restrict builder_writer)
@@ -179,43 +199,54 @@ void configset_describe(const configset * restrict configset, struct bacon_write
             configset_stats_build((struct configset *)configset, false, builder_writer);
           }
         }
+        vertex_relations_describe(&configset->vertex, builder_writer);
       }
     }
   }
 }
 
-void configset_file_stats_build(fsent * restrict fse, bool reset, bacon_writer * restrict builder_writer)
+void configset_identity_describe(const struct configset * restrict configset, struct bacon_writer * restrict builder_writer)
 {
-  fsent_stats_build(fse, reset, builder_writer);
-}
+  attrs32_describe(configset->vertex.attrs, graph_vertex_attrs, builder_writer);
 
-void configset_file_describe(const fsent * restrict fse, struct bacon_writer * restrict builder_writer)
-{
   { MAPPING
-    vertex_path_describe(&fse->vertex, builder_writer);
-    { SET
-      fsent_mappings(fse, builder_writer);
-      { MAPPING
-        STRING("configset")
-        vertex_path_describe(&fse->self_configset->vertex, builder_writer);
-      }
-      { MAPPING STRING("stats")
-        { SET
-          configset_file_stats_build((struct fsent *)fse, false, builder_writer);
-        }
-      }
-    }
+    STRING("id")
+    BYTES(configset->id, configset->id_len);
+  }
+  { MAPPING
+    STRING("path")
+    STRING(configset->self_node_abspath);
   }
 }
 
-void configset_identity_say(const struct configset * restrict configset, struct narrator * restrict N)
+void configset_id(const struct configset * restrict configset, const char ** restrict id, uint16_t * restrict idl)
 {
-  attrs32_say(configset->vertex.attrs, graph_vertex_attrs, N);
-  narrator_sayf(N, " id %.*s path %s", configset->id_len, configset->id, configset->self_node_abspath);
+  *id = configset->id;
+  *idl = configset->id_len;
 }
 
-void configset_file_identity_say(const struct fsent * restrict fse, struct narrator * restrict N)
+void configset_compute_id(const struct configset * restrict cfg, struct identity_ctx * restrict id)
 {
-  attrs32_say(fse->vertex.attrs, graph_vertex_attrs, N);
-  narrator_sayf(N, " id %.*s path %s", fse->self_configset->id_len, fse->self_configset->id, fse->self_configset->self_node_abspath);
+  /* configset */
+  identity_type(id, vertex_type_get(&cfg->vertex));
+  identity_add(id, " ", 1);
+
+  /* path */
+  fsent_id_path_compute(cfg->self_node, id);
 }
+
+#if CONFIG_DEVEL
+void configsets_show(void)
+{
+  configset *fml;
+  int x;
+
+  printf("configsets, live : %zu free : %zu\n", llist_count(&configset_list), llist_count(&configset_freelist));
+  x = 0;
+  llist_foreach(&configset_list, fml, vertex.owner) {
+    printf("%3u ", x++);
+    vertex_identity_show(&fml->vertex);
+    vertex_edges_show(&fml->vertex);
+  }
+}
+#endif

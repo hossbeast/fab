@@ -158,6 +158,27 @@ event_bacon *system_error_event(events_context *ctx)
   return ctx->pb = event_bacon_alloc();
 }
 
+void system_error(int code, void (*build)(bacon_writer * restrict builder_writer, void *ctx), const void *ctx)
+{
+  events_context ectx;
+  bamipc_message *msg;
+  bacon_writer writer, *builder_writer;
+  narrator_fixed fixed;
+
+  msg = system_error_event(&ectx);
+  narrator_fixed_init(&fixed, msg->text, msg->size);
+  bacon_writer_init(&writer);
+  builder_writer = bacon_writer_open(&writer, &fixed.base);
+
+  build(builder_writer, (void*)ctx);
+
+  bacon_writer_close(&writer);
+
+  msg->code = code;
+  msg->len = fixed.l;
+  events_publish(&ectx);
+}
+
 void system_setup(void)
 {
   moria_vertex_initw(g_system, &g_graph, VERTEX_SYSTEM | VERTEX_OK, MMS("(system)"));

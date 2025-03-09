@@ -103,6 +103,9 @@ void system_state_change(enum system_state state);
 struct event_bacon *system_error_event(struct events_context * restrict ctx)
   __attribute__((nonnull));
 
+void system_error(int code, void (*build)(struct bacon_writer * restrict builder_writer, void *ctx), const void *ctx)
+  __attribute__((nonnull(2)));
+
 void system_stats_build(bool reset, struct bacon_writer * restrict builder_writer)
   __attribute__((nonnull));
 
