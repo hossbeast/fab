@@ -11,11 +11,13 @@
 struct chain;
 struct narrator;
 struct narrator_fixed;
-struct pattern_search_node;
+struct pattern_search_hit;
 struct pattern_section;
 struct graph_invalidation_context;
 struct moria_vertex;
-struct entlist;
+struct vertices;
+struct bacon_value;
+struct bacon_parser;
 
 /// pattern_generate_context
 //
@@ -45,23 +47,27 @@ typedef struct pattern_generate_context {
   llist segment_traversal_stack;
 
   // state
-  struct fsent * node;
+  struct fsent *node;
   union {
     struct narrator * restrict section_narrator;
     struct narrator_fixed * restrict section_narrator_fixed;
   };
   off_t section_narrator_pos;
-  struct graph_invalidation_context * invalidation;
+  struct graph_invalidation_context *invalidation;
+  struct bacon_parser *parser;
 
   // input context
-  struct fsent * base;
-  struct module * mod;
-  struct moria_vertex * scope;
-  const struct pattern_search_node * match;
+  struct fsent *base;
+  struct module *mod;
+  struct bacon_value *vars;   // sysvars
+  struct moria_vertex *scope;
+  const struct pattern_search_hit *match;
   uint32_t flags;
 
   // output context
-  struct entlist *hits;
+  //struct vertices *hits;
+  void (*hit_visit)(void *ctx, const struct moria_vertex *hit);
+  void *hit_ctx;
 } pattern_generate_context;
 
 /// pattern_segment_generate

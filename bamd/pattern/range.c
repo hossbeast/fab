@@ -74,6 +74,7 @@ static int range_cmp(const pattern_segment * A, const pattern_segment *B)
   return 0;
 }
 
+#define range_cat 0
 #define range_generate 0
 #define range_render 0
 static pattern_segment_vtable vtable = PATTERN_SEGMENT_VTABLE(range, PATTERN_RANGE, 0);

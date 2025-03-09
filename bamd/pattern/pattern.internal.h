@@ -7,12 +7,9 @@
 #include "pattern.h"
 #include "macros.h"
 
-struct narrator;
 struct yyu_location;
 struct narrator;
-struct pattern_section;
 union pattern_segment;
-struct bacon_writer;
 struct llist;
 
 void pattern_segment_init(union pattern_segment * restrict n, const pattern_segment_vtable * restrict vtab, const yyu_location * restrict loc)
@@ -37,6 +34,6 @@ void pattern_attrs_say(uint16_t attrs, struct narrator * restrict N)
     , destroy : T ## _destroy               \
     , search : T ## _search                 \
     , generate : T ## _generate             \
-    , render : T ## _render                 \
     , cmp : T ## _cmp                       \
+    , cat : T ## _cat                       \
   }

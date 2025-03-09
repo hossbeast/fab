@@ -12,7 +12,6 @@
 #include "search.internal.h"
 #include "match.internal.h"
 #include "pattern.internal.h"
-#include "render.internal.h"
 #include "segment.h"
 #include "segments.h"
 
@@ -157,86 +156,6 @@ static void alternation_generate(const pattern_segment * pat, pattern_generate_c
   }
 }
 
-static void alternation_render(const pattern_segment * restrict pat, pattern_render_context * restrict ctx)
-{
-  const pattern_alternation * alternation = &pat->alternation;
-
-  const pattern_segments *alt_segments;
-  off_t start_pos;
-  bool first;
-
-  char saved_text[256];
-  off_t saved_text_len;
-  off_t saved_text_pos;
-
-  // section traversal
-  struct render_section_traversal saved_section_traversal;
-
-  // segment traversal
-  struct render_segment_traversal alt_segment_traversal;
-
-  saved_section_traversal = ctx->section_traversal;
-
-  // make a copy of the current section
-  narrator_seek(ctx->narrator, 0, NARRATOR_SEEK_CUR, &start_pos);
-  saved_text_pos = ctx->pos + sizeof(pattern_render_fragment);
-  saved_text_len = MIN(sizeof(saved_text), start_pos - ctx->pos - sizeof(pattern_render_fragment));
-  narrator_seek(ctx->narrator, saved_text_pos, NARRATOR_SEEK_SET, 0);
-  narrator_read(ctx->narrator, saved_text, saved_text_len, 0);
-  narrator_seek(ctx->narrator, start_pos, NARRATOR_SEEK_SET, 0);
-
-  memset(&alt_segment_traversal, 0, sizeof(alt_segment_traversal));
-  llist_init(&alt_segment_traversal.lln);
-  llist_append(&ctx->segment_traversal_stack, &alt_segment_traversal.lln);
-
-  first = true;
-  llist_foreach(&alternation->segments, alt_segments, lln) {
-    if(!first)
-    {
-      // start a new item - save the current offset
-      narrator_seek(ctx->narrator, 0, NARRATOR_SEEK_CUR, &ctx->pos);
-
-      // save a place for this fragment length
-      narrator_sayw(ctx->narrator, (uint16_t[]) { 0 }, sizeof(uint16_t));
-
-      // replay preceeding text
-      narrator_sayw(ctx->narrator, saved_text, saved_text_len);
-    }
-    first = false;
-
-    alt_segment_traversal.head = &alt_segments->list;
-    alt_segment_traversal.segment = 0;
-    alt_segment_traversal.end = false;
-    ctx->segment_traversal = &alt_segment_traversal;
-
-    // render sub-segments
-    pattern_segment_render(ctx);
-
-    // restore
-    ctx->section_traversal = saved_section_traversal;
-  }
-
-  llist_delete(&alt_segment_traversal.lln);
-  ctx->segment_traversal = llist_last(&ctx->segment_traversal_stack, typeof(*ctx->segment_traversal), lln);
-
-  if(alternation->epsilon)
-  {
-    if(!first)
-    {
-      // start a new item - save the current offset
-      narrator_seek(ctx->narrator, 0, NARRATOR_SEEK_CUR, &ctx->pos);
-
-      // save a place for this fragment length
-      narrator_sayw(ctx->narrator, (uint16_t[]) { 0 }, sizeof(uint16_t));
-
-      // replay preceeding text
-      narrator_sayw(ctx->narrator, saved_text, saved_text_len);
-    }
-
-    pattern_segment_render(ctx);
-  }
-}
-
 static int alternation_cmp(const pattern_segment * A, const pattern_segment *B)
 {
   int d;
@@ -247,6 +166,7 @@ static int alternation_cmp(const pattern_segment * A, const pattern_segment *B)
   return pattern_segments_list_cmp(&A->alternation.segments, &B->alternation.segments);
 }
 
+#define alternation_cat 0
 static pattern_segment_vtable vtable = PATTERN_SEGMENT_VTABLE(alternation, PATTERN_ALTERNATION, PATTERN_SEGMENT_SEARCH_RECURSIVE);
 
 //

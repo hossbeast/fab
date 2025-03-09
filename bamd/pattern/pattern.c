@@ -114,7 +114,7 @@ void pattern_mk(
   , llist * restrict list
 )
 {
-  pattern * p = 0;
+  pattern *p = 0;
 
   xmalloc(&p, sizeof(*p));
   memcpy(&p->loc, loc, sizeof(p->loc));
@@ -145,7 +145,7 @@ void pattern_free(pattern * restrict pat)
 	free(pat);
 }
 
-void pattern_say(const pattern * restrict pattern, narrator * restrict N)
+void pattern_say(const struct pattern * restrict pattern, narrator * restrict N)
 {
   pattern_section *section;
   int x = 0;
@@ -158,8 +158,36 @@ void pattern_say(const pattern * restrict pattern, narrator * restrict N)
   }
 
   llist_foreach(&pattern->sections, section, lln) {
+    if(x) {
+      xsayc('/');
+    }
     pattern_section_say(section, x++ == 0, N);
   }
+}
+
+size_t pattern_cat(void * restrict dst, size_t sz, const struct pattern * restrict pattern)
+{
+  pattern_section *section;
+  int x = 0;
+  size_t z;
+
+  z = 0;
+
+  /* special case */
+  if((section = llist_first(&pattern->sections, typeof(*section), lln))) {
+    if(llist_count(&pattern->sections) == 1 && section->nodeset == PATTERN_NODESET_ROOT) {
+      z += zcatc(dst + z, sz - z, '/');
+    }
+  }
+
+  llist_foreach(&pattern->sections, section, lln) {
+    if(x) {
+      z += zcatc(dst + z, sz - z, '/');
+    }
+    z += pattern_section_cat(dst + z, sz - z, section, x++ == 0);
+  }
+
+  return z;
 }
 
 int pattern_cmp(const pattern * A, const pattern * B)
@@ -183,14 +211,16 @@ void pattern_describe(const pattern * restrict pattern, struct bacon_writer * re
 {
   pattern_section *section;
 
-  SET
-  { MAPPING
-    STRING("sections")
-    { LIST
-      llist_foreach(&pattern->sections, section, lln) {
-        MAPPING
-        LOADF("section %p", section)
-        pattern_section_describe(section, builder_writer);
+  { SET
+    { MAPPING STRING("bound") BOOL(pattern->bound) }
+    { MAPPING
+      STRING("sections")
+      { LIST
+        llist_foreach(&pattern->sections, section, lln) {
+          MAPPING
+          LOADF("section %p", section)
+          pattern_section_describe(section, builder_writer);
+        }
       }
     }
   }

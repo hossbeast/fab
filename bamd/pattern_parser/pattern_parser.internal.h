@@ -10,25 +10,29 @@
 
 struct pattern_yystype {
   yyu_lval yyu;
-  pattern *pattern;
+  struct pattern *pattern;
 };
 
 struct pattern_parser {
   yyu_parser search_yyu;
   yyu_parser generate_yyu;
-  yyu_parser reference_yyu;
+  yyu_parser attachment_yyu;
   yyu_parser lookup_yyu;
   yyu_parser include_yyu;
   yyu_parser match_yyu;
+  yyu_parser path_yyu;
 
   // state
   yyu_parser *yyu;
   uint16_t group_counter;
   uint16_t capture_group_counter;
-  bool section_has_type_qualifiers;
+  uint32_t section_type_qualifiers_mask;  // for the current section
+  uint32_t group_type_qualifiers_mask;    // for the current group
 
   // (returns)
-  pattern * pattern;
+  struct pattern *pattern;
+  const char *error;
+  uint16_t error_len;
 };
 
 static int search_pattern_yylex(void*, void*, void*)
@@ -43,10 +47,10 @@ static int generate_pattern_yylex(void*, void*, void*)
 static int generate_pattern_yyerror(yyu_location* loc, void * scanner, yyu_parser * pp, char const * err)
   __attribute__((weakref("yyu_grammar_error")));
 
-static int reference_pattern_yylex(void*, void*, void*)
+static int attachment_pattern_yylex(void*, void*, void*)
   __attribute__((weakref("pattern_yylex")));
 
-static int reference_pattern_yyerror(yyu_location* loc, void * scanner, yyu_parser * pp, char const * err)
+static int attachment_pattern_yyerror(yyu_location* loc, void * scanner, yyu_parser * pp, char const * err)
   __attribute__((weakref("yyu_grammar_error")));
 
 static int lookup_pattern_yylex(void*, void*, void*)
@@ -65,4 +69,10 @@ static int match_pattern_yylex(void*, void*, void*)
   __attribute__((weakref("pattern_yylex")));
 
 static int match_pattern_yyerror(yyu_location* loc, void * scanner, yyu_parser * pp, char const * err)
+  __attribute__((weakref("yyu_grammar_error")));
+
+static int path_pattern_yylex(void*, void*, void*)
+  __attribute__((weakref("pattern_yylex")));
+
+static int path_pattern_yyerror(yyu_location* loc, void * scanner, yyu_parser * pp, char const * err)
   __attribute__((weakref("yyu_grammar_error")));

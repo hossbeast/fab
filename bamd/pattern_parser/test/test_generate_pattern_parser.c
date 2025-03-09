@@ -46,8 +46,8 @@ static void pattern_parser_unit_cleanup(xunit_unit * unit)
 
 static void pattern_parser_test_entry(xunit_test * _test)
 {
-  pattern * A = 0;
-  pattern * B = 0;
+  generate_pattern *A = 0;
+  generate_pattern *B = 0;
   narrator_growing * N1 = 0;
   narrator_growing * N2 = 0;
   pattern_parser * parser = 0;
@@ -67,22 +67,22 @@ static void pattern_parser_test_entry(xunit_test * _test)
 
   // round trip parse
   if(generate_pattern_parse_partial(parser, test->text, strlen(test->text) + 2, "-test-", 0, &loc, &A) != 0) {
-    tracef("%.*s", (int)parser->generate_yyu.error_len, parser->generate_yyu.error_str);
+    tracef("%.*s", (int)parser->error_len, parser->error);
   }
   assert_eq_zu(strlen(test->text), loc.l);
 
-  pattern_say(A, &N1->base);
+  pattern_say(&A->pattern, &N1->base);
   len = N1->l;
   narrator_seek(&N1->base, 0, NARRATOR_SEEK_SET, 0);
   narrator_read(&N1->base, buf, len, 0);
   buf[len] = buf[len + 1] = 0;
 
   if(generate_pattern_parse_partial(parser, buf, len + 2, "-test-", 0, &loc, &B) != 0) {
-    tracef("%.*s", (int)parser->generate_yyu.error_len, parser->generate_yyu.error_str);
+    tracef("%.*s", (int)parser->error_len, parser->error);
   }
 
   assert_eq_zu(strlen(expected), loc.l);
-  pattern_say(B, &N2->base);
+  pattern_say(&B->pattern, &N2->base);
 
   // round-trip
   assert_eq_w(N1->s, N1->l, N2->s, N2->l);
@@ -94,8 +94,8 @@ static void pattern_parser_test_entry(xunit_test * _test)
   pattern_parser_free(parser);
   narrator_growing_free(N1);
   narrator_growing_free(N2);
-  pattern_free(A);
-  pattern_free(B);
+  pattern_free(&A->pattern);
+  pattern_free(&B->pattern);
 }
 
 //
@@ -206,20 +206,33 @@ static xunit_unit xunit = {
         text : (char[]) { "A/$foo/D\0" }
       }}
     , (pattern_parser_test[]) {{
-        text : (char[]) { "a$^H\0" }
+        text : (char[]) { ".A\0" }
       }}
-    , (pattern_parser_test[]) {{
-        text : (char[]) { ".$^H\0" }
-      }}
-    , (pattern_parser_test[]) {{
-        text : (char[]) { "$^D\0" }
-      }}
+    /* capture groups / numbered variables */
     , (pattern_parser_test[]) {{
           text : (char[]) { "$1.o\0" }
       }}
     , (pattern_parser_test[]) {{
           text : (char[]) { "${1}.o\0" }
         , expected : "$1.o"
+      }}
+    /* initial nodesets / aka sysvars */
+    , (pattern_parser_test[]) {{
+        text : (char[]) { "$bm_ipcdir/foo\0" }
+      }}
+    , (pattern_parser_test[]) {{
+          text : (char[]) { "$bm_anchor_rel\0" }
+        , expected : "$^A"
+      }}
+    , (pattern_parser_test[]) {{
+        text : (char[]) { "$bm_homedir/foo\0" }
+      }}
+    /* autovar variables */
+    , (pattern_parser_test[]) {{
+        text : (char[]) { "$bm_module_id\0" }
+      }}
+    , (pattern_parser_test[]) {{
+        text : (char[]) { "$bm_bamd_id\0" }
       }}
     , 0
   }

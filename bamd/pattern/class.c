@@ -12,7 +12,6 @@
 #include "generate.internal.h"
 #include "search.internal.h"
 #include "match.internal.h"
-#include "render.internal.h"
 #include "segment.h"
 #include "segments.h"
 
@@ -52,83 +51,6 @@ static void class_say(const pattern_segment * restrict fn, const pattern_segment
   }
 
   xsayc(']');
-}
-
-static void class_render(const pattern_segment * restrict fn, pattern_render_context * restrict ctx)
-{
-  const pattern_class * class = &fn->class;
-
-  const pattern_segments * alt_segments;
-  const pattern_segment * alt_segment;
-  off_t start_pos;
-  bool first;
-
-  char saved_text[256];
-  off_t saved_text_len;
-  off_t saved_text_pos;
-
-  uint8_t c;
-  uint8_t start;
-  uint8_t end;
-
-  // make a copy of the current section
-  narrator_seek(ctx->narrator, 0, NARRATOR_SEEK_CUR, &start_pos);
-  saved_text_pos = ctx->pos + sizeof(pattern_render_fragment);
-  saved_text_len = MIN(sizeof(saved_text), start_pos - ctx->pos - sizeof(pattern_render_fragment));
-  narrator_seek(ctx->narrator, saved_text_pos, NARRATOR_SEEK_SET, 0);
-  narrator_read(ctx->narrator, saved_text, saved_text_len, 0);
-  narrator_seek(ctx->narrator, start_pos, NARRATOR_SEEK_SET, 0);
-
-  // section traversal
-  struct render_section_traversal saved_section_traversal;
-  struct render_segment_traversal *saved_segment_traversal;
-
-  saved_section_traversal = ctx->section_traversal;
-  saved_segment_traversal = ctx->segment_traversal;
-
-  first = true;
-  llist_foreach(&class->segments, alt_segments, lln) {
-    llist_foreach(&alt_segments->list, alt_segment, lln) {
-
-      start = 0;
-      end = 0;
-
-      if(alt_segment->vtab->type == PATTERN_CHARACTER)
-      {
-        start = end = alt_segment->byte.code;
-      }
-      else if(alt_segment->vtab->type == PATTERN_RANGE)
-      {
-        start = alt_segment->range.start;
-        end = alt_segment->range.end;
-      }
-
-      for(c = start; c <= end; c++)
-      {
-        if(!first)
-        {
-          // start a new item - save the current offset
-          narrator_seek(ctx->narrator, 0, NARRATOR_SEEK_CUR, &ctx->pos);
-
-          // save a place for this fragment length
-          narrator_sayw(ctx->narrator, (uint16_t[]) { 0 }, sizeof(uint16_t));
-
-          // replay preceeding text
-          narrator_sayw(ctx->narrator, saved_text, saved_text_len);
-        }
-        first = false;
-
-        ctx->segment_traversal = saved_segment_traversal;
-        narrator_sayc(ctx->narrator, c);
-
-        // continue
-        pattern_segment_render(ctx);
-
-        // restore
-        ctx->section_traversal = saved_section_traversal;
-      }
-    }
-  }
 }
 
 static void class_destroy(pattern_segment * restrict n)
@@ -236,6 +158,7 @@ static int class_cmp(const pattern_segment * A, const pattern_segment *B)
   return pattern_segments_list_cmp(&A->class.segments, &B->class.segments);
 }
 
+#define class_cat 0
 static pattern_segment_vtable vtable = PATTERN_SEGMENT_VTABLE(class, PATTERN_CLASS, PATTERN_SEGMENT_SEARCH_RECURSIVE);
 
 //

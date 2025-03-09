@@ -12,10 +12,11 @@
 
 /* the token enums shadow each other - only include one set */
 #define SEARCH_PATTERN_YYTOKENTYPE
-#define REFERENCE_PATTERN_YYTOKENTYPE
+#define ATTACHMENT_PATTERN_YYTOKENTYPE
 #define LOOKUP_PATTERN_YYTOKENTYPE
 #define INCLUDE_PATTERN_YYTOKENTYPE
 #define MATCH_PATTERN_YYTOKENTYPE
+#define PATH_PATTERN_YYTOKENTYPE
 
 #include "pattern_parser.internal.h"
 #include "pattern.lex.h"
@@ -24,22 +25,24 @@
 #include "search_pattern.tokens.h"
 #include "generate_pattern.tab.h"
 #include "generate_pattern.tokens.h"
-#include "reference_pattern.tab.h"
-#include "reference_pattern.tokens.h"
+#include "attachment_pattern.tab.h"
+#include "attachment_pattern.tokens.h"
 #include "lookup_pattern.tab.h"
 #include "lookup_pattern.tokens.h"
 #include "include_pattern.tab.h"
 #include "include_pattern.tokens.h"
 #include "match_pattern.tab.h"
 #include "match_pattern.tokens.h"
-
+#include "path_pattern.tab.h"
+#include "path_pattern.tokens.h"
 
 static YYU_VTABLE(search_vtable, pattern, search_pattern);
 static YYU_VTABLE(generate_vtable, pattern, generate_pattern);
-static YYU_VTABLE(reference_vtable, pattern, reference_pattern);
+static YYU_VTABLE(attachment_vtable, pattern, attachment_pattern);
 static YYU_VTABLE(lookup_vtable, pattern, lookup_pattern);
 static YYU_VTABLE(include_vtable, pattern, include_pattern);
 static YYU_VTABLE(match_vtable, pattern, match_pattern);
+static YYU_VTABLE(path_vtable, pattern, path_pattern);
 
 //
 // public
@@ -71,11 +74,11 @@ void pattern_parser_create(pattern_parser ** rv)
     , pattern_statenames
   );
 
-  // reference (formula)
-  yyu_parser_init(&p->reference_yyu, &reference_vtable);
-  yyu_parser_init_tokens(&p->reference_yyu, reference_pattern_token_table, reference_pattern_TOKEN_TABLE_SIZE);
+  // attachment (formula)
+  yyu_parser_init(&p->attachment_yyu, &attachment_vtable);
+  yyu_parser_init_tokens(&p->attachment_yyu, attachment_pattern_token_table, attachment_pattern_TOKEN_TABLE_SIZE);
   yyu_parser_init_states(
-      &p->reference_yyu
+      &p->attachment_yyu
     , pattern_numstates
     , pattern_statenumbers
     , pattern_statenames
@@ -86,6 +89,16 @@ void pattern_parser_create(pattern_parser ** rv)
   yyu_parser_init_tokens(&p->lookup_yyu, lookup_pattern_token_table, lookup_pattern_TOKEN_TABLE_SIZE);
   yyu_parser_init_states(
       &p->lookup_yyu
+    , pattern_numstates
+    , pattern_statenumbers
+    , pattern_statenames
+  );
+
+  // path
+  yyu_parser_init(&p->path_yyu, &path_vtable);
+  yyu_parser_init_tokens(&p->path_yyu, path_pattern_token_table, path_pattern_TOKEN_TABLE_SIZE);
+  yyu_parser_init_states(
+      &p->path_yyu
     , pattern_numstates
     , pattern_statenumbers
     , pattern_statenames
@@ -120,10 +133,11 @@ void pattern_parser_free(pattern_parser* const p)
   {
     yyu_parser_destroy(&p->search_yyu);
     yyu_parser_destroy(&p->generate_yyu);
-    yyu_parser_destroy(&p->reference_yyu);
+    yyu_parser_destroy(&p->attachment_yyu);
     yyu_parser_destroy(&p->lookup_yyu);
     yyu_parser_destroy(&p->include_yyu);
     yyu_parser_destroy(&p->match_yyu);
+    yyu_parser_destroy(&p->path_yyu);
   }
 
   free(p);
@@ -166,6 +180,14 @@ static int parse_partial(
 
   pattern_free(parser->pattern);
 
+  /* error aggregation */
+  parser->error = 0;
+  parser->error_len = 0;
+  if(r != 0) {
+    parser->error = parser->yyu->error_str;
+    parser->error_len = parser->yyu->error_len;
+  }
+
   return r;
 }
 
@@ -176,10 +198,23 @@ int search_pattern_parse_partial(
   , const char * restrict fname
   , yyu_location * init_loc
   , yyu_location * used_loc
-  , pattern ** restrict rv
+  , search_pattern ** restrict rv
 )
 {
-  return parse_partial(parser, &parser->search_yyu, buf, size, fname, init_loc, used_loc, rv);
+  return parse_partial(parser, &parser->search_yyu, buf, size, fname, init_loc, used_loc, (void*)rv);
+}
+
+int attachment_pattern_parse_partial(
+    pattern_parser * restrict parser
+  , char * const restrict buf
+  , size_t size
+  , const char * restrict fname
+  , yyu_location * init_loc
+  , yyu_location * used_loc
+  , attachment_pattern ** restrict rv
+)
+{
+  return parse_partial(parser, &parser->attachment_yyu, buf, size, fname, init_loc, used_loc, (void*)rv);
 }
 
 int generate_pattern_parse_partial(
@@ -189,23 +224,52 @@ int generate_pattern_parse_partial(
   , const char * restrict fname
   , yyu_location * init_loc
   , yyu_location * used_loc
-  , pattern ** restrict rv
+  , generate_pattern ** restrict rv
 )
 {
-  return parse_partial(parser, &parser->generate_yyu, buf, size, fname, init_loc, used_loc, rv);
+  return parse_partial(parser, &parser->generate_yyu, buf, size, fname, init_loc, used_loc, (void*)rv);
 }
 
-int reference_pattern_parse_partial(
+int path_pattern_parse_partial(
     pattern_parser * restrict parser
   , char * const restrict buf
   , size_t size
   , const char * restrict fname
   , yyu_location * init_loc
   , yyu_location * used_loc
-  , pattern ** restrict rv
+  , path_pattern ** restrict rv
 )
 {
-  return parse_partial(parser, &parser->reference_yyu, buf, size, fname, init_loc, used_loc, rv);
+  int r;
+
+  parser->group_counter = 0;
+  parser->capture_group_counter = 0;
+  parser->yyu = &parser->path_yyu;
+
+  if((r = yyu_parse(parser->yyu, buf, size, fname, YYU_PARTIAL | YYU_INPLACE, init_loc, used_loc))) {
+    /* error */
+  } else if (rv) {
+    parser->pattern->bound = true;
+
+    if(fname && parser->pattern) {
+      ixstrdup(&parser->pattern->fname, fname);
+    }
+
+    *rv = containerof(parser->pattern, typeof(**rv), pattern);
+    parser->pattern = 0;
+  }
+
+  pattern_free(parser->pattern);
+
+  /* error aggregation */
+  parser->error = 0;
+  parser->error_len = 0;
+  if(r != 0) {
+    parser->error = parser->yyu->error_str;
+    parser->error_len = parser->yyu->error_len;
+  }
+
+  return r;
 }
 
 int lookup_pattern_parse_partial(
@@ -213,12 +277,47 @@ int lookup_pattern_parse_partial(
   , char * const restrict buf
   , size_t size
   , const char * restrict fname
-  , yyu_location * init_loc
-  , yyu_location * used_loc
-  , pattern ** restrict rv
+  , yyu_location * restrict init_loc
+  , yyu_location * restrict used_loc
+  , lookup_pattern ** restrict rv
 )
 {
-  return parse_partial(parser, &parser->lookup_yyu, buf, size, fname, init_loc, used_loc, rv);
+  int r;
+  pattern_section *section;
+
+  parser->group_counter = 0;
+  parser->capture_group_counter = 0;
+  parser->yyu = &parser->lookup_yyu;
+
+  if((r = yyu_parse(parser->yyu, buf, size, fname, YYU_PARTIAL | YYU_INPLACE, init_loc, used_loc))) {
+    /* error */
+  } else if (rv) {
+    section = llist_first(&parser->pattern->sections, typeof(*section), lln);
+    if(section->nodeset || section->axis != PATTERN_AXIS_DOWN) {
+      parser->pattern->bound = true;
+    } else {
+      parser->pattern->bound = false;
+    }
+
+    if(fname && parser->pattern) {
+      ixstrdup(&parser->pattern->fname, fname);
+    }
+
+    *rv = containerof(parser->pattern, typeof(**rv), pattern);
+    parser->pattern = 0;
+  }
+
+  pattern_free(parser->pattern);
+
+  /* error aggregation */
+  parser->error = 0;
+  parser->error_len = 0;
+  if(r != 0) {
+    parser->error = parser->yyu->error_str;
+    parser->error_len = parser->yyu->error_len;
+  }
+
+  return r;
 }
 
 int include_pattern_parse_partial(
@@ -228,10 +327,10 @@ int include_pattern_parse_partial(
   , const char * restrict fname
   , yyu_location * init_loc
   , yyu_location * used_loc
-  , pattern ** restrict rv
+  , include_pattern ** restrict rv
 )
 {
-  return parse_partial(parser, &parser->include_yyu, buf, size, fname, init_loc, used_loc, rv);
+  return parse_partial(parser, &parser->include_yyu, buf, size, fname, init_loc, used_loc, (void*)rv);
 }
 
 int match_pattern_parse_partial(
@@ -241,10 +340,10 @@ int match_pattern_parse_partial(
   , const char * restrict fname
   , yyu_location * init_loc
   , yyu_location * used_loc
-  , pattern ** restrict rv
+  , match_pattern ** restrict rv
 )
 {
-  return parse_partial(parser, &parser->match_yyu, buf, size, fname, init_loc, used_loc, rv);
+  return parse_partial(parser, &parser->match_yyu, buf, size, fname, init_loc, used_loc, (void*)rv);
 }
 
 int lookup_pattern_parse(
@@ -252,27 +351,43 @@ int lookup_pattern_parse(
   , char * const restrict buf
   , size_t size
   , const char * restrict fname
-  , pattern ** restrict rv
+  , lookup_pattern ** restrict rv
 )
 {
   int r;
+  pattern_section *section;
 
   parser->group_counter = 0;
   parser->capture_group_counter = 0;
   parser->yyu = &parser->lookup_yyu;
 
   if((r = yyu_parse(parser->yyu, buf, size, fname, YYU_INPLACE, 0, 0))) {
+    /* error */
   } else if(rv) {
+    section = llist_first(&parser->pattern->sections, typeof(*section), lln);
+    if(section->nodeset || section->axis != PATTERN_AXIS_DOWN) {
+      parser->pattern->bound = true;
+    } else {
+      parser->pattern->bound = false;
+    }
+
     if(fname && parser->pattern) {
       ixstrdup(&parser->pattern->fname, fname);
     }
-    parser->pattern->groups_count = parser->group_counter;
-    parser->pattern->capture_groups_count = parser->capture_group_counter;
-    *rv = parser->pattern;
+
+    *rv = containerof(parser->pattern, typeof(**rv), pattern);
     parser->pattern = 0;
   }
 
   pattern_free(parser->pattern);
+
+  /* error aggregation */
+  parser->error = 0;
+  parser->error_len = 0;
+  if(r != 0) {
+    parser->error = parser->yyu->error_str;
+    parser->error_len = parser->yyu->error_len;
+  }
 
   return r;
 }

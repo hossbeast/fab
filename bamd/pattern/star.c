@@ -58,6 +58,7 @@ static int star_cmp(const pattern_segment * A, const pattern_segment *B)
   return 0;
 }
 
+#define star_cat 0
 #define star_generate 0
 #define star_render 0
 static pattern_segment_vtable vtable = PATTERN_SEGMENT_VTABLE(star, PATTERN_STAR, PATTERN_SEGMENT_SEARCH_RECURSIVE);

@@ -32,8 +32,8 @@ static void group_describe(const pattern_segment * restrict fn, bacon_writer * r
     UINT(group->capture_group_num)
   }
   { MAPPING
-    STRING("has-type-qualifiers")
-    BOOL(group->has_type_qualifiers)
+    STRING("type-qualifiers-mask")
+    HEX(group->type_qualifiers_mask)
   }
 
   if(group->name_len) {
@@ -87,7 +87,7 @@ static void group_search(const pattern_segment * restrict segment, pattern_searc
   ctx->traversal = &traversal;
   pattern_segments_search(ctx);
 
-  if(group->has_type_qualifiers)
+  if(group->type_qualifiers_mask)
   {
     /* type-qualifier groups dont capture */
   }
@@ -119,6 +119,7 @@ static int group_cmp(const pattern_segment * A, const pattern_segment *B)
   return pattern_segments_list_cmp(&A->group.segments, &B->group.segments);
 }
 
+#define group_cat 0
 #define group_render 0
 #define group_match 0
 #define group_generate 0
@@ -136,6 +137,7 @@ void pattern_group_mk(
   , uint8_t name_len
   , uint16_t group_number
   , uint16_t capture_group_number
+  , uint32_t type_qualifiers_mask
 )
 {
   pattern_segment * n = 0;
@@ -147,6 +149,7 @@ void pattern_group_mk(
   llist_splice_head(&n->group.segments, segments);
   n->group.group_num = group_number;
   n->group.capture_group_num = capture_group_number;
+  n->group.type_qualifiers_mask = type_qualifiers_mask;
 
   if(name)
   {

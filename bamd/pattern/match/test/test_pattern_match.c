@@ -12,12 +12,12 @@
 #include "valyria/hashtable.h"
 #include "narrator.h"
 #include "narrator/growing.h"
+#include "bacon/parser.h"
 #include "bacon/load.h"
 #include "bacon/builder.h"
 
 #include "match.internal.h"
 #include "pattern_parser.h"
-#include "lookup.h"
 #include "pattern.h"
 #include "fsent.h"
 #include "shadow.h"
@@ -25,38 +25,47 @@
 #include "fstree.h"
 #include "node_operations_test.h"
 
-#include "common/hash.h"
 #include "zcat.h"
 
 typedef struct pattern_match_test {
   XUNITTEST;
 
   // setup
-  char * operations;
+  char *operations;
 
   // context
-  char * pattern;
-  char * node;
+  char *pattern;
+  char *node;
+  char *vars;
 
   // results
   bool expected;
-  char ** matches;  // space separated, 1, 2, etc
+  char **matches;  // space separated, 1, 2, etc
 } pattern_match_test;
 
 static void pattern_match_test_unit_setup(xunit_unit * unit)
 {
   bacon_load();
+
   fsent_root_setup();
+  shadow_root_setup();
+  fstree_root_setup();
   shadow_setup();
   fstree_setup();
   graph_setup();
+
+  extern __thread bool rcu_is_reader ; rcu_is_reader = true;
 }
 
 static void pattern_match_test_unit_cleanup(xunit_unit * unit)
 {
   bacon_unload();
+
+  shadow_cleanup();
   fstree_cleanup();
+  module_cleanup();
   fsent_cleanup();
+  graph_cleanup();
 }
 
 //
@@ -65,17 +74,19 @@ static void pattern_match_test_unit_cleanup(xunit_unit * unit)
 
 static void pattern_match_test_entry(xunit_test * _test)
 {
-  pattern_match_test * test = (pattern_match_test *)_test;
+  pattern_match_test *test = (pattern_match_test *)_test;
 
-  pattern_parser * parser = 0;
-  pattern * pattern = 0;
-  moria_parser * op_parser = 0;
+  pattern_parser *parser = 0;
+  match_pattern *pattern = 0;
+  moria_parser *op_parser = 0;
   yyu_location loc;
   graph_invalidation_context invalidation = { 0 };
   bool matched;
   fsent *fse;
   fsent *n = 0;
   int r;
+  bacon_value *vars = 0;
+  bacon_parser *val_parser = 0;
 
   // setup initial graph
   moria_parser_create(&op_parser, &g_graph, (llist *[]) { &fsent_list }, 1, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
@@ -87,6 +98,12 @@ static void pattern_match_test_entry(xunit_test * _test)
   match_pattern_parse_partial(parser, test->pattern, strlen(test->pattern) + 2, "-test-", 0, &loc, &pattern);
   assert_eq_u32(strlen(test->pattern), loc.l);
 
+  bacon_parser_alloc(&val_parser);
+  if(test->vars) {
+    bacon_parser_parse(val_parser, MMS(test->vars), "-vars-", BACON_TYPE_SET, &vars);
+  }
+
+  /* locate node to match */
   n = 0;
   llist_foreach(&fsent_list, fse, vertex.owner) {
     if(memncmp(fse->vertex.label, fse->vertex.label_len, test->node, strlen(test->node)) == 0) {
@@ -98,15 +115,17 @@ static void pattern_match_test_entry(xunit_test * _test)
   RUNTIME_ASSERT(n);
 
   // act
-  pattern_match(pattern, n, &matched);
+  matched = pattern_match(pattern, vars, n);
 
   // assert
   assert_eq_b(test->expected, matched);
 
   pattern_parser_free(parser);
-  pattern_free(pattern);
+  pattern_free(&pattern->pattern);
   moria_parser_free(op_parser);
   graph_invalidation_end(&invalidation);
+  bacon_value_free(val_parser, vars);
+  bacon_parser_free(val_parser);
 }
 
 //
@@ -683,7 +702,6 @@ static xunit_unit xunit = {
         , node : "bar"
         , expected : true
       }}
-
     , (pattern_match_test[]) {{
           operations : ""
             " X"
@@ -698,7 +716,23 @@ static xunit_unit xunit = {
         , node : "builtin-modules+devel"
         , expected : true
       }}
-
+    /* match with segment sysvars */
+    , (pattern_match_test[]) {{
+          operations : ""
+            " A/B"
+        , pattern : (char[]) { "A/$bm_module_id\0" }
+        , vars : (char[]) { "bm_module_id : B\0" }
+        , node : "B"
+        , expected : true
+      }}
+    , (pattern_match_test[]) {{
+          operations : ""
+            " A/BCD"
+        , pattern : (char[]) { "A/B${bm_bamd_id}D\0" }
+        , vars : (char[]) { "bm_bamd_id : C\0" }
+        , node : "BCD"
+        , expected : true
+      }}
     , 0
   }
 };

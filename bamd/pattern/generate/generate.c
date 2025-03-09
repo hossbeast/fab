@@ -5,6 +5,8 @@
 
 #include "narrator.h"
 #include "narrator/fixed.h"
+#include "bacon/value.h"
+#include "bacon/parser.h"
 
 #include "generate.internal.h"
 #include "fsedge.h"
@@ -12,7 +14,8 @@
 #include "vertex.h"
 #include "vertex/probes.h"
 #include "search.internal.h"
-#include "entlist.h"
+#include "edges.h"
+#include "vertices.h"
 #include "module.h"
 #include "shadow.h"
 
@@ -37,24 +40,35 @@ static void pattern_section_generate(pattern_generate_context * restrict ctx)
 
   if(!ctx->section_traversal.section)
   {
-    entlist_push(ctx->hits, ctx->node);
+    //vertices_push(ctx->hits, &ctx->node->vertex);
+    ctx->hit_visit(ctx->hit_ctx, &ctx->node->vertex);
+  }
+  else if(ctx->section_traversal.section->nodeset == PATTERN_NODESET_ANCHOR_REL)
+  {
+    v = &ctx->match->node->vertex;
+    v = moria_vertex_up(v);
+    fse = containerof(v, fsent, vertex);
+
+    ctx->node = fsent_translate(fse, ctx->mod->build_dir, ctx->mod->anchor_dir, ctx->invalidation);
+    pattern_section_generate(ctx);
+  }
+  else if(ctx->section_traversal.section->nodeset == PATTERN_NODESET_BUILD_REL)
+  {
+    v = &ctx->match->node->vertex;
+    v = moria_vertex_up(v);
+    fse = containerof(v, fsent, vertex);
+
+    ctx->node = fsent_translate(fse, ctx->mod->anchor_dir, ctx->mod->build_dir, ctx->invalidation);
+    pattern_section_generate(ctx);
   }
   else if(ctx->section_traversal.section->nodeset == PATTERN_NODESET_ANCHOR)
   {
-    v = &ctx->match->node->vertex;
-    v = moria_vertex_up(v);
-    fse = containerof(v, fsent, vertex);
-
-    ctx->node = fsent_translate(fse, ctx->mod->dir_node, ctx->mod->anchor_node, ctx->invalidation);
+    ctx->node = ctx->mod->anchor_dir;
     pattern_section_generate(ctx);
   }
-  else if(ctx->section_traversal.section->nodeset == PATTERN_NODESET_MODULE)
+  else if(ctx->section_traversal.section->nodeset == PATTERN_NODESET_BUILD)
   {
-    v = &ctx->match->node->vertex;
-    v = moria_vertex_up(v);
-    fse = containerof(v, fsent, vertex);
-
-    ctx->node = fsent_translate(fse, ctx->mod->anchor_node, ctx->mod->dir_node, ctx->invalidation);
+    ctx->node = ctx->mod->build_dir;
     pattern_section_generate(ctx);
   }
   else if(ctx->section_traversal.section->nodeset == PATTERN_NODESET_SELF)
@@ -72,6 +86,14 @@ static void pattern_section_generate(pattern_generate_context * restrict ctx)
   else if(ctx->section_traversal.section->nodeset == PATTERN_NODESET_ROOT)
   {
     v = &g_root->vertex;
+    ctx->node = containerof(v, fsent, vertex);
+    RUNTIME_ASSERT(ctx->node);
+
+    pattern_section_generate(ctx);
+  }
+  else if(ctx->section_traversal.section->nodeset == PATTERN_NODESET_BASEDIR)
+  {
+    v = &g_base->vertex;
     ctx->node = containerof(v, fsent, vertex);
     RUNTIME_ASSERT(ctx->node);
 
@@ -98,13 +120,15 @@ static void pattern_section_generate(pattern_generate_context * restrict ctx)
 
 void pattern_segment_generate(pattern_generate_context * restrict ctx)
 {
-  fsent * next_context_node;
-  moria_vertex * next_context_vertex;
-  const char * section;
+  fsent *next_context_node;
+  moria_vertex *next_context_vertex;
+  const char *section;
   size_t section_len;
   struct segment_traversal *segment_traversal;
   const pattern_segment *segment;
   bool end;
+  bool nofollow;
+  vertex_kind kind;
 
   segment_traversal = ctx->segment_traversal;
   segment = segment_traversal->segment;
@@ -141,7 +165,6 @@ void pattern_segment_generate(pattern_generate_context * restrict ctx)
     goto end;
   }
 
-  next_context_vertex = 0;
   if(!ctx->node) {
     ctx->node = ctx->base;
   }
@@ -153,21 +176,25 @@ void pattern_segment_generate(pattern_generate_context * restrict ctx)
     }
   }
 
-  if(!next_context_vertex)
-  {
-    next_context_vertex = moria_vertex_downw(
-        &ctx->node->vertex
-      , section
-      , section_len
-    );
+  kind = VERTEX_FILE;
+  nofollow = false;
+  switch(ctx->section_traversal.section->type_qualifiers_mask) {
+    case PATTERN_QUALIFIER_TYPE_DIR:
+      kind = VERTEX_DIR;
+      break;
+    case PATTERN_QUALIFIER_TYPE_SYMLINK:
+      kind = VERTEX_SYMLINK;
+      nofollow = true;
+      break;
   }
 
+  next_context_vertex = moria_vertex_downw(&ctx->node->vertex, section, section_len);
   if(next_context_vertex)
   {
-    if(!(ctx->flags & PATTERN_GENERATE_NOFOLLOW)) {
-      while(next_context_vertex->attrs & MORIA_VERTEX_LINK) {
-        next_context_vertex = next_context_vertex->ref;
-      }
+    nofollow |= (ctx->flags & PATTERN_GENERATE_NOFOLLOW);
+
+    if(!nofollow) {
+      next_context_vertex = moria_vertex_follow(next_context_vertex);
     }
     if(vertex_type_get(next_context_vertex) == VERTEX_CONTEXT_MODULE) {
       next_context_vertex = &ctx->mod->shadow->vertex;
@@ -182,7 +209,7 @@ void pattern_segment_generate(pattern_generate_context * restrict ctx)
   else
   {
     /* create as not yet existing */
-    fsent_create(&next_context_node, VERTEX_FILE, VERTEX_UNCREATED, section, section_len);
+    fsent_create(&next_context_node, kind, VERTEX_UNCREATED, section, section_len);
     fsedge_connect(next_context_node, ctx->node, ctx->invalidation);
     vertex_alloc_probe(&next_context_node->vertex);
   }
@@ -201,13 +228,16 @@ end:
 //
 
 void pattern_generate(
-    const pattern * restrict pattern
+    const generate_pattern * restrict pattern
   , module * restrict mod
+  , bacon_value * restrict vars
+  , bacon_parser * restrict parser
   , fsent * restrict base
   , graph_invalidation_context * invalidation
-  , const pattern_search_node * restrict match
-  , entlist * restrict hits
+  , const pattern_search_hit * restrict match
   , uint32_t flags
+  , void (*hit_visit)(void *ctx, const struct moria_vertex *hit)
+  , void *hit_ctx
 )
 {
   char space[512] = { };
@@ -220,15 +250,47 @@ void pattern_generate(
     , invalidation : invalidation
     , match : match
     , mod : mod
+    , vars : vars
+    , parser : parser
     , flags : flags
+    , hit_visit : hit_visit
+    , hit_ctx : hit_ctx
 
     /* outputs */
-    , hits : hits
+    //, hits : hits
   };
 
-  ctx.section_traversal.head = &pattern->sections;
+  ctx.section_traversal.head = &pattern->pattern.sections;
   ctx.section_narrator = narrator_fixed_init(&fixed, space, sizeof(space));
   llist_init(&ctx.segment_traversal_stack);
 
   pattern_section_generate(&ctx);
 }
+
+void pattern_attachment_generate(
+    const attachment_pattern * restrict pattern
+  , module * restrict mod
+  , bacon_value * restrict vars
+  , bacon_parser * restrict parser
+  , fsent * restrict base
+  , graph_invalidation_context * invalidation
+  , const pattern_search_hit * restrict match
+  , uint32_t flags
+  , void (*hit_visit)(void *ctx, const struct moria_vertex *hit)
+  , void *hit_ctx
+)
+  __attribute__((alias("pattern_generate")));
+
+void pattern_include_generate(
+    const include_pattern * restrict pattern
+  , module * restrict mod
+  , bacon_value * restrict vars
+  , bacon_parser * restrict parser
+  , fsent * restrict base
+  , graph_invalidation_context * invalidation
+  , const pattern_search_hit * restrict match
+  , uint32_t flags
+  , void (*hit_visit)(void *ctx, const struct moria_vertex *hit)
+  , void *hit_ctx
+)
+  __attribute__((alias("pattern_generate")));

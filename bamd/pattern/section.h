@@ -14,6 +14,7 @@ struct yyu_location;
 struct bacon_value;
 struct bacon_writer;
 struct llist;
+struct moria_vertex;
 
 void pattern_section_mk(
     struct pattern_section ** restrict rv
@@ -21,12 +22,15 @@ void pattern_section_mk(
   , enum pattern_nodeset nodeset
   , enum pattern_graph graph
   , enum pattern_axis axis
-  , struct llist * restrict qualifiers
-  , bool has_type_qualifiers
+  , struct llist * restrict qualifiers // struct pattern_segments * restrict qualifiers
+  , uint32_t type_qualifiers_mask
 )
   __attribute__((nonnull(1, 2)));
 
 void pattern_section_say(const struct pattern_section * section, bool first, struct narrator * restrict N)
+  __attribute__((nonnull));
+
+size_t pattern_section_cat(void * restrict dst, size_t sz, const struct pattern_section * section, bool first)
   __attribute__((nonnull));
 
 void pattern_section_describe(const struct pattern_section * section, struct bacon_writer * restrict writer)
@@ -35,10 +39,8 @@ void pattern_section_describe(const struct pattern_section * section, struct bac
 int pattern_sections_cmp(const struct llist *A, const struct llist *B);
 int pattern_section_cmp(const struct pattern_section *A, const struct pattern_section *B);
 
-size_t pattern_section_cat(
-    char * restrict dst
-  , size_t sz
-  , const struct bacon_value * restrict vars
-  , const struct pattern_section * restrict section
-)
-  __attribute__((nonnull(1, 4)));
+void pattern_section_show(const pattern_section * restrict section)
+  __attribute__((nonnull));
+
+bool pattern_section_evaluate_type_qualifiers(const pattern_section * restrict section, const struct moria_vertex * restrict v)
+  __attribute__((nonnull));

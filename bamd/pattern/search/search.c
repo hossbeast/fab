@@ -5,6 +5,7 @@
 #include "valyria/hashtable.h"
 #include "xlinux/xstdlib.h"
 #include "moria/traverse.h"
+#include "moria/foreach.h"
 #include "narrator.h"
 
 #include "search.internal.h"
@@ -17,31 +18,33 @@
 #include "section.h"
 #include "zcat.h"
 
+#include "pattern/segments.h"
+
 //
 // static
 //
 
 static uint32_t search_node_hash(uint32_t h, const void * el)
 {
-  const pattern_search_node * m = el;
+  const pattern_search_hit * m = el;
 
   return hash32(h, &m->node, sizeof(m->node));
 }
 
 static int search_node_cmp(const void * A, const void *B)
 {
-  const pattern_search_node * mA = A;
-  const pattern_search_node * mB = B;
+  const pattern_search_hit * mA = A;
+  const pattern_search_hit * mB = B;
 
   return INTCMP(mA->node, mB->node);
 }
 
-static void matched(pattern_search_context * restrict ctx, fsent * restrict fse)
+static void __attribute__((nonnull)) matched(pattern_search_context * restrict ctx, fsent * restrict fse)
 {
-  pattern_search_node *m;
+  pattern_search_hit lm, *m;
   int x;
 
-  xmalloc(&m, sizeof(*m));
+  m = &lm;
   m->node = fse;
 
   memcpy(m->groups, ctx->groups, sizeof(m->groups));
@@ -53,7 +56,7 @@ static void matched(pattern_search_context * restrict ctx, fsent * restrict fse)
     m->groups[x] = ctx->groups[x];
   }
 
-  hashtable_put(ctx->matches, m);
+  ctx->hit_visit(ctx->hit_ctx, m);
 }
 
 static void search_visit(
@@ -66,7 +69,11 @@ static void search_visit(
 {
   pattern_search_context * restrict ctx = _ctx;
   fsent * n;
-  bool section_has_type_qualifiers;
+  uint32_t section_type_qualifiers_mask;
+  int anchor_mod;
+  moria_foreach_state st;
+  moria_edge *edge;
+  const module *mod;
 
   struct search_section_traversal saved_section_traversal;
   struct search_segments_traversal traversal;
@@ -84,8 +91,32 @@ static void search_visit(
     result->flags = MORIA_TRAVERSE_PRUNE;
     goto end;
   }
-  section_has_type_qualifiers = ctx->section_traversal.section->has_type_qualifiers;
 
+  /* search patterns will not traverse into a nested module */
+  anchor_mod = 0;
+  if(vertex_filetype_get(v) == VERTEX_FILETYPE_DIR) {
+    moria_foreach_edge_up(&st, v, edge) {
+      if(edge->attrs == EDGE_BUILD_DIR_MOD) {
+        mod = containerof(edge->A, module, vertex);
+        if(ctx->build_mod && mod != ctx->build_mod) {
+          result->flags = MORIA_TRAVERSE_PRUNE;
+          goto end;
+        }
+      } else if(edge->attrs == EDGE_ANCHOR_DIR_MOD) {
+        anchor_mod |= 1;
+        mod = containerof(edge->A, module, vertex);
+        if(ctx->anchor_mod && mod == ctx->anchor_mod) {
+          anchor_mod |= 2;
+        }
+      }
+    }
+    if(ctx->anchor_mod && anchor_mod == 1) {
+      result->flags = MORIA_TRAVERSE_PRUNE;
+      goto end;
+    }
+  }
+
+  section_type_qualifiers_mask = ctx->section_traversal.section->type_qualifiers_mask;
   /* outer segments */
   traversal = (typeof(traversal)) {
     segments_head : &ctx->section_traversal.section->qualifiers
@@ -105,10 +136,11 @@ static void search_visit(
     goto end;
   }
 
-  /* follow links */
-  while(v->attrs & MORIA_VERTEX_LINK) {
+  /* follow only shadow links : permits symlinks to be matched */
+  while(vertex_type_get(v) == VERTEX_SHADOW_LINK) {
     v = v->ref;
   }
+
   /* follow context-dependent nodes */
   n = containerof(v, fsent, vertex);
   if(vertex_type_get(&n->vertex) == VERTEX_CONTEXT_MODULE) {
@@ -121,7 +153,8 @@ static void search_visit(
     /* continue to the next section of the pattern */
     pattern_section_search(ctx, n);
   }
-  else if(vertex_filetype_get(&n->vertex) == VERTEX_FILETYPE_DIR && !section_has_type_qualifiers)
+  else if((vertex_filetype_get(&n->vertex) == VERTEX_FILETYPE_DIR)
+          && (section_type_qualifiers_mask & (PATTERN_QUALIFIER_TYPE_DIR | PATTERN_QUALIFIER_TYPE_DIR_NONEMPTY)) == 0)
   {
     /* to match a directory, it is necessary to specify a directory qualifier */
   }
@@ -230,11 +263,12 @@ void pattern_segments_search(pattern_search_context * ctx)
     }
 
     /* entire label was matched */
-    if(has_segments && !ctx->section_traversal.section->has_type_qualifiers) {
+    if(has_segments && !ctx->section_traversal.section->type_qualifiers_mask) {
       matched &= (traversal->offset == ctx->node->name.namel);
-    }
-    if(invert) {
-      matched = !matched;
+
+      if(invert) {
+        matched = !matched;
+      }
     }
 
     ctx->matched = matched;
@@ -250,15 +284,8 @@ void pattern_section_search(pattern_search_context * restrict ctx, fsent * restr
   const pattern_section *section;
   uint16_t min_depth = 0;
   uint16_t max_depth = UINT16_MAX;
-  const module *mod;
 
-  mod = vertex_module_get(&fse->vertex);
-
-  if(mod && mod != ctx->mod) {
-    /* this directory is owned by some other module */
-    return;
-  }
-
+  /* search patterns will not traverse into a nested module */
   if(vertex_filetype_get(&fse->vertex) == VERTEX_FILETYPE_DIR) {
     if(ctx->dirnode_visit) {
       ctx->dirnode_visit(ctx->dirnode_visit_ctx, fse);
@@ -267,12 +294,7 @@ void pattern_section_search(pattern_search_context * restrict ctx, fsent * restr
 
   section = ctx->section_traversal.section;
 
-  if(section->axis == PATTERN_AXIS_SELF)
-  {
-    min_depth = 0;
-    max_depth = 0;
-  }
-  else if(section->axis == PATTERN_AXIS_DOWN)
+  if(section->axis == PATTERN_AXIS_DOWN)
   {
     min_depth = 1;
     max_depth = 1;
@@ -289,8 +311,8 @@ void pattern_section_search(pattern_search_context * restrict ctx, fsent * restr
     , search_visit
     , 0
     , (moria_traversal_criteria[]) {{
-          edge_travel : EDGE_KIND_FSTREE
-        , edge_visit : EDGE_KIND_FSTREE
+          edge_travel : EDGE_KIND_FS
+        , edge_visit : EDGE_KIND_FS
         , min_depth : min_depth
         , max_depth : max_depth
       }}
@@ -309,11 +331,12 @@ void pattern_search_matches_init(hashtable * matches)
 }
 
 void pattern_search(
-    const pattern * restrict pattern
+    const search_pattern * restrict pattern
   , const module * restrict mod
-  , hashtable * restrict matches
+  , void (*hit_visit)(void *ctx, const pattern_search_hit *hit)
+  , void *hit_ctx
   , void (*dirnode_visit)(void * ctx, struct fsent * dirnode)
-  , void *dirnode_visit_ctx
+  , void *dirnode_ctx
 )
 {
   pattern_search_context ctx;
@@ -325,13 +348,15 @@ void pattern_search(
     /* inputs */
       mod : mod
     , dirnode_visit : dirnode_visit
-    , dirnode_visit_ctx : dirnode_visit_ctx
-
-    /* outputs */
-    , matches : matches
+    , dirnode_visit_ctx : dirnode_ctx
+    , hit_visit : hit_visit
+    , hit_ctx : hit_ctx
   };
+  if(mod) {
+    ctx.vars = mod->vars;
+  }
 
-  ctx.section_traversal.head = &pattern->sections;
+  ctx.section_traversal.head = &pattern->pattern.sections;
   ctx.section_traversal.section = llist_first(ctx.section_traversal.head, typeof(*ctx.section_traversal.section), lln);
 
   /* these can only appear as the initial section */
@@ -343,23 +368,40 @@ void pattern_search(
       case PATTERN_NODESET_SHADOW:
         base = g_shadow;
         break;
+      case PATTERN_NODESET_ANCHOR_REL:
       case PATTERN_NODESET_ANCHOR:
-        base = mod->anchor_node;
+        if(mod) {
+          base = mod->anchor_dir;
+          ctx.build_mod = mod;
+          ctx.anchor_mod = mod;
+        }
         break;
-      case PATTERN_NODESET_MODULE:
-        base = mod->dir_node;
+      case PATTERN_NODESET_BUILD_REL:
+      case PATTERN_NODESET_BUILD:
+        if(mod) {
+          base = mod->build_dir;
+          ctx.build_mod = mod;
+          ctx.anchor_mod = mod;
+        }
         break;
-      case PATTERN_NODESET_SELF:
+      case PATTERN_NODESET_BASEDIR:
+        base = g_base;
+        break;
+      default:
         RTA;
     }
+    if(!base) {
+      return;
+    }
+
     if((ctx.section_traversal.section = llist_next(ctx.section_traversal.head, ctx.section_traversal.section, lln)) == 0) {
       matched(&ctx, base);
       return;
     }
 
-    /* follow links */
+    /* follow only shadow links : permits symlinks to be matched */
     v = &base->vertex;
-    while(v->attrs & MORIA_VERTEX_LINK) {
+    while(vertex_type_get(v) == VERTEX_SHADOW_LINK) {
       v = v->ref;
     }
     /* follow context-dependent nodes */
@@ -373,7 +415,16 @@ void pattern_search(
     return;
   }
 
-  /* otherwise the default is to search from both the base and anchor nodes */
-  pattern_section_search(&ctx, mod->dir_node);
-  pattern_section_search(&ctx, mod->anchor_node);
+  if(!mod) {
+    return;
+  }
+
+  /* otherwise the default is to search from both the build and anchor dirs */
+  ctx.build_mod = mod;
+  ctx.anchor_mod = mod;
+
+  pattern_section_search(&ctx, mod->build_dir);
+  if(mod->build_dir != mod->anchor_dir) {
+    pattern_section_search(&ctx, mod->anchor_dir);
+  }
 }

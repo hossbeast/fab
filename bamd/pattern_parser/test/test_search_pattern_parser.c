@@ -43,8 +43,8 @@ static void pattern_parser_unit_cleanup(xunit_unit * unit)
 
 static void pattern_parser_test_entry(xunit_test * _test)
 {
-  pattern * A = 0;
-  pattern * B = 0;
+  search_pattern *A = 0;
+  search_pattern *B = 0;
   narrator_growing * N1 = 0;
   narrator_growing * N2 = 0;
   pattern_parser * parser = 0;
@@ -64,7 +64,7 @@ static void pattern_parser_test_entry(xunit_test * _test)
   // round trip parse
   search_pattern_parse_partial(parser, test->text, strlen(test->text) + 2, "-test-", 0, &loc, &A);
   assert_eq_zu(strlen(test->text), loc.l);
-  pattern_say(A, &N1->base);
+  pattern_say(&A->pattern, &N1->base);
 
   len = N1->l;
   narrator_seek(&N1->base, 0, NARRATOR_SEEK_SET, 0);
@@ -73,7 +73,7 @@ static void pattern_parser_test_entry(xunit_test * _test)
 
   search_pattern_parse_partial(parser, buf, len + 2, "-test-", 0, &loc, &B);
   assert_eq_zu(len, loc.l);
-  pattern_say(B, &N2->base);
+  pattern_say(&B->pattern, &N2->base);
 
   // round-trip
   assert_eq_w(N1->s, N1->l, N2->s, N2->l);
@@ -85,8 +85,8 @@ static void pattern_parser_test_entry(xunit_test * _test)
   pattern_parser_free(parser);
   narrator_growing_free(N1);
   narrator_growing_free(N2);
-  pattern_free(A);
-  pattern_free(B);
+  pattern_free((void*)A);
+  pattern_free((void*)B);
 }
 
 //
@@ -280,6 +280,12 @@ static xunit_unit xunit = {
       }}
     , (pattern_parser_test[]) {{
         text : (char[]) { "9${99}9\0" }
+      }}
+    , (pattern_parser_test[]) {{
+        text : (char[]) { "$bm_ipcdir\0" }
+      }}
+    , (pattern_parser_test[]) {{
+        text : (char[]) { "$bm_ipcdir/foo\0" }
       }}
     , 0
   }

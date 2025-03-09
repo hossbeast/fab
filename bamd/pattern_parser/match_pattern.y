@@ -12,6 +12,7 @@
   #include "pattern/star.h"
   #include "pattern/section.h"
   #include "pattern/segments.h"
+  #include "pattern/variable.h"
 
   #include "pattern_parser.internal.h"
   #include "pattern.internal.h"
@@ -53,34 +54,57 @@
 %token '{' '}'      // alternations
 %token '[' ']'      // classes
 %token ':'
-%token '?'
-%token '~'
-%token '+'
-%token '$'
-%token '.'
-%token '@'
-%token '_'
+%token '?'          // capture group name
+%token '~'          // not-qualifiers
+%token '+'          // and-qualifiers
+%token '$'          // variable
+%token '.'          // file qualifier
+%token '@'          // symlink qualifier
 
-%token <yyu.umax>  UINTMAX8   100
-%token <yyu.umax>  UINTMAX16  101
-%token <yyu.imax>  INTMAX8    102
-%token <yyu.imax>  INTMAX16   103
+%token <yyu.imax> INTMAX8       306
+%token <yyu.imax> INTMAX16      307
+%token <yyu.imax> INTMAX32      308
+%token <yyu.imax> INTMAX64      309
+%token <yyu.umax> UINTMAX8      310
+%token <yyu.umax> UINTMAX16     311
+%token <yyu.umax> UINTMAX32     312
+%token <yyu.umax> UINTMAX64     313
+%token <yyu.umax> HEX8          314
+%token <yyu.umax> HEX16         315
+%token <yyu.umax> HEX32         316
+%token <yyu.umax> HEX64         317
 
 /* terminals */
-%token             STR        104 "string"
-%token <yyu.u8>    CREF       105 "character-escape"
-%token <yyu.u8>    HREF       106 "hex-escape"
-%token             STARSTAR   107 "**"
-%token             DOT        108 "."
-%token             DOT2       109 ".."
-%token <yyu.u8>    CHAR       110
-%token MODULE                 111 "module"
-%token MODULES                112 "modules"
-%token SHADOW                 113 "shadow"
-%token UP                     114 "up"
-%token DOWN                   115 "down"
-%token SELF_OR_BELOW          116 "self-or-below"
-%token DIRS                   117 "dirs"
+%token             STR         204 "string"
+%token <yyu.u8>    CREF        205 "character-escape"
+%token <yyu.u8>    HREF        206 "hex-escape"
+%token             STARSTAR    207 "**"
+%token             DOT         208 "."
+%token             DOT2        209 ".."
+%token <yyu.u8>    CHAR        210
+%token MODULE                  211 "module"
+%token MODULES                 212 "modules"
+%token SHADOW                  213 "shadow"
+%token UP                      214 "up"
+%token DOWN                    215 "down"
+%token SELF_OR_BELOW           216 "self-or-below"
+%token DIRS                    217 "dirs"
+ /* nodesets - global sysvars */
+%token BM_BASEDIR              218 "bm_basedir"
+%token BM_HOMEDIR              219 "bm_homedir"
+%token BM_IPCDIR               220 "bm_ipcdir"
+ /* nodesets - module sysvars */
+%token BM_ANCHOR_REL           221 "bm_anchor_rel"
+%token BM_BUILD_REL            222 "bm_build_rel"
+%token BM_ANCHOR               223 "bm_anchor"
+%token BM_BUILD                224 "bm_build"
+ /* segment - global sysvars */
+%token BM_BAMD_ID              225 "bm_bamd_id"
+%token BM_BAMD_PID             226 "bm_bamd_pid"
+ /* segment - module sysvars */
+%token BM_MODULE_ID            227 "bm_module_id"
+%token BM_MODULE_NAME          228 "bm_module_name"
+%token BM_MODULE_BUILDDIR_NAME 229 "bm_module_builddir_name"
 
 %type <yyu.umax>   uint16
 
@@ -100,7 +124,7 @@
 %type <pattern> pattern
 
 %type <section> pattern-section
-%type <section> pattern-initial-section
+%type <section> pattern-absolute-initial-section
 
 %type <segments> alternation-pattern
 %type <segments> class-segments
@@ -110,6 +134,7 @@
 %type <segment> escape
 %type <segment> class class-segment class-range class-char
 %type <segment> word
+%type <segment> variable
 %type <segment> star
 %type <segment> quoted-strpart unquoted-strpart
 %type <segment> pattern-dentry-segment
@@ -156,7 +181,6 @@ pattern-relative-sections-list
   {
     llist_init(&$$);
     llist_push(&$$, &$1->lln);
-    PARSER->section_has_type_qualifiers = false;
   }
   ;
 
@@ -166,30 +190,29 @@ pattern-absolute-sections-list
     $$ = $1;
     llist_push(&$$, &$3->lln);
   }
-  | pattern-initial-section pattern-section
+  | pattern-absolute-initial-section pattern-section
   {
     llist_init(&$$);
     llist_push(&$$, &$1->lln);
     llist_push(&$$, &$2->lln);
-    PARSER->section_has_type_qualifiers = false;
   }
   ;
 
-pattern-initial-section
+pattern-absolute-initial-section
   : '/'
   {
-    pattern_section_mk(&$$, &@$, PATTERN_NODESET_ROOT, 0, 0, NULL, false);
+    pattern_section_mk(&$$, &@$, PATTERN_NODESET_ROOT, 0, 0, NULL, 0);
   }
   ;
 
 pattern-section
   : pattern-dentry-segments-list
   {
-    pattern_section_mk(&$$, &@$, 0, PATTERN_GRAPH_FS, PATTERN_AXIS_DOWN, &$1, false);
+    pattern_section_mk(&$$, &@$, 0, PATTERN_GRAPH_FS, PATTERN_AXIS_DOWN, &$1, 0);
   }
   | STARSTAR pattern-qualifiers
   {
-    pattern_section_mk(&$$, &@$, 0, PATTERN_GRAPH_DIRS, PATTERN_AXIS_SELF_OR_BELOW, &$2, false);
+    pattern_section_mk(&$$, &@$, 0, PATTERN_GRAPH_DIRS, PATTERN_AXIS_SELF_OR_BELOW, &$2, 0);
   }
   ;
 
@@ -209,7 +232,7 @@ pattern-dentry-segments-list
 pattern-dentry-segments
   : pattern-dentry-segment-list
   {
-    pattern_segments_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_AND, &$1);
+    pattern_segments_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_AND, 0, &$1);
   }
   ;
 
@@ -237,6 +260,18 @@ pattern-dentry-segment
   : alternation
   | class
   | star
+  | variable
+  ;
+
+variable
+  : '$' word-token
+  {
+    pattern_variable_mk(&$$, &@$, PATTERN_VARIABLE_TYPE_NAME, 0, @2.s, @2.l);
+  }
+  | '$' '{' word-token '}'
+  {
+    pattern_variable_mk(&$$, &@$, PATTERN_VARIABLE_TYPE_NAME, 0, @3.s, @3.l);
+  }
   ;
 
 pattern-qualifiers
@@ -263,11 +298,11 @@ pattern-qualifier-list
 pattern-qualifier
   : '+' pattern-qualifier-parts
   {
-    pattern_segments_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_AND, &$2);
+    pattern_segments_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_AND, 0, &$2);
   }
   | '~' pattern-qualifier-parts
   {
-    pattern_segments_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_NOT, &$2);
+    pattern_segments_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_NOT, 0, &$2);
   }
   ;
 
@@ -336,7 +371,7 @@ class-segments
     llist list;
     llist_init(&list);
     llist_push(&list, &$1->lln);
-    pattern_segments_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_AND, &list);
+    pattern_segments_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_AND, 0, &list);
   }
   ;
 
@@ -401,7 +436,7 @@ alternation-part-epsilon
 alternation-pattern
   : alternation-pattern-parts
   {
-    pattern_segments_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_AND, &$1);
+    pattern_segments_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_AND, 0, &$1);
   }
   ;
 
@@ -498,11 +533,12 @@ word-token
   | 'A'
   | 'D'
   | 'F'
-  | 'H'
-  | 'M'
   | '@'
-  | '_'
   | '.'
+  /* segment sysvars */
+  | BM_MODULE_ID
+  | BM_BAMD_ID
+  | BM_BAMD_PID
   ;
 
 escape

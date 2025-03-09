@@ -7,6 +7,13 @@
 
 struct yyu_location;
 struct pattern;
+struct search_pattern;
+struct generate_pattern;
+struct attachment_pattern;
+struct lookup_pattern;
+struct include_pattern;
+struct match_pattern;
+struct path_pattern;
 
 struct pattern_parser;
 typedef struct pattern_parser pattern_parser;
@@ -52,7 +59,7 @@ int search_pattern_parse_partial(
   , const char * restrict fname
   , struct yyu_location * restrict init_loc
   , struct yyu_location * restrict used_loc
-  , struct pattern ** restrict rv
+  , struct search_pattern ** restrict rv
 )
   __attribute__((nonnull(1, 2)));
 
@@ -63,18 +70,18 @@ int generate_pattern_parse_partial(
   , const char * restrict fname
   , struct yyu_location * restrict init_loc
   , struct yyu_location * restrict used_loc
-  , struct pattern ** restrict rv
+  , struct generate_pattern ** restrict rv
 )
   __attribute__((nonnull(1, 2)));
 
-int reference_pattern_parse_partial(
+int attachment_pattern_parse_partial(
     pattern_parser * restrict parser
   , char * const restrict buf
   , size_t size
   , const char * restrict fname
   , struct yyu_location * restrict init_loc
   , struct yyu_location * restrict used_loc
-  , struct pattern ** restrict rv
+  , struct attachment_pattern ** restrict rv
 )
   __attribute__((nonnull(1, 2)));
 
@@ -85,7 +92,7 @@ int lookup_pattern_parse_partial(
   , const char * restrict fname
   , struct yyu_location * restrict init_loc
   , struct yyu_location * restrict used_loc
-  , struct pattern ** restrict rv
+  , struct lookup_pattern ** restrict rv
 )
   __attribute__((nonnull(1, 2)));
 
@@ -96,7 +103,7 @@ int include_pattern_parse_partial(
   , const char * restrict fname
   , struct yyu_location * restrict init_loc
   , struct yyu_location * restrict used_loc
-  , struct pattern ** restrict rv
+  , struct include_pattern ** restrict rv
 )
   __attribute__((nonnull(1, 2)));
 
@@ -107,16 +114,26 @@ int match_pattern_parse_partial(
   , const char * restrict fname
   , struct yyu_location * restrict init_loc
   , struct yyu_location * restrict used_loc
-  , struct pattern ** restrict rv
+  , struct match_pattern ** restrict rv
 )
   __attribute__((nonnull(1, 2)));
-
 
 int lookup_pattern_parse(
     pattern_parser * restrict parser
   , char * const restrict buf
   , size_t size
   , const char * restrict fname
-  , struct pattern ** restrict rv
+  , struct lookup_pattern ** restrict rv
+)
+  __attribute__((nonnull(1, 2)));
+
+int path_pattern_parse_partial(
+    pattern_parser * restrict parser
+  , char * const restrict buf
+  , size_t size
+  , const char * restrict fname
+  , struct yyu_location * restrict init_loc
+  , struct yyu_location * restrict used_loc
+  , struct path_pattern ** restrict rv
 )
   __attribute__((nonnull(1, 2)));

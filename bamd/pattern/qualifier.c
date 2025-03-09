@@ -12,7 +12,6 @@
 #include "generate.internal.h"
 #include "search.internal.h"
 #include "match.internal.h"
-#include "render.internal.h"
 
 #include "fsent.h"
 #include "vertex.h"
@@ -48,16 +47,9 @@ static void qualifier_describe(const pattern_segment * restrict fn, bacon_writer
 {
   const pattern_qualifier * qualifier = &fn->qualifier;
 
-  { MAPPING
-    STRING("qualifier-type")
+  { MAPPING STRING("qualifier-type")
     STRING(attrs16_name_byvalue(pattern_qualifier_type_attrs, qualifier->qualifier_type))
   }
-}
-
-static void qualifier_render(const pattern_segment * restrict fn, pattern_render_context * restrict ctx)
-{
-  qualifier_say(fn, 0, ctx->narrator);
-  pattern_segment_render(ctx);
 }
 
 static void qualifier_destroy(pattern_segment * restrict n)
@@ -89,6 +81,7 @@ static int qualifier_cmp(const pattern_segment * A, const pattern_segment *B)
   return 0;
 }
 
+#define qualifier_cat 0
 static pattern_segment_vtable vtable = PATTERN_SEGMENT_VTABLE(qualifier, PATTERN_QUALIFIER, 0);
 
 //
@@ -99,27 +92,32 @@ bool pattern_qualifier_evaluate(pattern_qualifier_type qualifier_type, const mor
 {
   bool satisfied = false;
 
+  /* n.b. symlinks are resolved before rules are run */
+
   switch(qualifier_type)
   {
     case PATTERN_QUALIFIER_TYPE_DIR:
+      v = moria_vertex_follow(v);
       satisfied =  vertex_kind_get(v) == VERTEX_KIND_FSENT
             && vertex_filetype_get(v) == VERTEX_FILETYPE_DIR
             ;
       break;
     case PATTERN_QUALIFIER_TYPE_DIR_NONEMPTY:
+      v = moria_vertex_follow(v);
       satisfied =  vertex_kind_get(v) == VERTEX_KIND_FSENT
             && vertex_filetype_get(v) == VERTEX_FILETYPE_DIR
             && 1    // actually check child-count
             ;
       break;
     case PATTERN_QUALIFIER_TYPE_FILE:
+      v = moria_vertex_follow(v);
       satisfied =  vertex_kind_get(v) == VERTEX_KIND_FSENT
             && vertex_filetype_get(v) == VERTEX_FILETYPE_REG
             ;
       break;
     case PATTERN_QUALIFIER_TYPE_SYMLINK:
       satisfied =  vertex_kind_get(v) == VERTEX_KIND_FSENT
-            && vertex_filetype_get(v) == VERTEX_FILETYPE_LINK
+            && vertex_filetype_get(v) == VERTEX_FILETYPE_SYMLINK
             ;
       break;
     default:

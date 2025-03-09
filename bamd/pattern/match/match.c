@@ -1,9 +1,10 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include "common/hash.h"
 #include "xlinux/xstdlib.h"
 #include "moria/traverse.h"
+#include "moria/foreach.h"
+#include "bacon/value.h"
 
 #include "match.internal.h"
 #include "pattern.internal.h"
@@ -26,10 +27,9 @@
 /* match_node
  *
  * ctx     - dynamic context
- * quals   - whether to evalate section qualifiers, if present
  * matches - (returns) whether the initial section matches
  */
-static void match_node(pattern_search_context * ctx, bool quals, bool * restrict matches)
+static void match_node(pattern_search_context * restrict ctx)
 {
   const struct pattern_section *sec;
   struct search_section_traversal saved_section_traversal;
@@ -46,7 +46,7 @@ static void match_node(pattern_search_context * ctx, bool quals, bool * restrict
       match = false;
     }
   }
-  else if(!llist_empty(&ctx->section_traversal.section->qualifiers) && quals)
+  else if(!llist_empty(&ctx->section_traversal.section->qualifiers))
   {
     traversal = (typeof(traversal)) {
       segments_head : &ctx->section_traversal.section->qualifiers
@@ -90,7 +90,8 @@ static void match_visit(moria_vertex * restrict v, void * _ctx, moria_traversal_
 {
   pattern_search_context * ctx = _ctx;
   fsent * n;
-  bool initial_match;
+  moria_foreach_state st;
+  moria_edge *edge;
 
   /* matching path has been found */
   if(ctx->matched) {
@@ -107,8 +108,22 @@ static void match_visit(moria_vertex * restrict v, void * _ctx, moria_traversal_
     return;
   }
 
+  /* check for match here */
   ctx->node = n;
-  match_node(ctx, true, &initial_match);
+  match_node(ctx);
+
+  /* check for match from any symlinks to this node */
+  moria_foreach_edge_up(&st, &n->vertex, edge) {
+    if(edge->attrs != EDGE_REF_SYMLINK) {
+      continue;
+    }
+
+    if(ctx->matched) {
+      break;
+    }
+    ctx->node = containerof(edge->A, fsent, vertex);
+    match_node(ctx);
+  }
 }
 
 //
@@ -122,10 +137,7 @@ void pattern_section_match(pattern_search_context * restrict ctx, const struct p
 
   min_depth = 0;
   max_depth = 0;
-  if(prev->axis == PATTERN_AXIS_SELF)
-  {
-  }
-  else if(prev->axis == PATTERN_AXIS_DOWN)
+  if(prev->axis == PATTERN_AXIS_DOWN)
   {
     min_depth = 1;
     max_depth = 1;
@@ -142,12 +154,12 @@ void pattern_section_match(pattern_search_context * restrict ctx, const struct p
     , match_visit
     , 0
     , (moria_traversal_criteria[]) {{
-          edge_travel : EDGE_KIND_FSTREE
-        , edge_visit : EDGE_KIND_FSTREE
+          edge_travel : EDGE_KIND_FS
+        , edge_visit : EDGE_KIND_FS
         , min_depth : min_depth
         , max_depth : max_depth
       }}
-    , MORIA_TRAVERSE_UP | MORIA_TRAVERSE_PRE | MORIA_TRAVERSE_DEPTH
+    , MORIA_TRAVERSE_UP | MORIA_TRAVERSE_PRE | MORIA_TRAVERSE_DEPTH | MORIA_TRAVERSE_NOFOLLOW
     , ctx
   );
 }
@@ -156,21 +168,54 @@ void pattern_section_match(pattern_search_context * restrict ctx, const struct p
 // public
 //
 
-void pattern_match(
-    const pattern * restrict pattern
+bool pattern_match_sections(
+    const struct llist * restrict head
+  , const struct pattern_section * restrict section
+  , const bacon_value * restrict vars
   , const struct fsent * restrict node
-  , bool * restrict matched
 )
 {
   pattern_search_context ctx = { };
-  bool initial_match;
 
   // setup the dynamic context
-  ctx.section_traversal.head = &pattern->sections;
-  ctx.section_traversal.section = llist_last(ctx.section_traversal.head, typeof(*ctx.section_traversal.section), lln);
+  ctx.vars = vars;
+  ctx.section_traversal.head = head;
+  ctx.section_traversal.section = section;
   ctx.node = node;
 
-  match_node(&ctx, true, &initial_match);
+  match_node(&ctx);
 
-  *matched = ctx.matched;
+  return ctx.matched;
+}
+
+bool pattern_match(
+    const match_pattern * restrict pattern
+  , const bacon_value * restrict vars
+  , const struct fsent * restrict node)
+{
+  const struct llist *head;
+  const struct pattern_section *section;
+
+  head = &pattern->pattern.sections;
+  section = llist_last(head, typeof(*section), lln);
+
+  return pattern_match_sections(head, section, vars, node);
+}
+
+bool pattern_match_section(
+    const struct pattern_section * restrict section
+  , const bacon_value * restrict vars
+  , const struct fsent * restrict node
+)
+{
+  pattern_search_context ctx = { };
+
+  // setup the dynamic context
+  ctx.vars = vars;
+  ctx.section_traversal.section = section;
+  ctx.node = node;
+
+  pattern_section_match(&ctx, section, node);
+
+  return ctx.matched;
 }

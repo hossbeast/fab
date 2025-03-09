@@ -20,7 +20,6 @@
 #include "search.internal.h"
 #include "pattern_parser.h"
 #include "pattern_parser.internal.h"
-#include "lookup.h"
 #include "pattern.h"
 #include "fsent.h"
 #include "shadow.h"
@@ -31,7 +30,6 @@
 #include "fstree.h"
 #include "args.h"
 
-#include "common/hash.h"
 #include "zcat.h"
 
 typedef struct pattern_search_test {
@@ -50,37 +48,54 @@ typedef struct pattern_search_test {
   char **matches;      // space separated, 1, 2, etc
 } pattern_search_test;
 
-static void pattern_search_test_unit_setup(xunit_unit * unit)
+static void pattern_test_unit_setup(xunit_unit * unit)
 {
   bacon_load();
 
   args_init();
   fsent_root_setup();
+  shadow_root_setup();
+  fstree_root_setup();
   shadow_setup();
   fstree_setup();
   graph_setup();
+
+  extern __thread bool rcu_is_reader ; rcu_is_reader = true;
 }
 
-static void pattern_search_test_unit_cleanup(xunit_unit * unit)
+static void pattern_test_unit_cleanup(xunit_unit * unit)
 {
   bacon_unload();
-  fstree_cleanup();
-  fsent_cleanup();
+
   shadow_cleanup();
+  fstree_cleanup();
+  module_cleanup();
+  fsent_cleanup();
+  graph_cleanup();
 }
 
 //
 // tests
 //
 
+static void search_hit(void *ctx, const pattern_search_hit *hitp)
+{
+  hashtable *matches = ctx;
+  pattern_search_hit *hit;
+
+  xmalloc(&hit, sizeof(*hit));
+  memcpy(hit, hitp, sizeof(*hit));
+  hashtable_put(matches, hit);
+}
+
 static void pattern_search_test_entry(xunit_test * _test)
 {
   pattern_search_test * test = (pattern_search_test *)_test;
 
-  pattern_parser * parser = 0;
-  pattern * pattern = 0;
-  moria_parser * op_parser = 0;
-  bacon_parser * val_parser = 0;
+  pattern_parser *parser = 0;
+  search_pattern *pattern = 0;
+  moria_parser *op_parser = 0;
+  bacon_parser *val_parser = 0;
   hashtable matches;
   module mods[4] = { 0 };
   module *mod;
@@ -102,10 +117,10 @@ static void pattern_search_test_entry(xunit_test * _test)
   moria_parser_operations_parse(op_parser, MMS(test->operations));
 
   // prepare the module
-  resolve_fragment(MMS(test->base), &mods[0].dir_node);
-  mods[0].anchor_node = mods[0].dir_node;
+  mods[0].build_dir = resolve_fragment(MMS(test->base));
+  mods[0].anchor_dir = mods[0].build_dir;
   if(test->anchor) {
-    resolve_fragment(MMS(test->anchor), &mods[0].anchor_node);
+    mods[0].anchor_dir = resolve_fragment(MMS(test->anchor));
   }
   mod = &mods[0];
   bacon_parser_alloc(&val_parser);
@@ -123,7 +138,7 @@ static void pattern_search_test_entry(xunit_test * _test)
 
   // act
   pattern_search_matches_init(&matches);
-  pattern_search(pattern, mod, &matches, 0, 0);
+  pattern_search(pattern, mod, search_hit, &matches, 0, 0);
 
   // assert
   hashtable_initx(&expected, 0, strht_hash, strht_cmp, 0);
@@ -134,7 +149,7 @@ static void pattern_search_test_entry(xunit_test * _test)
   hashtable_initx(&actual, 0, strht_hash, strht_cmp, free);
   for(x = 0; x < matches.table_size; x++)
   {
-    pattern_search_node * m;
+    pattern_search_hit * m;
     if(!(m = hashtable_table_entry(&matches, x))) {
       continue;
     }
@@ -179,7 +194,7 @@ static void pattern_search_test_entry(xunit_test * _test)
   bacon_value_free(val_parser, vars);
   hashtable_destroy(&matches);
   pattern_parser_free(parser);
-  pattern_free(pattern);
+  pattern_free(&pattern->pattern);
   moria_parser_free(op_parser);
   hashtable_destroy(&expected);
   hashtable_destroy(&actual);
@@ -193,8 +208,8 @@ static void pattern_search_test_entry(xunit_test * _test)
 //
 
 static xunit_unit xunit = {
-    xu_setup : pattern_search_test_unit_setup
-  , xu_cleanup : pattern_search_test_unit_cleanup
+    xu_setup : pattern_test_unit_setup
+  , xu_cleanup : pattern_test_unit_cleanup
   , xu_entry : pattern_search_test_entry
   , xu_tests : (pattern_search_test*[]) {
     /* single word */

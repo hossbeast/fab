@@ -5,14 +5,16 @@
 #include "narrator.h"
 #include "common/attrs.h"
 #include "bacon/builder.h"
+#include "bacon/value.h"
 
 #include "byte.h"
 #include "pattern.internal.h"
 #include "fsent.h"
+#include "zcat.h"
+
 #include "generate.internal.h"
 #include "search.internal.h"
 #include "match.internal.h"
-#include "render.internal.h"
 
 //
 // static
@@ -33,12 +35,15 @@ static void byte_say(const pattern_segment * restrict n, const pattern_segment *
   byte_say_code(n->byte.code, N);
 }
 
-static void byte_render(const pattern_segment * restrict fn, pattern_render_context * restrict ctx)
+static size_t byte_cat(void * restrict dst, size_t sz, const bacon_value * restrict vars, const union pattern_segment * restrict seg)
 {
-  const pattern_byte * n = &fn->byte;
+  const pattern_byte * n = &seg->byte;
+  size_t z;
 
-  byte_say_code(n->code, ctx->narrator);
-  pattern_segment_render(ctx);
+  z = 0;
+  z += zcatc(dst + z, sz - z, n->code);
+
+  return z;
 }
 
 static void byte_search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)

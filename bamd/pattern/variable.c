@@ -6,14 +6,14 @@
 #include "xlinux/xstring.h"
 #include "bacon/value.h"
 #include "bacon/set.h"
-#include "common/attrs.h"
 #include "bacon/builder.h"
+#include "bacon/coerce.h"
+#include "common/attrs.h"
 
 #include "variable.h"
 #include "generate.internal.h"
 #include "search.internal.h"
 #include "pattern.internal.h"
-#include "render.internal.h"
 #include "fsent.h"
 #include "module.h"
 
@@ -43,8 +43,6 @@ static void variable_describe(const pattern_segment * restrict fn, bacon_writer 
         STRING("num")
         UINT(variable->num)
       }
-      break;
-    case PATTERN_VARIABLE_TYPE_AUTO_HASH:
       break;
   }
 }
@@ -106,13 +104,9 @@ static void variable_say(const pattern_segment * restrict fn, const pattern_segm
   }
 
   if(n->variable_type == PATTERN_VARIABLE_TYPE_NAME) {
-    xsayf("%.*s", n->name_len, n->name);
-  } else if(n->variable_type == PATTERN_VARIABLE_TYPE_NAME) {
     xsayw(n->name, n->name_len);
   } else if(n->variable_type == PATTERN_VARIABLE_TYPE_NUM) {
     xsayf("%hhu", n->num);
-  } else if(n->variable_type == PATTERN_VARIABLE_TYPE_AUTO_HASH) {
-    xsays("^H");
   }
 
   if(brace) {
@@ -124,29 +118,33 @@ static void variable_destroy(pattern_segment * restrict fn)
 {
   pattern_variable * n = &fn->variable;
 
-  if(n->variable_type == PATTERN_VARIABLE_TYPE_NAME)
+  if(n->variable_type == PATTERN_VARIABLE_TYPE_NAME) {
     free(n->name);
+  }
 }
 
-static void variable_render(const pattern_segment * restrict fn, pattern_render_context * restrict ctx)
+static size_t variable_cat(void * restrict dst, size_t sz, const bacon_value * restrict vars, const union pattern_segment * restrict seg)
 {
-  const pattern_variable * n = &fn->variable;
+  const pattern_variable * variable;
   const bacon_value *val;
+  size_t z;
 
-  if(ctx->vars == NULL) {
-    goto end;
+  variable = &seg->variable;
+
+  if(vars == NULL) {
+    return 0;
   }
 
-  RUNTIME_ASSERT(ctx->vars->type == BACON_TYPE_SET);
-  if((val = bacon_set_lookupw(ctx->vars, n->name, n->name_len)) == 0) {
-    goto end;
+  RUNTIME_ASSERT(vars->type == BACON_TYPE_SET);
+  if((val = bacon_set_lookupw(vars, variable->name, variable->name_len)) == 0) {
+    return 0;
   }
-
   RUNTIME_ASSERT(val->type == BACON_TYPE_STRING);
-  narrator_sayw(ctx->narrator, val->s, val->len);
 
-end:
-  pattern_segment_render(ctx);
+  z = 0;
+  z += zcatw(dst + z, sz - z, val->s, val->len);
+
+  return z;
 }
 
 static void variable_search(const pattern_segment * restrict segment, pattern_search_context * restrict ctx)
@@ -160,14 +158,19 @@ static void variable_search(const pattern_segment * restrict segment, pattern_se
   name = ctx->node->name.name;
   namel = ctx->node->name.namel;
 
-  if(ctx->mod->vars == NULL) {
+  if(ctx->vars == NULL) {
+    ctx->traversal->unsatisfied = true;
     return;
   }
 
-  RUNTIME_ASSERT(ctx->mod->vars->type == BACON_TYPE_SET);
-  if((val = bacon_set_lookupw(ctx->mod->vars, variable->name, variable->name_len)) == 0) {
+  RUNTIME_ASSERT(ctx->vars->type == BACON_TYPE_SET);
+  if((val = bacon_set_lookupw(ctx->vars, variable->name, variable->name_len)) == 0) {
+    ctx->traversal->unsatisfied = true;
     return;
   }
+
+//bacon_value_say(ctx->vars, g_narrator_stdout);
+//printf("\n");
 
   RUNTIME_ASSERT(val->type == BACON_TYPE_STRING);
   if(     (namel - ctx->traversal->offset) >= val->len
@@ -181,7 +184,8 @@ static void variable_search(const pattern_segment * restrict segment, pattern_se
 static void variable_generate(const pattern_segment * restrict seg, pattern_generate_context * restrict ctx)
 {
   const pattern_variable * n = &seg->variable;
-  const bacon_value *val;
+  const bacon_value *val0;
+  bacon_value *val;
 
   /* references to matching groups */
   if(n->variable_type == PATTERN_VARIABLE_TYPE_NUM)
@@ -196,25 +200,26 @@ static void variable_generate(const pattern_segment * restrict seg, pattern_gene
     goto end;
   }
 
-  /* auto vars */
-  if(n->variable_type == PATTERN_VARIABLE_TYPE_AUTO_HASH) {
-    narrator_says(ctx->section_narrator, ctx->mod->id);
-    goto end;
-  }
-
   /* named vars */
-  if(ctx->mod->vars == NULL) {
-    goto end;
-  }
-
   RUNTIME_ASSERT(n->variable_type == PATTERN_VARIABLE_TYPE_NAME);
-  RUNTIME_ASSERT(ctx->mod->vars->type == BACON_TYPE_SET);
-  if((val = bacon_set_lookupw(ctx->mod->vars, n->name, n->name_len)) == 0) {
-    goto end;
+  val0 = 0;
+  if(ctx->vars) {
+    RUNTIME_ASSERT(ctx->vars->type == BACON_TYPE_SET);
+    val0 = bacon_set_lookupw(ctx->vars, n->name, n->name_len);
   }
-  RUNTIME_ASSERT(val->type == BACON_TYPE_STRING);
 
-  narrator_sayw(ctx->section_narrator, val->s, val->len);
+  if(!val0 && ctx->mod->vars) {
+    RUNTIME_ASSERT(ctx->mod->vars->type == BACON_TYPE_SET);
+    val0 = bacon_set_lookupw(ctx->mod->vars, n->name, n->name_len);
+  }
+
+  if(val0) {
+    bacon_value_coerce(ctx->parser, val0, BACON_TYPE_STRING, &val);
+    narrator_sayw(ctx->section_narrator, val->s, val->len);
+    if(val0 != val) {
+      bacon_value_free(ctx->parser, val);
+    }
+  }
 
 end:
   pattern_segment_generate(ctx);
@@ -230,7 +235,6 @@ static int variable_cmp(const pattern_segment * A, const pattern_segment *B)
   return memncmp(A->variable.name, A->variable.name_len, B->variable.name, B->variable.name_len);
 }
 
-#define variable_match 0
 static pattern_segment_vtable vtable = PATTERN_SEGMENT_VTABLE(variable, PATTERN_VARIABLE, 0);
 
 void pattern_variable_mk(

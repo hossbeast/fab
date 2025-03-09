@@ -8,8 +8,8 @@
   #include "match_pattern.tab.h"
   #include "match_pattern.tokens.h"
 
-#include <unistd.h>
-#include "types.h"
+//#include <unistd.h>
+//#include "types.h"
 
   #define YYSTYPE struct pattern_yystype
   #define YYLTYPE yyu_location
@@ -33,15 +33,18 @@
 
  /* tokens */
 <INITIAL>[*][*]                                         { return LEX(STARSTAR); }
-<INITIAL>[.][/]                                         { int r = LEX(DOT); yyless(1); return r; }
 <INITIAL>[.][.]                                         { return LEX(DOT2); }
-<INITIAL>[+(){}<>:*,/~^ADHF?@.]                         { return LEX(yytext[0]); }
+<INITIAL>[+(){}<>:*,/~]                                 { return LEX(yytext[0]); }
+ /* sysvar shortname tokens */
+<INITIAL>[AD^]                                          { return LEX(yytext[0]); }
+ /* type-qualifier tokens */
+<INITIAL>[F?@.]                                         { return LEX(yytext[0]); }
 
  /* integers */
 <INITIAL>[0-9]+                                         { return LEXI("%"SCNuMAX); }
 
  /* named tokens and unquoted strings */
-<INITIAL>[_a-zA-Z][-0-9_a-zA-Z]*                        { return LEXA(); }
+<INITIAL>[_a-zA-Z.%][-_a-zA-Z0-9.%]*                    { return LEXA(); }
 
  /* scanmodes, quoted strings */
 <INITIAL>[[]                                            { PUSHSTATE(bracketed); return LEX(yytext[0]); }
@@ -52,7 +55,21 @@
 
  /* var refs */
 <INITIAL>[$]                                            { PUSHSTATE(varref); return LEX(yytext[0]); }
-<varref>[ADH^}]                                         { POPSTATE; return LEX(yytext[0]); }
+ /* global sysvars */
+<varref>"bm_homedir"                                    { POPSTATE; return LEX(BM_HOMEDIR); }
+<varref>"bm_ipcdir"                                     { POPSTATE; return LEX(BM_IPCDIR); }
+<varref>"bm_basedir"                                    { POPSTATE; return LEX(BM_BASEDIR); }
+<varref>"bm_bamd_id"                                    { POPSTATE; return LEX(BM_BAMD_ID); }
+<varref>"bm_bamd_pid"                                   { POPSTATE; return LEX(BM_BAMD_PID); }
+ /* module sysvars */
+<varref>"bm_anchor_rel"                                 { POPSTATE; return LEX(BM_ANCHOR_REL); }
+<varref>"bm_build_rel"                                  { POPSTATE; return LEX(BM_BUILD_REL); }
+<varref>"bm_anchor"                                     { POPSTATE; return LEX(BM_ANCHOR); }
+<varref>"bm_build"                                      { POPSTATE; return LEX(BM_BUILD); }
+<varref>"bm_module_id"                                  { POPSTATE; return LEX(BM_MODULE_ID); }
+<varref>"bm_module_name"                                { POPSTATE; return LEX(BM_MODULE_NAME); }
+<varref>"bm_module_builddir_name"                       { POPSTATE; return LEX(BM_MODULE_BUILDDIR_NAME); }
+<varref>[AD^}]                                          { POPSTATE; return LEX(yytext[0]); }
 <varref>[{]                                             { POPSTATE; PUSHSTATE(varref2); return LEX(yytext[0]); }
 <varref>[0-9]+                                          { POPSTATE; return LEXI("%"SCNuMAX); }
 <varref>[^ADH^{0-9-]                                    { POPSTATE; PUSHSTATE(varref2); yyless(0); }

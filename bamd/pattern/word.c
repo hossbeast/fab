@@ -7,6 +7,7 @@
 
 #include "narrator.h"
 #include "bacon/writer.h"
+#include "bacon/value.h"
 #include "bacon/builder.h"
 #include "xlinux/xstdlib.h"
 #include "xlinux/xstring.h"
@@ -14,10 +15,10 @@
 #include "pattern.internal.h"
 #include "word.h"
 #include "generate.internal.h"
-#include "render.internal.h"
 #include "search.internal.h"
 #include "match.internal.h"
 #include "fsent.h"
+#include "zcat.h"
 
 #include "common/attrs.h"
 
@@ -25,10 +26,44 @@
 // static
 //
 
+static bool should_quote(const char *s, uint16_t l)
+{
+  int x;
+
+  /* corresponds to the LEXA rule in pattern.l */
+
+  for(x = 0; x < l; x++)
+  {
+    if(s[x] >= 'a' && s[x] <= 'z')
+      continue;
+    if(s[x] >= 'A' && s[x] <= 'Z')
+      continue;
+    if(s[x] == '_')
+      continue;
+    if(s[x] == '.')
+      continue;
+    if(s[x] == '%')
+      continue;
+    if(/*x > 0 &&*/ (s[x] >= '0' && s[x] <= '9'))
+      continue;
+    if(x > 0 && s[x] == '-')
+      continue;
+
+    break;
+  }
+
+  return x < l;
+}
+
 static void word_say(const pattern_segment * restrict fn, const pattern_segment * restrict next, narrator * restrict N)
 {
   const pattern_word * n = &fn->word;
-  xsayw(n->text, n->len);
+
+  if(should_quote(n->text, n->len)) {
+    xsayf("\"%.*s\"", n->len, n->text);
+  } else {
+    xsayw(n->text, n->len);
+  }
 }
 
 static void word_describe(const pattern_segment * restrict fn, struct bacon_writer * restrict builder_writer)
@@ -39,15 +74,17 @@ static void word_describe(const pattern_segment * restrict fn, struct bacon_writ
     STRING("text")
     BYTES(n->text, n->len)
   }
-  HEX(n)
 }
 
-static void word_render(const pattern_segment * restrict fn, pattern_render_context * restrict ctx)
+static size_t word_cat(void * restrict dst, size_t sz, const bacon_value * restrict vars, const union pattern_segment * restrict seg)
 {
-  const pattern_word * n = &fn->word;
+  const pattern_word * n = &seg->word;
+  size_t z;
 
-  narrator_sayw(ctx->narrator, n->text, n->len);
-  pattern_segment_render(ctx);
+  z = 0;
+  z += zcatw(dst + z, sz - z, n->text, n->len);
+
+  return z;
 }
 
 static void word_destroy(pattern_segment * restrict fn)

@@ -6,6 +6,7 @@
 #include "common/attrs.h"
 #include "narrator.h"
 #include "xlinux/xstdlib.h"
+#include "moria.h"
 #include "bacon/value.h"
 #include "bacon/set.h"
 #include "bacon/builder.h"
@@ -14,7 +15,7 @@
 #include "pattern.internal.h"
 #include "segment.h"
 #include "system.h"
-#include "events.h"
+#include "events/events.h"
 #include "channel.h"
 #include "segments.h"
 
@@ -40,14 +41,28 @@ void pattern_section_describe(const pattern_section * restrict n, bacon_writer *
     STRING(attrs16_name_byvalue(pattern_axis_attrs, n->axis))
   }
   { MAPPING
-    STRING("has-type-qualifiers")
-    BOOL(n->has_type_qualifiers)
+    STRING("type-qualifiers-mask")
+    HEX(n->type_qualifiers_mask)
   }
   if(!llist_empty(&n->qualifiers)) {
     MAPPING
     STRING("segments-list")
     pattern_segments_list_describe(&n->qualifiers, builder_writer);
   }
+}
+
+void pattern_section_show(const pattern_section * restrict section)
+{
+  bacon_writer writer, *builder_writer;
+
+  bacon_writer_init(&writer);
+  builder_writer = bacon_writer_open(&writer, g_narrator_stdout);
+
+  pattern_section_describe(section, builder_writer);
+
+  bacon_writer_close(&writer);
+  bacon_writer_destroy(&writer);
+  printf("\n");
 }
 
 void pattern_section_free(pattern_section * restrict n)
@@ -115,7 +130,7 @@ void pattern_section_mk(
   , pattern_graph graph
   , pattern_axis axis
   , llist * restrict qualifiers_list
-  , bool has_type_qualifiers
+  , uint32_t type_qualifiers_mask
 )
 {
   pattern_section *section;
@@ -131,27 +146,9 @@ void pattern_section_mk(
   if(qualifiers_list && qualifiers_list->next) {
     llist_splice_head(&section->qualifiers, qualifiers_list);
   }
-  section->has_type_qualifiers = has_type_qualifiers;
+  section->type_qualifiers_mask = type_qualifiers_mask;
 
   *rv = section;
-}
-
-size_t pattern_section_cat(
-    char * restrict dst
-  , size_t sz
-  , const bacon_value * restrict vars
-  , const struct pattern_section * restrict section
-)
-{
-  const pattern_segments *segs;
-  size_t z;
-
-  z = 0;
-  llist_foreach(&section->qualifiers, segs, lln) {
-    z += pattern_segments_cat(dst + z, sz - z, vars, segs);
-  }
-
-  return z;
 }
 
 void pattern_section_say(const pattern_section * restrict n, bool first, narrator * restrict N)
@@ -159,13 +156,21 @@ void pattern_section_say(const pattern_section * restrict n, bool first, narrato
   bool qualnot = !llist_empty(&n->qualifiers) && llist_first(&n->qualifiers, pattern_segments, lln) ->qualifier_type == PATTERN_QUALIFIER_TYPE_NOT;
   bool only = false;
 
-  if(n->nodeset == PATTERN_NODESET_ANCHOR)
+  if(n->nodeset == PATTERN_NODESET_ANCHOR_REL)
   {
     xsays("$^A");
   }
-  else if(n->nodeset == PATTERN_NODESET_MODULE)
+  else if(n->nodeset == PATTERN_NODESET_BUILD_REL)
   {
     xsays("$^D");
+  }
+  else if(n->nodeset == PATTERN_NODESET_ANCHOR)
+  {
+    xsays("$bm_anchor");
+  }
+  else if(n->nodeset == PATTERN_NODESET_BUILD)
+  {
+    xsays("$bm_build");
   }
   else if(n->nodeset == PATTERN_NODESET_SELF)
   {
@@ -181,7 +186,18 @@ void pattern_section_say(const pattern_section * restrict n, bool first, narrato
   }
   else if(n->nodeset == PATTERN_NODESET_ROOT)
   {
-
+  }
+  else if(n->nodeset == PATTERN_NODESET_BASEDIR)
+  {
+    xsays("$bm_basedir");
+  }
+  else if(n->nodeset == PATTERN_NODESET_HOMEDIR)
+  {
+    xsays("$bm_homedir");
+  }
+  else if(n->nodeset == PATTERN_NODESET_IPCDIR)
+  {
+    xsays("$bm_ipcdir");
   }
   else if(n->nodeset)
   {
@@ -189,10 +205,6 @@ void pattern_section_say(const pattern_section * restrict n, bool first, narrato
   }
   else if(n->graph == PATTERN_GRAPH_FS && n->axis == PATTERN_AXIS_DOWN)
   {
-    if(!first) {
-      xsayc('/');
-    }
-
     if(llist_empty(&n->qualifiers) || qualnot)
     {
       xsays("*");
@@ -204,10 +216,6 @@ void pattern_section_say(const pattern_section * restrict n, bool first, narrato
   }
   else if(n->graph == PATTERN_GRAPH_DIRS && n->axis == PATTERN_AXIS_SELF_OR_BELOW)
   {
-    if(!first) {
-      xsayc('/');
-    }
-
     xsays("**");
     only = false;
   }
@@ -232,4 +240,111 @@ void pattern_section_say(const pattern_section * restrict n, bool first, narrato
   if(!llist_empty(&n->qualifiers)) {
     pattern_segments_list_say(&n->qualifiers, only, N);
   }
+}
+
+size_t pattern_section_cat(void * restrict dst, size_t sz, const struct pattern_section *n, bool first)
+{
+  bool qualnot;
+  bool only = 0;
+  size_t z;
+
+  qualnot = !llist_empty(&n->qualifiers) && llist_first(&n->qualifiers, pattern_segments, lln) ->qualifier_type == PATTERN_QUALIFIER_TYPE_NOT;
+  z = 0;
+
+  if(n->nodeset == PATTERN_NODESET_ANCHOR_REL)
+  {
+    z += zcats(dst + z, sz - z, "$^A");
+  }
+  else if(n->nodeset == PATTERN_NODESET_BUILD_REL)
+  {
+    z += zcats(dst + z, sz - z, "$^D");
+  }
+  else if(n->nodeset == PATTERN_NODESET_ANCHOR)
+  {
+    z += zcats(dst + z, sz - z, "$bm_anchor");
+  }
+  else if(n->nodeset == PATTERN_NODESET_BUILD)
+  {
+    z += zcats(dst + z, sz - z, "$bm_build");
+  }
+  else if(n->nodeset == PATTERN_NODESET_SELF)
+  {
+    z += zcats(dst + z, sz - z, ".");
+  }
+  else if(n->graph == PATTERN_GRAPH_FS && n->axis == PATTERN_AXIS_UP)
+  {
+    z += zcats(dst + z, sz - z, "..");
+  }
+  else if(n->nodeset == PATTERN_NODESET_SHADOW)
+  {
+    z += zcats(dst + z, sz - z, "/");
+  }
+  else if(n->nodeset == PATTERN_NODESET_ROOT)
+  {
+
+  }
+  else if(n->nodeset)
+  {
+    RTA;
+  }
+  else if(n->graph == PATTERN_GRAPH_FS && n->axis == PATTERN_AXIS_DOWN)
+  {
+    //if(!first) {
+    //  xsayc('/');
+    //}
+
+    if(llist_empty(&n->qualifiers) || qualnot)
+    {
+      z += zcats(dst + z, sz - z, "*");
+    }
+    else
+    {
+      only = true;
+    }
+  }
+  else if(n->graph == PATTERN_GRAPH_DIRS && n->axis == PATTERN_AXIS_SELF_OR_BELOW)
+  {
+    z += zcats(dst + z, sz - z, "**");
+    only = false;
+  }
+  else if(n->graph && !n->axis)
+  {
+    z += zcats(dst + z, sz - z, "//");
+    z += zcats(dst + z, sz - z, attrs16_name_byvalue(pattern_graph_attrs, PATTERN_GRAPH_OPT & n->graph));
+  }
+  else if(!n->graph && n->axis)
+  {
+    z += zcats(dst + z, sz - z, "//");
+    z += zcats(dst + z, sz - z, attrs16_name_byvalue(pattern_axis_attrs, PATTERN_AXIS_OPT & n->axis));
+  }
+  else
+  {
+    z += zcats(dst + z, sz - z, "//");
+    z += zcats(dst + z, sz - z, attrs16_name_byvalue(pattern_graph_attrs, PATTERN_GRAPH_OPT & n->graph));
+    z += zcatc(dst + z, sz - z, ':');
+    z += zcats(dst + z, sz - z, attrs16_name_byvalue(pattern_axis_attrs, PATTERN_AXIS_OPT & n->axis));
+  }
+
+  if(!llist_empty(&n->qualifiers)) {
+    z += pattern_segments_list_cat(dst + z, sz - z, NULL, &n->qualifiers, only);
+  }
+
+  return z;
+}
+
+bool pattern_section_evaluate_type_qualifiers(const pattern_section * restrict section, const moria_vertex * restrict v)
+{
+  pattern_segments *segments;
+
+  llist_foreach(&section->qualifiers, segments, lln) {
+    if(!segments->type_qualifiers_mask) {
+      continue;
+    }
+
+    if(!pattern_segments_evaluate_type_qualifiers(segments, v)) {
+      return false;
+    }
+  }
+
+  return true;
 }

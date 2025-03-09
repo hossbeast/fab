@@ -17,6 +17,7 @@
 #include "segments.h"
 #include "section.h"
 #include "segment.h"
+#include "qualifier.h"
 #include "module.h"
 #include "fsent.h"
 
@@ -44,26 +45,12 @@ void pattern_segments_list_say(const llist * segments_list, bool only, narrator 
   }
 }
 
-size_t pattern_segments_cat(
-    void * restrict dst
-  , size_t dst_size
-  , const bacon_value * restrict vars
-  , const pattern_segments * restrict segments
-)
-{
-  narrator_fixed fixed;
-
-  narrator_fixed_init(&fixed, dst, dst_size);
-  pattern_segments_say(segments, true, &fixed.base);
-
-  return fixed.l;
-}
-
 size_t pattern_segments_list_cat(
     void * restrict dst
   , size_t dst_size
   , const bacon_value * restrict vars
   , const llist * restrict segments
+  , bool only
 )
 {
   narrator_fixed fixed;
@@ -155,6 +142,7 @@ void pattern_segments_mk(
     pattern_segments ** restrict rv
   , const struct yyu_location * restrict loc
   , pattern_qualifier_type qualifier_type
+  , uint32_t type_qualifiers_mask
   , llist * restrict list
 )
 {
@@ -164,6 +152,7 @@ void pattern_segments_mk(
   memcpy(&segments->loc, loc, sizeof(segments->loc));
 
   segments->qualifier_type = qualifier_type;
+  segments->type_qualifiers_mask = type_qualifiers_mask;
   llist_init(&segments->list);
   llist_splice_head(&segments->list, list);
   llist_init(&segments->lln);
@@ -193,4 +182,55 @@ void pattern_segments_free(pattern_segments * restrict segments)
 
   pattern_segment_list_free(&segments->list);
   free(segments);
+}
+
+bool pattern_segments_evaluate_type_qualifiers(const pattern_segments * restrict segments, const moria_vertex * restrict v)
+{
+  bool match;
+  const pattern_group *group;
+  const pattern_qualifier *qualifier;
+  const pattern_segments *group_segments;
+
+  group = llist_first(&segments->list, typeof(*group), lln);
+  RUNTIME_ASSERT(group->type == PATTERN_GROUP);
+  RUNTIME_ASSERT(group->type_qualifiers_mask);
+
+  RUNTIME_ASSERT(llist_count(&group->segments) == 1);
+  group_segments = llist_first(&group->segments, typeof(*group_segments), lln);
+  RUNTIME_ASSERT(group_segments->qualifier_type == PATTERN_QUALIFIER_TYPE_OR);
+
+  /* evaluate each qualifier in the group */
+  match = false;
+  llist_foreach(&group_segments->list, qualifier, lln) {
+    RUNTIME_ASSERT(qualifier->type == PATTERN_QUALIFIER);
+    match |= pattern_qualifier_evaluate(qualifier->qualifier_type, v);
+  }
+
+  /* overall match */
+  if(segments->qualifier_type == PATTERN_QUALIFIER_TYPE_AND && !match) {
+    return false;
+  }
+  if(segments->qualifier_type == PATTERN_QUALIFIER_TYPE_NOT && match) {
+    return false;
+  }
+
+  return true;
+}
+
+size_t pattern_segments_cat(
+    void * restrict dst
+  , size_t sz
+  , const bacon_value * restrict vars
+  , const struct pattern_segments * restrict segments
+)
+{
+  size_t z;
+  pattern_segment *seg;
+
+  z = 0;
+  llist_foreach(&segments->list, seg, lln) {
+    z += seg->vtab->cat(dst + z, sz - z, vars, seg);
+  }
+
+  return z;
 }

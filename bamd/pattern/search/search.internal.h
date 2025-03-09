@@ -10,8 +10,8 @@
 
 struct chain;
 struct fsent;
-struct module;
 struct pattern_section;
+struct bacon_value;
 struct hashtable;
 
 struct rule;
@@ -58,9 +58,12 @@ typedef struct pattern_search_context {
   } *traversal;
 
   // input context
-  const struct module * restrict mod;
+  const struct module *mod;
+  const struct bacon_value *vars;
   void (*dirnode_visit)(void *ctx, struct fsent *dirnode);
   void *dirnode_visit_ctx;
+  void (*hit_visit)(void *ctx, const struct pattern_search_hit *hit);
+  void *hit_ctx;
 
   // state
   const struct fsent *node;
@@ -68,15 +71,9 @@ typedef struct pattern_search_context {
   pattern_search_group groups[16];
   uint16_t group_max;
 
-  // output context
-  struct hashtable *matches;  // struct pattern_search
+  const struct module *build_mod;
+  const struct module *anchor_mod;
 } pattern_search_context;
-
-typedef struct pattern_search_node {
-  struct fsent * node;
-  pattern_search_group groups[16];
-  uint16_t group_max;
-} pattern_search_node;
 
 void pattern_section_search(
     struct pattern_search_context * restrict ctx
