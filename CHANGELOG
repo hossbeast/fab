@@ -1,3 +1,63 @@
+v0.8.3 - June 2026
+
+symlinks
+ * first-class support for symlinks in fstree and related subsystems
+
+ipc
+ * replace client/server pulse with ping / pong messages, more robust to peer timeout
+ * refactor into channel / pipe / ring which handle timeouts correctly
+ * adds per-pipe performance counters
+ * rcu rewrite for robustness, metrics
+
+identity
+ * adopts a standardized identity construction across vertex types
+ * uses bech32 encoded 12 byte truncated sha1 hash over canonical string
+
+namespaces
+ * new namespace system which replaces the fsindex
+ * used in module imports, bind rules, formula refs, lookup selector, plugin file / args / envs
+ * namespace resolutions take refs and invalidations propagate upwards via these refs
+
+disintegrate
+ * consolidated logic around vertex and edges cleanup into disintegrate operation
+ * improved visiblity and robustness
+ * centralized place for synchronization
+
+build
+ * build records which persist build metadata, available via //bm/build-records
+ * formula records which persist individual execution metadata, available via //bm/formula-records
+ * configurable retention for these records
+ * new build slot vars and build events
+
+client
+ * bam build is now the default command
+ * robust disambiguation of command names from file paths, moved to the lexer
+ * other args parsing improvements
+ * various new commands
+ * bam rma run command, run rma on demand and trace its execution
+ * bam blame command, show details of most recent exec that updated a node
+
+plugins
+ * detail nodes that expose trailing stdin, stdout, stderr, auxout, of the plugin process
+ * sysvars rendered to plugins env, like formulas
+
+modules
+ * removed the require keyword
+ * adds mak as an alternative text format for varfiles, filename var.mak
+ * managed keyword, to enable management of the module build dir. when this setting is active
+   non-primary files are actively unlinked from the build dir - it only contains artifacts.
+
+fstrees
+ * new unlink setting to control whether bam will perform unlink operations on paths in that fstree.
+   active pruning of managed module dirs requires unlink and mkdir be enabled.
+ * readlink changed from boolean to trinary of yes, no, required. if required and readlink fails,
+   reconciliation will also fail.
+
+bacon
+ * support for application defined bacon value types
+ * various parser improvements
+ * package and export the perl bacon bindings
+
 v0.8.2 - September 2024
 
 New plugins system, and the first two plugins. See the builtin-plugins directory.
