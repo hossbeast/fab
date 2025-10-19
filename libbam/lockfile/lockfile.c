@@ -17,6 +17,8 @@
 #include "common/fmt.h"
 #include "common/parseint.h"
 
+#include "zcat.h"
+
 /* ugo+rw world read/write */
 #define LOCKFILE_MODE 0666
 
@@ -24,8 +26,25 @@
 // static
 //
 
-int64_t lockfile_read(int fd);
-int64_t lockfile_read(int fd)
+static bool ishex(const char * restrict s, size_t len)
+{
+  int x;
+  for(x = 0; x < len; x++) {
+    if(s[x] >= 'a' && s[x] <= 'f') {
+      continue;
+    }
+    if(s[x] >= 'A' && s[x] <= 'F') {
+      continue;
+    }
+    if(s[x] >= '0' && s[x] <= '9') {
+      continue;
+    }
+    return false;
+  }
+  return true;
+}
+
+static int64_t lockfile_read(int fd)
 {
   char buf[64];
   size_t len;
@@ -96,22 +115,21 @@ void bamipc_lockfile_update(int fd)
   (void)!!ftruncate(fd, len);
 }
 
-DIR *bamipc_lockfile_scan_start(const char * restrict ipcdir_base)
-{
-  return xopendirat(AT_FDCWD, ipcdir_base);
-}
-
-void bamipc_lockfile_scan_stop(DIR * restrict dd)
-{
-  xclosedir(dd);
-}
-
-int64_t bamipc_lockfile_scan_scan(DIR * restrict dd, uint64_t * restrict hash, char *path, size_t path_sz, size_t *path_len)
+int64_t bamipc_lockfile_scan_scan(
+    DIR * restrict dd
+  , char * restrict bamd_id
+  , size_t bamd_id_size
+  , uint16_t * restrict bamd_id_lenp
+  , char *path
+  , size_t path_sz
+  , size_t *path_len
+)
 {
   struct dirent *entp;
   int dfd;
   int fd;
   int64_t pid;
+  ssize_t rv;
 
   dfd = dirfd(dd);
 
@@ -120,16 +138,17 @@ int64_t bamipc_lockfile_scan_scan(DIR * restrict dd, uint64_t * restrict hash, c
       continue;
     }
 
-    if(parseuint(entp->d_name, SCNx64, 0, UINT64_MAX, 16, 16, hash, 0) != 0) {
+    if(!ishex(entp->d_name, strlen(entp->d_name))) {
       continue; /* malformed directory name ? */
     }
 
-    *path_len = uxreadlinkatf(dfd, "%016"PRIx64"/basedir", path, path_sz, *hash);
-    if(*path_len < 0) {
+    *bamd_id_lenp = zcats(bamd_id, bamd_id_size, entp->d_name);
+    if((rv = uxreadlinkatf(dfd, "%.*s/basedir_real", path, path_sz, (int)*bamd_id_lenp, bamd_id)) < 0) {
       continue; /* no basedir ? */
     }
+    *path_len = rv;
 
-    if((fd = uxopenatf(O_RDONLY, dfd, "%016"PRIx64"/bamd/lock", *hash)) == -1) {
+    if((fd = uxopenatf(O_RDONLY, dfd, "%.*s/bamd/lock", (int)*bamd_id_lenp, bamd_id)) == -1) {
       continue;
     }
 
@@ -139,4 +158,14 @@ int64_t bamipc_lockfile_scan_scan(DIR * restrict dd, uint64_t * restrict hash, c
   }
 
   return 0;
+}
+
+DIR *bamipc_lockfile_scan_start(const char * restrict ipcdir_root)
+{
+  return xopendirat(AT_FDCWD, ipcdir_root);
+}
+
+void bamipc_lockfile_scan_stop(DIR * restrict dd)
+{
+  xclosedir(dd);
 }

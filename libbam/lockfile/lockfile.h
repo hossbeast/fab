@@ -30,7 +30,7 @@ void bamipc_lockfile_validate(int64_t * restrict pid, int * restrict fd, const c
 void bamipc_lockfile_update(int fd);
 
 /* scan the ipcdir for bamd lockfiles */
-struct __dirstream *bamipc_lockfile_scan_start(const char *ipcdir_base)
+struct __dirstream *bamipc_lockfile_scan_start(const char *ipcdir_root)
   __attribute__((nonnull));
 
 void bamipc_lockfile_scan_stop(struct __dirstream * restrict dd)
@@ -47,7 +47,9 @@ void bamipc_lockfile_scan_stop(struct __dirstream * restrict dd)
  */
 int64_t bamipc_lockfile_scan_scan(
     struct __dirstream * restrict dd
-  , uint64_t * restrict hash
+  , char * restrict id
+  , size_t id_size
+  , uint16_t * restrict id_lenp
   , char *basedir
   , size_t basedir_sz
   , size_t *basedir_len

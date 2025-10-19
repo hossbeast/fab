@@ -28,9 +28,11 @@
 #include "narrator/units.h"
 #include "lorien/mkdirp.h"
 #include "lorien/symlinkp.h"
+#include "lorien/path_normalize.h"
 #include "common/hash.h"
 #include "common/parseint.h"
 #include "common/attrs.h"
+#include "common/sha1.h"
 
 #include "client.h"
 #include "ipc.h"
@@ -43,11 +45,11 @@
 #include "zcat.h"
 
 #if CONFIG_DEVEL
-const char * g_bam_client_bamd_path;
-const char * g_bam_client_system_config_path;
-const char * g_bam_client_user_config_path;
-const char * g_bam_client_default_filesystem_invalidation;
-const char * g_bam_client_sweeper_period_nsec;
+const char *g_bam_client_bamd_path;
+const char *g_bam_client_system_config_path;
+const char *g_bam_client_user_config_path;
+const char *g_bam_client_default_filesystem_invalidation;
+const char *g_bam_client_sweeper_period_nsec;
 #endif
 
 /* ugo+rwx world read/write/execute */
@@ -55,12 +57,6 @@ const char * g_bam_client_sweeper_period_nsec;
 
 /* ugo+rw  world read/write */
 #define IPCDIR_MODE_DATA  0666
-
-//
-// static
-//
-
-int64_t lockfile_read(int fd);
 
 //
 // public
@@ -76,24 +72,47 @@ void bam_client_init(
 {
   char space[PATH_MAX];
   size_t len;
+  sha1_ctx sha;
+  uint8_t hash[20];
+  path_normalize_context ctx;
 
   memset(client, 0, sizeof(*client));
 
-  // canonicalized project path
-  client->basedir = xrealpathw(0, basedir, basedir_len);
+  /* canonical path to base */
+  xmalloc(&client->basedir_real, PATH_MAX);
+  client->basedir_real = xrealpathw(client->basedir_real, basedir, basedir_len);
+  client->basedir_real_len = strlen(client->basedir_real);
+
+  /* bamd id is computed over this canonical path */
+  sha1_init(&sha);
+  sha1_update(&sha, client->basedir_real, client->basedir_real_len);
+  sha1_final(hash, &sha);
+
+  /* bamd id encoded as first sixteen bytes as hexascii of this sha */
+  zcatf(client->bamd_id, sizeof(client->bamd_id)
+    , "%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx"
+      "%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx"
+    , hash[ 0], hash[ 1], hash[ 2], hash[ 3]
+    , hash[ 4], hash[ 5], hash[ 6], hash[ 7]
+    , hash[ 8], hash[ 9], hash[10], hash[11]
+    , hash[12], hash[13], hash[14], hash[15]
+  );
+
+  /* normalized path to base is used by bamd for constructing paths */
+  xmalloc(&client->basedir, PATH_MAX);
+  memset(&ctx, 0, sizeof(ctx));
+  ctx.base = basedir;
+  ctx.base_len = basedir_len;
+  path_normalize(&ctx, client->basedir, PATH_MAX, basedir, basedir_len);
   client->basedir_len = strlen(client->basedir);
 
-  // project path hash
-  client->hash = hash64(0, client->basedir, client->basedir_len);
-  snprintf(client->hash_str, sizeof(client->hash_str), "%016"PRIx64, client->hash);
-
   /* base ipc dir */
-  xmalloc(&client->ipcdir_base, ipcdir_len + 1);
-  memcpy(client->ipcdir_base, ipcdir, ipcdir_len);
-  client->ipcdir_base_len = ipcdir_len;
+  xmalloc(&client->ipcdir_root, ipcdir_len + 1);
+  memcpy(client->ipcdir_root, ipcdir, ipcdir_len);
+  client->ipcdir_root_len = ipcdir_len;
 
-  // ipc dir for the project
-  len = snprintf(space, sizeof(space), "%.*s/%s", (int)ipcdir_len, ipcdir, client->hash_str);
+  // ipc dir for the bamd instance
+  len = snprintf(space, sizeof(space), "%.*s/%s", (int)ipcdir_len, ipcdir, client->bamd_id);
   xmalloc(&client->ipcdir, len + 1);
   memcpy(client->ipcdir, space, len);
   client->ipcdir_len = len;
@@ -105,9 +124,10 @@ void bam_client_init(
 
 void bam_client_destroy(bam_client * restrict client)
 {
-  free(client->ipcdir_base);
+  free(client->ipcdir_root);
   free(client->ipcdir);
   free(client->basedir);
+  free(client->basedir_real);
   xshmdt(client->shm);
   xclose(client->lockfd);
 }
@@ -167,6 +187,8 @@ void bam_client_launch(bam_client * restrict client)
   /* prepare the ipc dir */
   uxunlinkf("%s/basedir", client->ipcdir);
   xsymlinkf("%s", "%s/basedir", client->basedir, client->ipcdir);
+  uxunlinkf("%s/basedir_real", client->ipcdir);
+  xsymlinkf("%s", "%s/basedir_real", client->basedir_real, client->ipcdir);
 
   // cleanup the directory
   uxunlinkf("%s/bamd/exit", client->ipcdir);
@@ -183,7 +205,7 @@ void bam_client_launch(bam_client * restrict client)
     // prepare the command
     i = 0;
     argv[i++] = "bamd";
-    argv[i++] = client->hash_str;
+    argv[i++] = client->bamd_id;
 
     /* its a hack, but this is a simple way to give bamd a visible place to record the base path */
     argv[i++] = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";

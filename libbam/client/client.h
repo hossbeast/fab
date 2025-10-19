@@ -22,14 +22,24 @@ struct __dirstream;
 
 typedef struct bam_client {
   /* configuration */
+  /* bamd uses basedir as the root of the base fstree */
   char *basedir;              /* /home/todd/bam-build */
   uint16_t basedir_len;
-  char *ipcdir_base;          /* /run/user/1000/bam */
-  uint16_t ipcdir_base_len;
+
+  /* basedir_real is not used directly by bamd */
+  char *basedir_real;         /* /local/home/todd/bam-build */
+  uint16_t basedir_real_len;
+
+  char *ipcdir_root;          /* /run/user/1000/bam */
+  uint16_t ipcdir_root_len;
   char *ipcdir;               /* /run/user/1000/bam/627e770a319a6cda */
   uint16_t ipcdir_len;
-  uint64_t hash;
-  char hash_str[16 + 1];      /* 627e770a319a6cda */
+
+  /* bamd id is the 16 byte truncated sha1 hash of the basedir realpath in hexascii
+   * it uniquely identifies the bamd instance started at a directory whose realpath
+   * resolves to basedir_real */
+  char bamd_id[64];           /* 5c45bec520503b0aa0b3d96d9aceea98 */
+  uint16_t bamd_id_len;
 
   /* runtime state */
   int64_t bamd_pid;           /* bamd process group id */
