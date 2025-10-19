@@ -63,8 +63,9 @@ uint32_t hash32(uint32_t h, const void * restrict v, size_t l)
   size_t x;
 
   s = v;
-  for(x = 0; x < l; x++)
+  for(x = 0; x < l; x++) {
     h = mix32(h, s[x]);
+  }
 
   return final32(h);
 }
@@ -73,8 +74,7 @@ uint64_t strhash64(uint64_t h, const char * restrict s)
 {
   int x;
 
-  for(x = 0; *s; x++)
-  {
+  for(x = 0; *s; x++) {
     h = mix64(h, *s);
     s++;
   }
