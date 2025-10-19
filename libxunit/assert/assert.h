@@ -38,19 +38,19 @@ extern uint32_t xunit_assertions_passed;
 extern uint32_t xunit_assertions_failed;
 
 // libxapi-provided assertion data types
-extern struct xunit_type * xunit_buffer;
-extern struct xunit_type * xunit_string;
-extern struct xunit_type * xunit_stringl;
-extern struct xunit_type * xunit_int;
-extern struct xunit_type * xunit_char;
-extern struct xunit_type * xunit_int32;
-extern struct xunit_type * xunit_uint32;
-extern struct xunit_type * xunit_int64;
-extern struct xunit_type * xunit_uint64;
-extern struct xunit_type * xunit_size_t;
-extern struct xunit_type * xunit_float;
-extern struct xunit_type * xunit_bool;
-extern struct xunit_type * xunit_pointer;
+extern struct xunit_type *xunit_buffer;
+extern struct xunit_type *xunit_string;
+extern struct xunit_type *xunit_stringl;
+extern struct xunit_type *xunit_int;
+extern struct xunit_type *xunit_char;
+extern struct xunit_type *xunit_int32;
+extern struct xunit_type *xunit_uint32;
+extern struct xunit_type *xunit_int64;
+extern struct xunit_type *xunit_uint64;
+extern struct xunit_type *xunit_size_t;
+extern struct xunit_type *xunit_float;
+extern struct xunit_type *xunit_bool;
+extern struct xunit_type *xunit_pointer;
 
 /// assert
 //
@@ -120,8 +120,8 @@ extern struct xunit_type * xunit_pointer;
 #define assert_ne_w(expected, expected_size, actual, actual_size) \
                                             _assertion(xunit_stringnl, XU_NE, QUOTE(actual), expected, expected_size, actual, actual_size)
 
-#define assert_ne_buf(expected, expected_size, actual, actual_size) \
-                                            _assertion(xunit_buffer, XU_NE, QUOTE(actual), expected, expected_size, actual, actual_size)
+#define assert_eq_buf(expected, expected_size, actual, actual_size) \
+                                            _assertion(xunit_buffer, XU_EQ, QUOTE(actual), expected, expected_size, actual, actual_size)
 #define assert_ne_buf(expected, expected_size, actual, actual_size) \
                                             _assertion(xunit_buffer, XU_NE, QUOTE(actual), expected, expected_size, actual, actual_size)
 

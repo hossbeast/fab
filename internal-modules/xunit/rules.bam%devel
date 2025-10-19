@@ -9,8 +9,3 @@ bind bam-build/asan         => [*] //artifacts
 rule $^D/**/test/(test_*).o -> $^D/$1.xunit : ./cc-test.bam%devel
 rule $^D/**/test/(test_*).xunit -> //$1 : ./run.bam%devel
 rule search //artifacts/*/$CONFIG_VARIANT/*.{a,o} [*] -> [*] search **/test/test_*.xunit 
-
-# omnibus test executable
-rule $^D/**/test/test_*.o [*] -> tests.xunit : ./cc-test.bam%devel
-rule $^D/tests.xunit -> //xunit : ./run.bam%devel
-search //artifacts/*/$CONFIG_VARIANT/*.{a,o} [*] -> [*] search tests.xunit

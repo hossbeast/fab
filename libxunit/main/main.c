@@ -70,7 +70,6 @@ static void xmain(int argc, char ** argv)
   pid_t pid = 0;
   int wstatus;
   xunit_unit *xunit;
-  size_t units;
   sigset_t sigs;
   struct sigaction act;
 
@@ -94,9 +93,7 @@ static void xmain(int argc, char ** argv)
   struct timespec suite_end;
   xclock_gettime(CLOCK_MONOTONIC_RAW, &suite_start);
 
-  units = 0;
   units_foreach(xunit) {
-    units++;
     struct timespec unit_start;
     struct timespec unit_end;
     xclock_gettime(CLOCK_MONOTONIC_RAW, &unit_start);
