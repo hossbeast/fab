@@ -226,8 +226,8 @@ int edge_cmp_key_down(void * _key, const rbnode * restrict bn)
 
   uint32_t identity;
   uint32_t hyper;
-  const edge_key * key = _key;
-  const moria_edge * b;
+  const edge_key *key = _key;
+  const moria_edge *b;
   const moria_vertex *A;
   const moria_vertex *B;
   int x;

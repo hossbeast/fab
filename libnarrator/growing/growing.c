@@ -158,11 +158,13 @@ void narrator_growing_claim_buffer(narrator_growing * const restrict n, void * b
   char * s = n->s;
   size_t a = n->a;
 
-  if(bufp)
+  if(bufp) {
     *(void**)bufp = s;
+  }
 
-  if(allocp)
+  if(allocp) {
     *allocp = a;
+  }
 
   n->s = 0;
   n->l = 0;
