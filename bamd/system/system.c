@@ -35,6 +35,13 @@
 #include "args.h"
 #include "formula.h"
 #include "rule.h"
+#include "namespace.h"
+#include "fsname.h"
+#include "bpe.h"
+#include "rma.h"
+#include "plugin.h"
+#include "fstree.h"
+#include "request_handler.h"
 
 #include "times.h"
 
@@ -197,6 +204,15 @@ void system_stats_build(bool reset, bacon_writer * restrict builder_writer)
   system_stats.rules = llist_count(&rule_list);
   system_stats.fsents = llist_count(&fsent_list);
   system_stats.formulas = llist_count(&formula_list);
+  system_stats.namespaces = llist_count(&namespace_list);
+  system_stats.fsnames = llist_count(&fsname_list);
+  system_stats.bpes = llist_count(&bpe_list);
+  system_stats.rmas = llist_count(&rma_list);
+  system_stats.plugins = llist_count(&plugin_list);
+  system_stats.fstrees = llist_count(&fstree_list);
+
+  /* there is always the root, and the shadow, fstree */
+  system_stats.fstrees += 2;
 
   stats_build(&system_stats.record, &descriptor_stats_system, builder_writer);
 }

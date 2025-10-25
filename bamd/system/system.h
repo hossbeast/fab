@@ -39,6 +39,7 @@ typedef union stats_system {
       uint8_t system_error;
       uint8_t autorun;
 
+      /* object counts */
       uint32_t modules;            /* modules */
       uint32_t rules;              /* rules */
       uint32_t fsents;             /* fsents */
@@ -46,6 +47,12 @@ typedef union stats_system {
       uint32_t varsets;            /* var.bam files */
       uint32_t configsets;         /* config.bam files */
       uint32_t formulas;           /* .bam formula files */
+      uint32_t namespaces;
+      uint32_t fsnames;
+      uint32_t bpes;
+      uint32_t rmas;
+      uint32_t plugins;
+      uint32_t fstrees;
 
       uint16_t system_state_bootstrap;              /* system-state set to bootstrap */
       uint16_t system_state_config_reconcile;       /* system-state set to config-reconcile */
