@@ -66,6 +66,15 @@ void shadow_graft_bind(
 )
   __attribute__((nonnull(1, 2, 3)));
 
+void shadow_graft_requires(
+    struct module * restrict mod
+  , struct fsent * restrict ref
+  , const char * restrict as
+  , uint16_t asl
+  , struct fsedge ** restrict ep
+)
+  __attribute__((nonnull(1, 2, 3)));
+
 void shadow_create(
     struct fsent * restrict parent
   , struct fsent ** restrict np

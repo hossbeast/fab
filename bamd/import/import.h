@@ -8,7 +8,7 @@
 #include "valyria/llist.h"
 
 struct narrator;
-struct pattern;
+struct lookup_pattern;
 struct module;
 struct rule_run_context;
 
@@ -36,14 +36,14 @@ typedef struct import {
   /* use cc */
   /* use fab/test as fabtest */
   /* require xunit */
-  struct pattern *lookup;
+  struct lookup_pattern *lookup;
   char *name;
   uint16_t name_len;
 } import;
 
 void import_uses_mk(
     import ** restrict importp
-  , struct pattern * restrict lookup
+  , struct lookup_pattern * restrict lookup
   , char * restrict name
   , uint16_t name_len
   , uint32_t attrs
@@ -59,8 +59,9 @@ void import_release(import * restrict)
 void import_say(const import * restrict r, struct narrator * restrict N)
   __attribute__((nonnull));
 
-void import_resolve_targets(import * restrict import, struct module * restrict mod, struct rule_run_context * restrict ctx)
-  __attribute__((nonnull));
-
-struct fsent *import_resolve_attachment(import * restrict import, struct module * restrict mod, struct rule_run_context * restrict ctx)
+struct fsent *import_resolve(
+    import * restrict import
+  , struct module * restrict mod
+  , struct rule_run_context * restrict ctx
+)
   __attribute__((nonnull));

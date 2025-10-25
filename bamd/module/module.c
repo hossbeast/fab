@@ -293,6 +293,30 @@ bool module_import_rules_file(
   return new;
 }
 
+/*
+ * Setup a requires binding between two modules A and B
+ */
+static void require_module(
+    module * restrict A
+  , fsent * mod_dir_n
+  , const char * restrict name
+  , uint16_t name_len
+)
+{
+  fsedge *ue;
+  module_edge *mme;
+  module *B;
+
+  B = mod_dir_n->mod;
+
+  // link @ //module/uses/$name
+  ue = 0;
+  shadow_graft_requires(A, B->dir_node, name, name_len, &ue);
+
+  module_edge_connect(A, &B->vertex, EDGE_REQUIRES, &mme);
+  mme->related = ue;
+}
+
 static bool import_process(
     module * restrict mod
   , import * restrict import
@@ -329,6 +353,9 @@ static bool import_process(
     switch(import->type) {
       case IMPORT_TYPE_USES:
         new |= module_import_rules_file(mod, target, &ctx->invalidation);
+        break;
+      case IMPORT_TYPE_REQUIRES:
+        require_module(mod, target, name, name_len);
         break;
       default:
         RTA;
