@@ -161,7 +161,6 @@
 
  /* keywords */
 <INITIAL>"use"                                          { PUSHSTATE(lookup); return LEX(USE); }
-<INITIAL>"require"                                      { PUSHSTATE(lookup); return LEX(REQUIRE); }
 <INITIAL>"anchor"                                       { PUSHSTATE(lookup); return LEX(ANCHOR); }
 <INITIAL>"varsets"                                      { PUSHSTATE(lookup); return LEX(VARSETS); }
 <INITIAL>"rulesets"                                     { PUSHSTATE(lookup); return LEX(RULESETS); }

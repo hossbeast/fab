@@ -51,8 +51,6 @@ typedef union stats_module {
     /* relation/entity counts */
     uint32_t rules;          /* number of rules in this file */
     uint32_t uses_down;      /* rulesets in effect */
-    uint32_t requires_up;
-    uint32_t requires_down;
     uint32_t modules_up;
     uint32_t modules_down;
   };

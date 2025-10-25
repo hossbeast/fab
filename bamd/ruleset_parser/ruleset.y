@@ -106,7 +106,6 @@
  NAME       "name"
  USE        "use"
  BIND       "bind"
- REQUIRE    "require"
  ANCHOR     "anchor"
  SEARCH     "search"
  GENERATE   "generate"
@@ -263,11 +262,7 @@ import
   {
     import_uses_mk(&$$, $2, 0, 0, 0);
   }
-  /* requires */
-  | REQUIRE LOOKUP_PATTERN
-  {
-    import_requires_mk(&$$, $2, 0, 0, 0);
-  }
+  ;
 
 bind
   /* bind target => attachment */

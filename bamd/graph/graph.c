@@ -215,7 +215,6 @@ static void edge_release(
   switch(edge_type_get(e)) {
     case EDGE_VARSET_MOD:
     case EDGE_RULESET_MOD:
-    case EDGE_REQUIRES:
       module_edge_disconnecting(containerof(e, module_edge, edge), edges, vertices, invalidation);
       break;
     case EDGE_FML_RMA:
@@ -263,7 +262,6 @@ static void edge_release(
       break;
     case EDGE_VARSET_MOD:
     case EDGE_RULESET_MOD:
-    case EDGE_REQUIRES:
       module_edge_release(containerof(e, module_edge, edge));
       break;
     case EDGE_FML_RMA:
@@ -314,7 +312,6 @@ void graph_disintegrate_bulk(entlist * restrict edges, entlist * restrict vertic
           break;
         case EDGE_VARSET_MOD:
         case EDGE_RULESET_MOD:
-        case EDGE_REQUIRES:
         case EDGE_RMA_MOD:
         case EDGE_RMA_RULESET:
           /* modules are deleted during system reconciliation */
@@ -348,7 +345,6 @@ void graph_disintegrate_bulk(entlist * restrict edges, entlist * restrict vertic
         case EDGE_DIR_MOD:
         case EDGE_VARSET_MOD:
         case EDGE_RULESET_MOD:
-        case EDGE_REQUIRES:
         case EDGE_FML_RMA:
         case EDGE_RULE_RMA:
         case EDGE_RMA_BPE:
@@ -403,7 +399,6 @@ void graph_disintegrate_bulk(entlist * restrict edges, entlist * restrict vertic
           case EDGE_DIR_MOD:
           case EDGE_VARSET_MOD:
           case EDGE_RULESET_MOD:
-          case EDGE_REQUIRES:
             entlist_push(edges, e);
             any = true;
           default:

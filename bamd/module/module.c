@@ -293,30 +293,6 @@ bool module_import_rules_file(
   return new;
 }
 
-/*
- * Setup a requires binding between two modules A and B
- */
-static void require_module(
-    module * restrict A
-  , fsent * mod_dir_n
-  , const char * restrict name
-  , uint16_t name_len
-)
-{
-  fsedge *ue;
-  module_edge *mme;
-  module *B;
-
-  B = mod_dir_n->mod;
-
-  // link @ //module/uses/$name
-  ue = 0;
-  shadow_graft_requires(A, B->dir_node, name, name_len, &ue);
-
-  module_edge_connect(A, &B->vertex, EDGE_REQUIRES, &mme);
-  mme->related = ue;
-}
-
 static bool import_process(
     module * restrict mod
   , import * restrict import
@@ -353,9 +329,6 @@ static bool import_process(
     switch(import->type) {
       case IMPORT_TYPE_USES:
         new |= module_import_rules_file(mod, target, &ctx->invalidation);
-        break;
-      case IMPORT_TYPE_REQUIRES:
-        require_module(mod, target, name, name_len);
         break;
       default:
         RTA;
@@ -745,7 +718,6 @@ void module_prune(module * restrict mod, graph_invalidation_context * restrict i
   moria_foreach_edge_down(&st, &mod->vertex, edge) {
     switch(edge_type_get(edge)) {
       case EDGE_RULESET_MOD:
-      case EDGE_REQUIRES:
       case EDGE_VARSET_MOD:
         break;
       default:
@@ -789,7 +761,6 @@ void module_disconnect_rules(module * restrict mod, graph_invalidation_context *
         entlist_push(&list, rma);
         break;
       case EDGE_RULESET_MOD:
-      case EDGE_REQUIRES:
       case EDGE_VARSET_MOD:
       case EDGE_DIR_MOD:
       case EDGE_SPECIAL:
@@ -813,7 +784,7 @@ void module_excise(module * restrict mod, graph_invalidation_context * restrict 
   moria_edge *edge;
   moria_foreach_state st;
 
-  /* visit USES, REQUIRES, and IMPORTS, and SPECIAL edges */
+  /* visit USES and IMPORTS, and SPECIAL edges */
   entlist_init(&edges);
   moria_foreach_edge_up(&st, &mod->vertex, edge) {
     if(!(edge->attrs & EDGE_MODULES)) {
@@ -1087,33 +1058,6 @@ static void module_stats_collate(module *mod)
     , &count
   );
   stats->uses_down = count;
-
-  /* requires */
-  count = 0;
-  moria_traverse_vertex_edges(&g_graph, &mod->vertex, moria_edge_count, 0
-    , (moria_traversal_criteria[]) {{
-          edge_travel : EDGE_REQUIRES
-        , edge_visit : EDGE_REQUIRES
-        , min_depth : 0
-        , max_depth : 0
-      }}
-    , MORIA_TRAVERSE_UP | MORIA_TRAVERSE_PRE | MORIA_TRAVERSE_DEPTH
-    , &count
-  );
-  stats->requires_up = count;
-
-  count = 0;
-  moria_traverse_vertex_edges(&g_graph, &mod->vertex, moria_edge_count, 0
-    , (moria_traversal_criteria[]) {{
-          edge_travel : EDGE_REQUIRES
-        , edge_visit : EDGE_REQUIRES
-        , min_depth : 0
-        , max_depth : 0
-      }}
-    , MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE | MORIA_TRAVERSE_DEPTH
-    , &count
-  );
-  stats->requires_down = count;
 
   /* modules_up */
   count = 0;

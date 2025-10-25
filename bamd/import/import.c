@@ -86,17 +86,6 @@ void import_uses_mk(
   import_alloc(importp, lookup, name, name_len, attrs | IMPORT_TYPE_USES);
 }
 
-void import_requires_mk(
-    import ** restrict importp
-  , pattern * lookup
-  , char * restrict name
-  , uint16_t name_len
-  , uint32_t attrs
-)
-{
-  import_alloc(importp, lookup, name, name_len, attrs | IMPORT_TYPE_REQUIRES);
-}
-
 void import_dispose(import * restrict import)
 {
   free(import->name);
@@ -157,9 +146,6 @@ void import_resolve_targets(import * restrict import, module * restrict mod, rul
   switch(import->type) {
     case IMPORT_TYPE_USES:
       target_file_name = fsent_name_rules;
-      break;
-    case IMPORT_TYPE_REQUIRES:
-      target_file_name = fsent_name_module;
       break;
     default:
       RTA;

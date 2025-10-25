@@ -29,7 +29,6 @@ extern llist module_edge_list; // active list
 /*
  * edge connecting two module vertices
  *  EDGE_RULES_MOD
- *  EDGE_REQUIRES
  *
  * edge connecting a module vertex A -> a dirnode vertex B
  *  EDGE_IMPORTS

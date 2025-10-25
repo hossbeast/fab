@@ -197,17 +197,6 @@ void shadow_cleanup()
 {
 }
 
-void shadow_graft_requires(
-    module * restrict mod
-  , fsent * restrict ref
-  , const char * restrict as
-  , uint16_t asl
-  , fsedge ** restrict nep
-)
-{
-  shadow_link(mod->shadow_requires, as, asl, &ref->vertex, nep);
-}
-
 void shadow_graft_bind(
     module * restrict mod
   , fsent * restrict ref
