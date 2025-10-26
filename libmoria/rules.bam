@@ -10,4 +10,4 @@ rule **+(/) => [*] //module/include
 rule libmoria.a -> //targets
 
 # pull in object files in the module, ignoring ./test
-rule { search : module } **~test/*.o -> libmoria.a
+rule $^D/**~test/*.o -> libmoria.a

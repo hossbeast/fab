@@ -7,7 +7,7 @@ bind descriptor => //descriptor
 rule **+(/) => [*] //module/include
 
 # pull in object files in the module, except those under integ
-rule { search : module } **~test/*.o -> libbam.a
+rule $^D/**~test/*.o -> libbam.a
 
 # default build targets
 rule libbam.a -> //targets
@@ -16,8 +16,8 @@ rule libbam.a -> //targets
 rule //artifacts/*/$CONFIG_VARIANT/*.a -> libbam.a
 
 # descriptor .c and .h files are generated
-rule { search : anchor } build_slot/build_slot.h            -> [*] bam/build_slot.desc.[ch] : //descriptor/descriptor.bam
-rule { search : anchor } config_tell/config_tell.h          -> [*] bam/config_tell.desc.[ch] : //descriptor/descriptor.bam
-rule { search : anchor } envs_tell/envs_tell.h              -> [*] bam/envs_tell.desc.[ch] : //descriptor/descriptor.bam
-rule { search : anchor } list/list.h                        -> [*] bam/list.desc.[ch] : //descriptor/descriptor.bam
-rule { search : anchor } vars_tell/vars_tell.h              -> [*] bam/vars_tell.desc.[ch] : //descriptor/descriptor.bam
+rule $^A/build_slot/build_slot.h            -> [*] bam/build_slot.desc.[ch] : //descriptor/descriptor.bam
+rule $^A/config_tell/config_tell.h          -> [*] bam/config_tell.desc.[ch] : //descriptor/descriptor.bam
+rule $^A/envs_tell/envs_tell.h              -> [*] bam/envs_tell.desc.[ch] : //descriptor/descriptor.bam
+rule $^A/list/list.h                        -> [*] bam/list.desc.[ch] : //descriptor/descriptor.bam
+rule $^A/vars_tell/vars_tell.h              -> [*] bam/vars_tell.desc.[ch] : //descriptor/descriptor.bam

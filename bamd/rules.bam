@@ -4,6 +4,7 @@
 use git
 use flex
 use bison
+use descriptor
 
 bind bam-build/asan   => //asan-bits
 bind executable       => //executable
@@ -16,32 +17,38 @@ rule bamd -> //targets
 rule **+(/) => [*] //module/include
 
 # invoke the compiler to build the executable
-rule { search : module } **~test/(?:*~xunit-)*.o [*] -> bamd : //executable/cc.bam
+rule $^D/**~test/(?:*~xunit-)*.o [*] -> bamd : //executable/cc.bam
 
 # dependencies
-rule { search : module } //artifacts/*/$CONFIG_VARIANT/(*~libxunit).a -> bamd
+rule //artifacts/*/$CONFIG_VARIANT/(*~libxunit).a -> bamd
 
 rule git-state.h -> args/args.o
 
 # descriptors
-rule { search : anchor } build/build.h -> [*] build/build_stats.desc.[ch] : //descriptor/descriptor.bam
-rule { search : anchor } buildplan/buildplan.h -> [*] buildplan/buildplan_stats.desc.[ch] : //descriptor/descriptor.bam
-rule { search : anchor } buildplan_entity/buildplan_entity.h -> [*] buildplan_entity/stats_bpe.desc.[ch] : //descriptor/descriptor.bam
-rule { search : anchor } configset/configset.h -> [*] configset/stats_configset.desc.[ch] : //descriptor/descriptor.bam
-rule { search : anchor } filesystem/filesystem.h -> [*] filesystem/filesystem_stats.desc.[ch] : //descriptor/descriptor.bam
-rule { search : anchor } formula/formula.h -> [*] formula/stats_formula.desc.[ch] : //descriptor/descriptor.bam
-rule { search : anchor } fstree/fstree.h -> [*] fstree/stats_fstree.desc.[ch] : //descriptor/descriptor.bam
-rule { search : anchor } fsindex/fsindex.h -> [*] fsindex/fsindex_stats.desc.[ch] : //descriptor/descriptor.bam
-rule { search : anchor } module/module.h -> [*] module/stats_module.desc.[ch] : //descriptor/descriptor.bam
-rule { search : anchor } notify/notify.h -> [*] notify/notify_stats.desc.[ch] : //descriptor/descriptor.bam
-rule { search : anchor } plugin/plugin.h -> [*] plugin/stats_plugin.desc.[ch] : //descriptor/descriptor.bam
-rule { search : anchor } rule/rule.h -> [*] rule/stats_rule.desc.[ch] : //descriptor/descriptor.bam
-rule { search : anchor } rule_module_association/rule_module_association.h -> [*] rule_module_association/stats_rma.desc.[ch] : //descriptor/descriptor.bam
-rule { search : anchor } ruleset/ruleset.h -> [*] ruleset/stats_ruleset.desc.[ch] : //descriptor/descriptor.bam
-rule { search : anchor } stats/stats_fsent_dir.h -> [*] build/stats_fsent_dir.desc.[ch] : //descriptor/descriptor.bam
-rule { search : anchor } system/system.h -> [*] system/system_stats.desc.[ch] : //descriptor/descriptor.bam
-rule { search : anchor } varset/varset.h -> [*] varset/stats_varset.desc.[ch] : //descriptor/descriptor.bam
-rule { search : anchor } vertex/vertex.h -> [*] vertex/stats_vertex.desc.[ch] : //descriptor/descriptor.bam
+rule $^A/build/build.h -> [*] build/build_stats.desc.[ch] : //descriptor/descriptor.bam
+rule $^A/buildplan/buildplan.h -> [*] buildplan/buildplan_stats.desc.[ch] : //descriptor/descriptor.bam
+rule $^A/buildplan_entity/buildplan_entity.h -> [*] buildplan_entity/stats_bpe.desc.[ch] : //descriptor/descriptor.bam
+rule $^A/configset/configset.h -> [*] configset/stats_configset.desc.[ch] : //descriptor/descriptor.bam
+rule $^A/filesystem/filesystem.h -> [*] filesystem/filesystem_stats.desc.[ch] : //descriptor/descriptor.bam
+rule $^A/config_system/config_system.h -> [*] config_system/config_system_stats.desc.[ch] : //descriptor/descriptor.bam
+rule $^A/rcu/rcu.h -> [*] rcu/rcu_stats.desc.[ch] : //descriptor/descriptor.bam
+rule $^A/formula/formula.h -> [*] formula/stats_formula.desc.[ch] : //descriptor/descriptor.bam
+rule $^A/fstree/fstree.h -> [*] fstree/stats_fstree.desc.[ch] : //descriptor/descriptor.bam
+rule $^A/client/client.h -> [*] client/stats_client.desc.[ch] : //descriptor/descriptor.bam
+rule $^A/fsname/fsname.h -> [*] fsname/fsname_stats.desc.[ch] : //descriptor/descriptor.bam
+rule $^A/namespace/namespace.h -> [*] namespace/namespace_stats.desc.[ch] : //descriptor/descriptor.bam
+rule $^A/module/module.h -> [*] module/stats_module.desc.[ch] : //descriptor/descriptor.bam
+rule $^A/notify/notify.h -> [*] notify/notify_stats.desc.[ch] : //descriptor/descriptor.bam
+rule $^A/plugin/plugin.h -> [*] plugin/stats_plugin.desc.[ch] : //descriptor/descriptor.bam
+rule $^A/rule/rule.h -> [*] rule/stats_rule.desc.[ch] : //descriptor/descriptor.bam
+rule $^A/rule_module_association/rule_module_association.h -> [*] rule_module_association/stats_rma.desc.[ch] : //descriptor/descriptor.bam
+rule $^A/ruleset/ruleset.h -> [*] ruleset/stats_ruleset.desc.[ch] : //descriptor/descriptor.bam
+rule $^A/stats/stats_fsent_dir.h -> [*] fsent/stats_fsent_dir.desc.[ch] : //descriptor/descriptor.bam
+rule $^A/fsindex/fsindex.h -> [*] fsindex/stats_fsindex.desc.[ch] : //descriptor/descriptor.bam
+rule $^A/fsent/fsent_symlink.h -> [*] fsent/stats_fsent_symlink.desc.[ch] : //descriptor/descriptor.bam
+rule $^A/system/system.h -> [*] system/system_stats.desc.[ch] : //descriptor/descriptor.bam
+rule $^A/varset/varset.h -> [*] varset/stats_varset.desc.[ch] : //descriptor/descriptor.bam
+rule $^A/vertex/vertex.h -> [*] vertex/stats_vertex.desc.[ch] : //descriptor/descriptor.bam
 
 {
   if ($CONFIG_DEVEL)
@@ -49,7 +56,7 @@ rule { search : anchor } vertex/vertex.h -> [*] vertex/stats_vertex.desc.[ch] : 
   rule //asan-bits/devel/asan.o -> bamd
 
   # all the code into the blob
-  rule { search : module } **~test/(?:*~main~git-state).o [*] -> test/blob.a : ./cc-blob.bam
+  rule $^D/**~test/(?:*~main~git-state).o [*] -> test/blob.a : ./cc-blob.bam
 
   # including test utilities
   rule test/node_operations_test.o -> test/blob.a
@@ -57,8 +64,8 @@ rule { search : anchor } vertex/vertex.h -> [*] vertex/stats_vertex.desc.[ch] : 
 
   # add blob to test binaries
   rule **/test/test_*.xunit <- test/blob.a
-  rule { search : module } search //artifacts/*/$CONFIG_VARIANT/*.{a,o} [*] -> [*] search **/test/test_*.xunit
+  rule search //artifacts/*/$CONFIG_VARIANT/*.{a,o} [*] -> [*] search **/test/test_*.xunit
 
   rule tests.xunit <- test/blob.a
-  rule { search : module } search //artifacts/*/$CONFIG_VARIANT/*.{a,o} [*] -> [*] search tests.xunit
+  rule search //artifacts/*/$CONFIG_VARIANT/*.{a,o} [*] -> [*] search tests.xunit
 }

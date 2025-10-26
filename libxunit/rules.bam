@@ -4,10 +4,10 @@
 use library/static
 use git
 
-rule { id : beef } **+(/) => [*] //module/include
+rule **+(/) => [*] //module/include
 
 # pull in object files in the module
-rule { search : module } **/*.o -> libxunit.a
+rule $^D/**/*.o -> libxunit.a
 
 # default build targets
 rule libxunit.a -> //targets

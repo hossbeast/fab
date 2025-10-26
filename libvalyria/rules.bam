@@ -8,4 +8,4 @@ rule *+(/)  => [*] //module/include
 rule libvalyria.a -> //targets
 
 # build the library
-rule { search : module } **~test/*.o -> libvalyria.a
+rule $^D/*~test/*.o -> libvalyria.a

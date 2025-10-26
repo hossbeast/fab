@@ -4,7 +4,7 @@
 rule **+(/) => [*] //module/include
 
 # pull in object files in the module, except those under integ
-rule { search : module } *~integ/**/*.o -> libyyutil.a
+rule $^D/*~integ/**/*.o -> libyyutil.a
 
 # default build targets
 rule libyyutil.a -> //targets
