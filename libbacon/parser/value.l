@@ -97,7 +97,7 @@
 <INITIAL>[+-]?[0-9]+[.][0-9]+                           { return LEXF(); }
 
  /* strings */
-<INITIAL>[-a-zA-Z0-9_./+=]+                             { return LEX(STR); }
+<INITIAL>[-_a-zA-Z0-9./+=%|()@]+                        { return LEX(STR); }
 
  /* quoted strings */
 <INITIAL>["]                                            { PUSHSTATE(quoted); return LEX(yytext[0]); }

@@ -2,8 +2,7 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 %code requires {
-#include <stdio.h>
-
+  #include <stdio.h>
   #include <stdint.h>
   #include <string.h>
 
@@ -74,7 +73,7 @@
 %token EQ                       326 "=="
 
 /* nonterminals */
-%type <val> quote_words quote_word quoted_string unquoted_string
+%type <val> word words quoted_string unquoted_string
 %type <val> value
 %type <val> aggregate
 %type <val> list items
@@ -180,23 +179,14 @@ string
 
 /* must be a single token because strings can appear repeatedly together */
 unquoted_string
-  : word
+  : literal
   {
     bacon_string_mkw(PARSER, &@$, 0, &$$, @1.s, @1.l);
   }
   ;
 
-word
-  : STR
-  | '/'
-  | '-'
-  | '+'
-  | '='
-  | ','
-  ;
-
 quoted_string
-  : '"' quote_words '"'
+  : '"' words '"'
   {
     $$ = $2;
   }
@@ -206,17 +196,17 @@ quoted_string
   }
   ;
 
-quote_words
-  : quote_words quote_word
+words
+  : words word
   {
     bacon_string_mkv(PARSER, &@$, $1, &$$, $2);
     bacon_value_free(PARSER, $2);
   }
-  | quote_word
+  | word
   ;
 
-quote_word
-  : STR
+word
+  : literal
   {
     bacon_string_mkw(PARSER, &@$, 0, &$$, @1.s, @1.l);
   }
@@ -228,6 +218,17 @@ quote_word
   {
     bacon_string_mkc(PARSER, &@$, 0, &$$, $1);
   }
+  ;
+
+literal
+  : STR
+  | '/'
+  | '-'
+  | '+'
+  | '='
+  | ','
+  | '%'
+  | '|'
   ;
 
 boolean

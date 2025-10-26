@@ -39,7 +39,7 @@ static bool should_quote(const char * const restrict s, size_t len)
       continue;
     if(s[x] == '.' || s[x] == '/' || s[x] == '_')
       continue;
-    if(s[x] == '+' || s[x] == '-' || s[x] == '=')
+    if(s[x] == '+' || s[x] == '-' || s[x] == '=' || s[x] == '%' || s[x] == '|')
       continue;
     if(x == 0)
       break;

@@ -2,8 +2,7 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 %code requires {
-#include <stdio.h>
-
+  #include <stdio.h>
   #include <stdint.h>
   #include <string.h>
 
@@ -72,7 +71,7 @@
 %token EQ                       326 "=="
 
 /* nonterminals */
-%type <val> words quoted_string unquoted_string
+%type <val> word words quoted_string unquoted_string
 %type <val> value
 %type <val> aggregate
 %type <val> list items
@@ -176,8 +175,9 @@ string
   | quoted_string
   ;
 
+/* must be a single token because strings can appear repeatedly together */
 unquoted_string
-  : word-token
+  : literal
   {
     bacon_string_mkw(PARSER, &@$, 0, &$$, @1.s, @1.l);
   }
@@ -195,25 +195,38 @@ quoted_string
   ;
 
 words
-  : words word-token
+  : words word
   {
-    bacon_string_mkw(PARSER, &@$, $1, &$$, @2.s, @2.l);
+    bacon_string_mkv(PARSER, &@$, $1, &$$, $2);
+    bacon_value_free(PARSER, $2);
   }
-  | word-token
+  | word
+  ;
+
+word
+  : literal
   {
     bacon_string_mkw(PARSER, &@$, 0, &$$, @1.s, @1.l);
   }
+  | CREF
+  {
+    bacon_string_mkc(PARSER, &@$, 0, &$$, $1);
+  }
+  | HREF
+  {
+    bacon_string_mkc(PARSER, &@$, 0, &$$, $1);
+  }
   ;
 
-word-token
+literal
   : STR
-  | CREF
-  | HREF
   | '/'
   | '-'
   | '+'
   | '='
   | ','
+  | '%'
+  | '|'
   ;
 
 boolean
