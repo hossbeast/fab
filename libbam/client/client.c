@@ -199,6 +199,9 @@ void bam_client_launch(bam_client * restrict client)
   uxunlinkf("%s/bamd/core", client->ipcdir);
   uxunlinkf("%s/bamd/stdout", client->ipcdir);
   uxunlinkf("%s/bamd/stderr", client->ipcdir);
+#if CONFIG_DEVEL
+  uxunlinkf("%s/bamd/objects", client->ipcdir);
+#endif
 
   // block all signals
   sigfillset(&sigs);
