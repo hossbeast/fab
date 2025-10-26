@@ -9,10 +9,10 @@ bind executable             => //executable
 rule **+(/) => [*] //module/include
 
 # invoke the compiler to build the executable
-rule { search : module } **/*.o [*] -> bacon : //executable/cc.bam
+rule $^D/**/*.o [*] -> bacon : //executable/cc.bam
 
 # default targets
-rule { search : module } bacon -> //targets
+rule $^D/bacon -> //targets
 
 # dependencies
 rule //artifacts/*/$CONFIG_VARIANT/*.a -> bacon

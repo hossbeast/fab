@@ -153,7 +153,7 @@ static void * notify_thread_jump(void * arg)
   tid = g_params.thread_notify = gettid();
   errnop = &errno;
 
-  notify_thread(arg);
+  notify_thread();
 
   atomic_fetch_dec(&g_params.thread_count);
   syscall(SYS_tgkill, g_params.pid, g_params.thread_monitor, SIGUSR1);

@@ -4,40 +4,47 @@
 # Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com>
 #
 
-#
-# installs binaries/libraries built by bam-v0.8.1
-#
-
 usage() {
-  echo "usage: $0 /path/to/build-dir" 1>&2
-  exit 1
+  echo "usage: $0"
 }
 
-if [ $# -ne 1 ]; then
+if [ $# -ne 0 ]; then
   usage
+  exit 1
 fi
 
 SRCDIR=$(dirname $(realpath $0))
-BUILDDIR=$1
-if [ ! -d $BUILDDIR ]; then
-  usage
-fi
+BUILDDIR=$(realpath .)
 
 echo SRCDIR   $SRCDIR
 echo BUILDDIR $BUILDDIR
 
+# temporary guardrails
+if [ $SRCDIR != "/home/todd/bam" ]; then
+  echo "unexpected SRCDIR $SRCDIR" 1>&2
+  exit 1
+fi
+if [ $BUILDDIR != "/home/todd/bam-build" ]; then
+  echo "unexpected BUILDDIR $BUILDDIR" 1>&2
+  exit 1
+fi
+
 # cleanup previous builds
 (
-  find . $BUILDDIR -type f \(    \
+  find $BUILDDIR -type f \(      \
        -name '*.o'               \
+    -o -name '*.a'               \
     -o -name 'git-state.[ch]'    \
     -o -name '*.tokens.[ch]'     \
     -o -name '*.states.[ch]'     \
     -o -name '*.tab.[ch]'        \
     -o -name '*.lex.[ch]'        \
+    -o -name '*.descriptor.[ch]' \
     -o -name '*.desc.[ch]'       \
+    -o -name '*.unit'            \
+    -o -name '*.xunit'           \
   \) -print
-) | xargs rm
+) | xargs rm -f
 
 set +e
 killall bamd
@@ -46,7 +53,7 @@ if [ $? == 0 ]; then
 fi
 set -e
 
-for x in libxlinux libcommon asan unit libnarrator libdescriptor libvalyria libxunit libyyutil liblorien libbacon libmoria ; do
+for x in libxlinux asan unit libcommon libnarrator libdescriptor libvalyria libxunit libyyutil liblorien libbacon libmoria ; do
   pushd $BUILDDIR/$x
   bam
   bam kill

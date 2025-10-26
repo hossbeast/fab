@@ -11,8 +11,7 @@ BUILD_PATH=$(realpath .)
 CONFIG_PROBES=y
 
 usage() {
-  echo "usage: $0 [option].."
-  echo
+  echo "usage: $0"
 }
 
 if [ $# -ne 0 ]; then
@@ -24,6 +23,16 @@ set -e
 
 echo SRC_PATH   $SRC_PATH
 echo BUILD_PATH $BUILD_PATH
+
+# temporary guardrails
+if [ $SRC_PATH != "/home/todd/bam" ]; then
+  echo "unexpected SRC_PATH $SRC_PATH" 1>&2
+  exit 1
+fi
+if [ $BUILD_PATH != "/home/todd/bam-build" ]; then
+  echo "unexpected BUILD_PATH $BUILD_PATH" 1>&2
+  exit 1
+fi
 
 define() {
   name=$1
@@ -56,26 +65,52 @@ setup() {
   echo $1/$2
   mkdir -p $BUILD_PATH/$1/$2
 
-  ln -fs module.bam $BUILD_PATH/$1/$2/module.bam+devel
-
+  # bam-v0.8.2 will recognize fsents with the default special names
   rm -f $BUILD_PATH/$1/$2/module.bam
   cat 1>$BUILD_PATH/$1/$2/module.bam <<HERE
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 anchor $SRC_PATH/$1
-varfiles var.bam.$2
-rulesfiles rules.bam.$2
+varsets var.bam.$2
+rulesets rules.bam.$2
 HERE
+
+  # bam-v0.8.3 only recognizes special files that are mentioned in the module file
+  if [[ "$2" -eq "devel" ]]; then
+    rm -f $BUILD_PATH/$1/$2/module.bam%devel
+    cat 1>$BUILD_PATH/$1/$2/module.bam%devel <<HERE
+/* SPDX-License-Identifier: GPL-3.0 */
+/* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
+
+anchor $SRC_PATH/$1
+varsets var.bam%devel
+varsets var.bam.$2%devel
+rulesets rules.bam%devel
+rulesets rules.bam.$2%devel
+HERE
+  else
+    ln -fs module.bam $BUILD_PATH/$1/$2/module.bam%devel
+  fi
+
+  # replicate directory structure ; this is only needed because bam-v0.8.2
+  # has a bug in mkdir
+  (cd $SRC_PATH/$1 ; find . -type d) | (cd $BUILD_PATH/$1/$2 ; xargs mkdir -p)
 }
 
 # setup the build directory
 ln -fs $SRC_PATH/config.bam       $BUILD_PATH/
-ln -fs $SRC_PATH/config.bam+devel $BUILD_PATH/
+ln -fs $SRC_PATH/config.bam%devel $BUILD_PATH/
 
 # setup the build directories
 for x in libxlinux libcommon asan unit libnarrator libdescriptor libvalyria libxunit libyyutil liblorien libbacon libmoria bacon libbam bam bamd; do
   for v in debug devel final trace; do
     setup $x $v
   done
+done
+
+# generated files
+for v in debug devel final trace; do
+  mkdir -p $BUILD_PATH/libxlinux/$v/sigtable
+  mkdir -p $BUILD_PATH/libbam/$v/bam
 done

@@ -238,7 +238,7 @@ int API yyu_lexify_attrs(
   int token;
 
   yyu_token key = { string : text, string_len : leng };
-  yyu_token *ent = bsearch(&key, parser->token_table, parser->token_table_size, sizeof(*parser->token_table), token_table_cmp_key);
+  yyu_token *ent = (void*)bsearch(&key, parser->token_table, parser->token_table_size, sizeof(*parser->token_table), token_table_cmp_key);
   if(ent)
   {
     token = ent->token;
@@ -263,7 +263,7 @@ int API yyu_lexify_enum(
   int token = 0;
 
   yyu_token key = { string : text, string_len : leng };
-  yyu_token *ent = bsearch(&key, parser->token_table, parser->token_table_size, sizeof(*parser->token_table), token_table_cmp_key);
+  yyu_token *ent = (void*)bsearch(&key, parser->token_table, parser->token_table_size, sizeof(*parser->token_table), token_table_cmp_key);
   if(ent)
   {
     token = ent->token;
