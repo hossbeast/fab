@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: GPL-3.0
 # Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com>
 
+package bam::bacon;
+
 sub bacon__stackpush
 {
   my ($stack, $value) = @_;
@@ -66,7 +68,7 @@ sub bacon__list_end
   bacon__stackpush($stack, \@list);
 }
 
-sub bacon_parse
+sub parse
 {
   my $text = shift;
 
