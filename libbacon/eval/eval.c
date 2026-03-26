@@ -21,6 +21,8 @@
 
 #include "narrator.h"
 
+#undef CASE2
+#undef CASE3
 #define CASE2(x, y) x | (y << 8)
 #define CASE3(x, y, z) x | (y << 8) | (z << 16)
 

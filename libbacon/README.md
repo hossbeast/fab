@@ -3,12 +3,14 @@ Ba(m) con(figuration) object notation is a data model and structured text format
 In bacon, there is no object or dictionary type. Instead, mappings are a first-class type, and
 objects are realized as a set of mappings.
 
+bacon allows comments, which are discarded during parsing.
+
 scalar types
  boolean - true or false
  string - strings need not necessarily be quoted
  float - floating point number
  integer - signed integers
- variable - named, and referenced with the $ sigil
+ variable - named, and prefixed with the $ sigil
 
 aggregate types
  set - unordered collection of unique values
@@ -21,7 +23,7 @@ write structured bacon text
 
 # builder
 
-helpers for properly using a bacon writer
+helper for matching open/close operations on a bacon writer
 
 # merge
 

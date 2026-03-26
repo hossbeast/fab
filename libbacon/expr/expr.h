@@ -34,7 +34,7 @@ struct bacon_location;
   /* unary operations */                  \
   DEF(BACON_BITINV      , 0x0a) /* ~  */  \
   DEF(BACON_LOGINV      , 0x0b) /* !  */  \
-  /* wraps a bacon_value */                     \
+  /* wraps a bacon_value */               \
   DEF(BACON_VALUE       , 0x16)           \
 
 typedef enum bacon_operation {
