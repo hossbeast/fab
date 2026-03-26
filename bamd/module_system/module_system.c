@@ -1,268 +1,158 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include <string.h>
-#include <inttypes.h>
-#include <errno.h>
-
-#include "types.h"
-
-#include "moria/edge.h"
-#include "moria/foreach.h"
 #include "bacon/value.h"
-#include "bacon/merge.h"
-#include "bacon/parser.h"
-#include "bacon/writer.h"
-#include "bacon/coerce.h"
-#include "bacon/eval.h"
-#include "bacon/expr.h"
-#include "valyria/llist.h"
-#include "valyria/map.h"
-#include "valyria/hashtable.h"
-#include "xlinux/xfcntl.h"
-#include "xlinux/xstdlib.h"
+#include "valyria/rbtree.h"
+#include "common/hash.h"
 
 #include "module.h"
-#include "exec.h"
-#include "exec_builder.h"
-#include "exec_render.h"
-#include "fsedge.h"
+#include "module/probes.h"
 #include "fsent.h"
-#include "ruleset_parser.h"
-#include "params.h"
-#include "pattern.h"
-#include "lookup.h"
-#include "generate.h"
-#include "render.h"
 #include "rule.h"
-#include "rule_module_association.h"
-#include "module_edge.h"
-#include "dir_rma_edge.h"
-#include "rule_system.h"
-#include "shadow.h"
-#include "stats.h"
-#include "channel.h"
 #include "system.h"
-#include "events.h"
-#include "block.h"
-#include "rule/probes.h"
 #include "ruleset.h"
-#include "configset.h"
-#include "vertex.h"
-#include "edge.h"
-#include "fsent.h"
+#include "reconcile.h"
+#include "config.h"
+#include "disintegrate.h"
 
-#include "common/assure.h"
-#include "common/snarf.h"
-#include "common/hash.h"
-#include "marshal.h"
-#include "zcat.h"
+static rbtree rbempty = RBTREE_INITIALIZER;
+rbtree *modules_varsets = &rbempty;
+rbtree *modules_rulesets = &rbempty;
+
+llist ruleset_rebuilds = LLIST_INITIALIZER(ruleset_rebuilds);
+llist module_rebuilds = LLIST_INITIALIZER(module_rebuilds);
+static llist module_reparses = LLIST_INITIALIZER(module_reparses);
+static llist module_remakes = LLIST_INITIALIZER(module_remakes);
+static llist module_reimports = LLIST_INITIALIZER(module_reimports);
+static llist module_reloads = LLIST_INITIALIZER(module_reloads);
 
 void module_system_reconcile(rule_run_context * restrict rule_run_ctx)
 {
   module *mod = 0;
-  ruleset *rules = 0;
-  rules_container *con;
   llist *T;
+  ruleset *rules = 0;
   graph_invalidation_context *invalidation;
-  uint32_t count;
-  moria_foreach_state st;
-  moria_edge *edge;
-  llist reload_list = LLIST_INITIALIZER(reload_list);
-  bool reimport;
+  struct module_bootstrap_context bootstrap_ctx;
 
   invalidation = &rule_run_ctx->invalidation;
-
   graph_invalidation_begin(invalidation);
 
-  /* bootstrap modules under cwd */
+  /* bootstrap modules under g_base */
+  bootstrap_ctx = (typeof(bootstrap_ctx)){
+    .invalidation = &rule_run_ctx->invalidation
+  };
   moria_traverse_vertices(
       &g_graph
     , &g_base->vertex
     , module_bootstrap_visitor
     , 0
     , (moria_traversal_criteria[]) {{
-          edge_travel: EDGE_FSTREE
-        , edge_visit : EDGE_FSTREE
+          edge_travel: EDGE_FS
+        , edge_visit : EDGE_FS
         , vertex_travel : VERTEX_FILETYPE_DIR
         , vertex_visit : VERTEX_FILETYPE_DIR
       }}
     , MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE
-    , invalidation
+    , &bootstrap_ctx
   );
-
-  /* destroy modules that have been deleted */
-  llist_foreach_safe(&module_rebuild_list, con, lln, T) {
-    switch(con->attrs & VERTEX_TYPE_OPT) {
-      case VERTEX_MODULE:
-        mod = containerof(con, typeof(*mod), invalid);
-        rules = 0;
-        break;
-      case VERTEX_RULESET:
-        mod = 0;
-        rules = containerof(con, typeof(*rules), invalid);
-        break;
-      default:
-        RTA;
-    }
-
-    if(mod && !vertex_exists_get(&mod->self_node->vertex)) {
-      module_release(mod, invalidation);
-    } else if(rules && !vertex_exists_get(&rules->self_node->vertex)) {
-      ruleset_release(rules, invalidation);
-    }
-  }
-
-  /* reload modules and rules which have been invalidated */
-  while((con = llist_shift(&module_rebuild_list, typeof(*con), lln))) {
-    switch(con->attrs & VERTEX_TYPE_OPT) {
-      case VERTEX_MODULE:
-        mod = containerof(con, typeof(*mod), invalid);
-        rules = 0;
-        break;
-      case VERTEX_RULESET:
-        mod = 0;
-        rules = containerof(con, typeof(*rules), invalid);
-        break;
-      default:
-        RTA;
-    }
-
-    if(con->disconnect) {
-      llist_unshift(&module_rebuild_list, &con->lln);
-      if(mod) {
-        module_disconnect_rules(mod, invalidation);
-      } else {
-        ruleset_disconnect(rules, invalidation);
-      }
-      if(system_has_error) {
-        goto end;
-      }
-      con->disconnect = false;
-    } else if(con->reparse) {
-      llist_unshift(&module_rebuild_list, &con->lln);
-      if(mod) {
-        module_reparse(mod);
-      } else {
-        ruleset_reparse(rules);
-      }
-      if(system_has_error) {
-        goto end;
-      }
-      con->reparse = false;
-      if(mod) {
-        vertex_mark_fresh(&mod->self_node->vertex);
-      } else {
-        vertex_mark_fresh(&rules->self_node->vertex);
-      }
-    } else if(con->rebuild) {
-      llist_unshift(&module_rebuild_list, &con->lln);
-      if(mod) {
-        module_rebuild(mod, rule_run_ctx);
-      } else {
-        /* rules files are not rebuilt */
-      }
-      if(system_has_error) {
-        goto end;
-      }
-      con->rebuild = false;
-    } else if(con->reimport) {
-      llist_unshift(&module_rebuild_list, &con->lln);
-      if(mod) {
-        reimport = module_reimport(mod, rule_run_ctx);
-      } else {
-        /* rules files are not imported */
-        reimport = false;
-      }
-      if(system_has_error) {
-        goto end;
-      }
-      con->reimport = reimport;
-    } else if(con->prune) {
-      llist_unshift(&module_rebuild_list, &con->lln);
-      if(mod) {
-        module_prune(mod, invalidation);
-      } else {
-        /* rules files are not pruned */
-      }
-      con->prune = false;
-    } else {
-      llist_unshift(&reload_list, &con->lln);
-    }
-  }
-
-  while((con = llist_shift(&reload_list, typeof(*con), lln))) {
-    switch(con->attrs & VERTEX_TYPE_OPT) {
-      case VERTEX_MODULE:
-        mod = containerof(con, typeof(*mod), invalid);
-        rules = 0;
-        break;
-      case VERTEX_RULESET:
-        mod = 0;
-        rules = containerof(con, typeof(*rules), invalid);
-        break;
-      default:
-        RTA;
-    }
-
-    if(mod) {
-      module_reload(mod);
-      vertex_mark_fresh(&mod->vertex);
-    } else {
-      /* rules files are not reloaded */
-      vertex_mark_fresh(&rules->vertex);
-    }
-  }
-
-end:
-
-  /* destroy out-of-tree modules which are no longer referenced */
-  llist_foreach_safe(&module_list, mod, vertex.owner, T) {
-    /* in-tree check */
-    if(mod->in_tree) {
-      continue;
-    }
-
-    /* is-referenced by an in-tree module check */
-    count = 0;
-    moria_traverse_vertex_edges(&g_graph, &mod->vertex, moria_edge_count, 0
-      , (moria_traversal_criteria[]) {{
-            edge_travel : EDGE_MODULES
-          , edge_visit : EDGE_MODULES
-        }}
-      , MORIA_TRAVERSE_UP | MORIA_TRAVERSE_PRE
-      , &count
-    );
-    if(count > 0) {
-      continue;
-    }
-
-    module_release(mod, invalidation);
-  }
-
-  /* destroy rules file that are no longer referenced */
-  llist_foreach_safe(&ruleset_list, rules, vertex.owner, T) {
-    moria_foreach_edge_up(&st, &rules->vertex, edge) {
-      switch(edge_type_get(edge)) {
-        /* special edges dont count as a reference */
-        case EDGE_SPECIAL:
-          break;
-        default:
-          goto next;
-      }
-    }
-
-    ruleset_release(rules, invalidation);
-  next:
-    rules = 0;
-  }
-
   graph_invalidation_end(invalidation);
 
-  /* If the reload list is not empty, then reconciliation did not complete and any modules
-   * in the reload list go back onto the rebuild list, so that they will be re-considered
-   * for deletion on the next iteration */
-  llist_splice_head(&module_rebuild_list, &reload_list);
+  /* rebuild invalidated modules and rulesets */
+  while(1) {
+    if((rules = llist_shift(&ruleset_rebuilds, typeof(*rules), invalid_lln))) {
+      ruleset_rebuild(rules, invalidation);
+
+      if(system_has_error) {
+        llist_unshift(&ruleset_rebuilds, &rules->invalid_lln);
+        break;
+      }
+
+      vertex_mark_fresh(&rules->vertex);
+      vertex_mark_fresh(&rules->self_node->vertex);
+
+      /* only process modules once all rules are loaded */
+      RUNTIME_ASSERT(!llist_attached(&rules->invalid_lln));
+      continue;
+    }
+
+    if((mod = llist_shift(&module_rebuilds, typeof(*mod), invalid_lln))) {
+      module_rebuild(mod, rule_run_ctx);
+      RUNTIME_ASSERT(!llist_attached(&mod->invalid_lln));
+      llist_unshift(&module_remakes, &mod->invalid_lln);
+      continue;
+    }
+
+    if((mod = llist_shift(&module_remakes, typeof(*mod), invalid_lln))) {
+      module_remake_probe(mod);
+
+      module_remake(mod, rule_run_ctx);
+
+      if(system_has_error) {
+        llist_unshift(&module_remakes, &mod->invalid_lln);
+        break;
+      }
+
+      RUNTIME_ASSERT(!llist_attached(&mod->invalid_lln));
+      llist_unshift(&module_reimports, &mod->invalid_lln);
+
+      /* only reimport after all remakes are done */
+      continue;
+    }
+
+    if((mod = llist_shift(&module_reimports, typeof(*mod), invalid_lln))) {
+      module_reimport_probe(mod);
+
+      graph_invalidation_begin(invalidation);
+      if(module_reimport(mod, rule_run_ctx)) {
+        llist_push(&module_reimports, &mod->invalid_lln);
+      } else if(system_has_error) {
+        llist_push(&module_reimports, &mod->invalid_lln);
+        break;
+      } else {
+        llist_push(&module_reloads, &mod->invalid_lln);
+      }
+      graph_invalidation_end(invalidation);
+
+      /* only reload after all imports are done */
+      continue;
+    }
+
+    if((mod = llist_shift(&module_reloads, typeof(*mod), invalid_lln))) {
+      module_reload_probe(mod);
+      module_reload(mod, invalidation);
+
+      RUNTIME_ASSERT(!llist_attached(&mod->invalid_lln));
+      vertex_mark_fresh(&mod->vertex);
+      continue;
+    }
+
+    break;
+  }
+
+  /* follow anchors */
+  moria_traverse_vertices(
+      &g_graph
+    , &g_base->vertex
+    , module_bootstrap_anchor_visitor
+    , 0
+    , (moria_traversal_criteria[]) {{
+          edge_travel: EDGE_FS
+        , edge_visit : EDGE_FS
+        , vertex_travel : VERTEX_FILETYPE_DIR
+        , vertex_visit : VERTEX_FILETYPE_DIR
+      }}
+    , MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE
+    , &bootstrap_ctx
+  );
+
+  /* cleanup un-referenced modules */
+  llist_foreach_safe(&module_list, mod, vertex.owner, T) {
+    if(mod->epoch == reconciliation_epoch) {
+      continue;
+    }
+
+    graph_demolish(&mod->vertex);
+  }
 }
 
 static void invalidate_primary_visitor(
@@ -331,5 +221,58 @@ but without the overhead of constructing the selection
       , MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE | MORIA_TRAVERSE_NOFOLLOW
       , invalidation
     );
+  }
+}
+
+void module_system_reconfigure(struct config *cfg, bool dryrun, graph_invalidation_context * restrict invalidation)
+{
+  module *mod;
+  config_specials_entry *cse;
+  uint64_t h0;
+  uint64_t h1;
+  bool invalid = false;
+
+  if(dryrun) {
+    return;
+  }
+
+  h0 = 0;
+  if(modules_varsets) {
+    rbtree_foreach(modules_varsets, cse, rbn) {
+      h0 = hash64(h0, MM(cse->name->hash));
+    }
+  }
+  h1 = 0;
+  rbtree_foreach(&cfg->modules.varsets.set, cse, rbn) {
+    h1 = hash64(h1, MM(cse->name->hash));
+  }
+  if(h0 != h1) {
+    invalid = true;
+  }
+
+  h0 = 0;
+  if(modules_rulesets) {
+    rbtree_foreach(modules_rulesets, cse, rbn) {
+      h0 = hash64(h0, MM(cse->name->hash));
+    }
+  }
+  h1 = 0;
+  rbtree_foreach(&cfg->modules.rulesets.set, cse, rbn) {
+    h1 = hash64(h1, MM(cse->name->hash));
+  }
+  if(h0 != h1) {
+    invalid = true;
+  }
+
+  modules_varsets = &cfg->modules.varsets.set;
+  modules_rulesets = &cfg->modules.rulesets.set;
+
+  if(!invalid) {
+    return;
+  }
+
+  /* when these settings change, invalidate all modules */
+  llist_foreach(&module_list, mod, vertex.owner) {
+    vertex_invalidate(&mod->vertex, invalidation);
   }
 }

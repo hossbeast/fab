@@ -14,10 +14,11 @@
 #include "vertex.h"
 #include "edge.h"
 #include "reconcile.h"
-#include "entlist.h"
+#include "edges.h"
+#include "vertices.h"
 
-llist module_edge_list = LLIST_INITIALIZER(module_edge_list);          // active list
-static llist module_edge_freelist = LLIST_INITIALIZER(module_edge_freelist);  // freelist
+llist module_edge_list = LLIST_INITIALIZER(module_edge_list);   // active list
+static llist freelist = LLIST_INITIALIZER(freelist);            // freelist
 
 //
 // static
@@ -27,7 +28,10 @@ static void module_edge_alloc(module_edge ** restrict mep)
 {
   module_edge *me;
 
-  if((me = llist_shift(&module_edge_freelist, typeof(*me), edge.owner)) == 0) {
+  if((me = llist_shift(&freelist, typeof(*me), edge.owner))) {
+    ASAN_CLEAN(me);
+    memset(me, 0, sizeof(*me));
+  } else {
     xmalloc(&me, sizeof(*me));
   }
 
@@ -39,36 +43,22 @@ static void module_edge_alloc(module_edge ** restrict mep)
 
 static void module_edge_dispose(module_edge * restrict me)
 {
-  RUNTIME_ASSERT(me->edge.attrs & EDGE_MODULES);
+  //RUNTIME_ASSERT(me->edge.attrs & EDGE_MODULES);
 
   llist_delete(&me->edge.owner);
-  llist_append(&module_edge_freelist, &me->edge.owner);
+  llist_append(&freelist, &me->edge.owner);
+  ASAN_TAINT(me);
 }
 
 void module_edge_release(module_edge * restrict me)
 {
-  int x;
-
   /* this edge must have been previously excised from the graph */
-  if(me->edge.attrs & MORIA_EDGE_HYPER)
-  {
-    for(x = 0; x < me->edge.Alen; x++) {
-      RUNTIME_ASSERT(!rbnode_attached(&me->edge.Alist[x].rbn));
-    }
-    for(x = 0; x < me->edge.Blen; x++) {
-      RUNTIME_ASSERT(!rbnode_attached(&me->edge.Blist[x].rbn));
-    }
-  }
-  else
-  {
-    RUNTIME_ASSERT(!rbnode_attached(&me->edge.rbn_up));
-    RUNTIME_ASSERT(!rbnode_attached(&me->edge.rbn_down));
-  }
+  RUNTIME_ASSERT(moria_edge_degree(&me->edge) == 0);
 
   module_edge_dispose(me);
 }
 
-bool module_edge_connect(module * restrict A, moria_vertex * restrict B, edge_type type, module_edge ** restrict mmep)
+bool module_edge_connect(moria_vertex * restrict B, module * restrict A, edge_type type, module_edge ** restrict mmep)
 {
   module_edge *mme;
   moria_edge *e;
@@ -77,11 +67,15 @@ bool module_edge_connect(module * restrict A, moria_vertex * restrict B, edge_ty
   bool b;
 
   switch(type) {
-    case EDGE_RULESET_MOD:
+    case EDGE_RULESET_BUILD_MOD:
+    case EDGE_RULESET_ANCHOR_MOD:
+    case EDGE_RULESET_USES_MOD:
       RUNTIME_ASSERT(vertex_type_get(B) == VERTEX_RULESET);
+      RUNTIME_ASSERT(vertex_type_get(&A->vertex) == VERTEX_MODULE);
       break;
     case EDGE_VARSET_MOD:
       RUNTIME_ASSERT(vertex_type_get(B) == VERTEX_VARSET);
+      RUNTIME_ASSERT(vertex_type_get(&A->vertex) == VERTEX_MODULE);
       break;
     default:
       break;
@@ -90,7 +84,9 @@ bool module_edge_connect(module * restrict A, moria_vertex * restrict B, edge_ty
   r = moria_preconnect(&ctx, &g_graph, B, &A->vertex, type, &e);
   if(r == MORIA_HASEDGE) {
     mme = containerof(e, typeof(*mme), edge);
-    *mmep = mme;
+    if(mmep) {
+      *mmep = mme;
+    }
     b = false;
 
     goto end;
@@ -98,47 +94,56 @@ bool module_edge_connect(module * restrict A, moria_vertex * restrict B, edge_ty
   RUNTIME_ASSERT(r == MORIA_NOEDGE);
   module_edge_alloc(&mme);
   moria_connect(&ctx, &g_graph, &mme->edge, B, &A->vertex, type);
-  *mmep = mme;
+  if(mmep) {
+    *mmep = mme;
+  }
 
   b = true;
 
 end:
-  mme->reconciliation_epoch = reconciliation_epoch;
+  mme->epoch = reconciliation_epoch;
   return b;
 }
 
 void module_edge_disconnecting(
     module_edge * restrict mme
-  , entlist * restrict edges
-  , entlist * restrict vertices
   , graph_invalidation_context * restrict invalidation
 )
 {
   /* invalidate the module */
   switch(edge_type_get(&mme->edge)) {
-    case EDGE_RULESET_MOD:
+    case EDGE_RULESET_BUILD_MOD:
+    case EDGE_RULESET_ANCHOR_MOD:
+    case EDGE_RULESET_USES_MOD:
     case EDGE_VARSET_MOD:
       vertex_invalidate(mme->edge.A, invalidation);
+      break;
     default:
       RTA;
-  }
-
-  /* also removed related edges, e.g. //module/imports/foo */
-  if(mme->related) {
-    entlist_push(edges, &mme->related->edge);
   }
 }
 
 void module_module_cleanup()
 {
   module_edge *me;
-  llist *T;
 
-  llist_foreach_safe(&module_edge_list, me, edge.owner, T) {
-    module_edge_dispose(me);
-  }
-
-  llist_foreach_safe(&module_edge_freelist, me, edge.owner, T) {
+  while((me = llist_shift(&freelist, typeof(*me), edge.owner))) {
+    ASAN_CLEAN(me);
     free(me);
   }
 }
+
+#if CONFIG_DEVEL
+void module_edges_show()
+{
+  module_edge *e;
+  int x;
+
+  printf("module_edges, live : %zu free : %zu\n", llist_count(&module_edge_list), llist_count(&freelist));
+  x = 0;
+  llist_foreach(&module_edge_list, e, edge.owner) {
+    printf("%3u ", x++);
+    edge_identity_show(&e->edge);
+  }
+}
+#endif

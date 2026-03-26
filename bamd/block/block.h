@@ -7,7 +7,7 @@
 #include "valyria/llist.h"
 
 struct bacon_parser;
-struct entlist;
+struct vertices;
 
 typedef struct block {
   llist lln;
@@ -21,29 +21,17 @@ typedef struct block {
   /* uses / requires statements */
   llist imports;           // struct import
 
-  /* search rules */
+  /* rules */
   llist rules;             // struct rule
 } block;
 
 void block_alloc(block ** restrict blockp)
   __attribute__((nonnull));
 
-void block_init(block * restrict blockp)
-  __attribute__((nonnull));
-
 void block_release_bulk(struct bacon_parser * restrict parser, llist * restrict list)
-  __attribute__((nonnull));
-
-void block_release(struct bacon_parser * restrict parser, block * restrict block)
-  __attribute__((nonnull));
-
-void block_dispose_bulk(struct bacon_parser * restrict parser, llist * restrict list)
   __attribute__((nonnull));
 
 void block_cleanup(void);
 
-void block_gather_rule_edges(struct entlist * restrict list, block * restrict block)
-  __attribute__((nonnull));
-
-void block_show(block * restrict block)
+void blocks_gather_rules(struct vertices * restrict list, llist * restrict blocks)
   __attribute__((nonnull));

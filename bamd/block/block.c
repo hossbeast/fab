@@ -3,58 +3,28 @@
 
 #include "types.h"
 
-#include "narrator/fixed.h"
 #include "xlinux/xstdlib.h"
-#include "moria/vertex.h"
 #include "moria/foreach.h"
 #include "bacon/expr.h"
 #include "bacon/parser.h"
 #include "valyria/llist.h"
 
 #include "block.h"
-#include "graph.h"
-#include "pattern.h"
 #include "rule.h"
 #include "import.h"
 #include "edge.h"
-#include "entlist.h"
 
-#include "macros.h"
+static llist freelist = LLIST_INITIALIZER(freelist);
 
-static llist block_freelist = LLIST_INITIALIZER(block_freelist);  // freelist
-
-static void block_dispose(bacon_parser * restrict parser, block * restrict block)
+static void block_release(bacon_parser * restrict parser, struct block * restrict block)
 {
-  rule *rule;
   struct block *sb;
   struct import *import;
+  //struct rule *rule;
   llist *T;
   bacon_expr *expr;
 
-  llist_foreach_safe(&block->exprs, expr, lln, T) {
-    bacon_expr_free(parser, expr);
-  }
-  llist_foreach_safe(&block->blocks, sb, lln, T) {
-    block_dispose(parser, sb);
-  }
-  llist_foreach_safe(&block->rules, rule, lln, T) {
-    rule_dispose(rule);
-  }
-  llist_foreach_safe(&block->imports, import, lln, T) {
-    import_dispose(import);
-  }
-
-  llist_delete(&block->lln);
-  llist_append(&block_freelist, &block->lln);
-}
-
-void block_release(bacon_parser * restrict parser, block * restrict block)
-{
-  rule *rule;
-  struct block *sb;
-  struct import *import;
-  llist *T;
-  bacon_expr *expr;
+  //RUNTIME_ASSERT(llist_empty(&block->rules));
 
   llist_foreach_safe(&block->exprs, expr, lln, T) {
     bacon_expr_free(parser, expr);
@@ -62,18 +32,19 @@ void block_release(bacon_parser * restrict parser, block * restrict block)
   llist_foreach_safe(&block->blocks, sb, lln, T) {
     block_release(parser, sb);
   }
-  llist_foreach_safe(&block->rules, rule, lln, T) {
-    rule_release(rule);
-  }
+  //llist_foreach_safe(&block->rules, rule, lln, T) {
+  //  rule_release(rule);
+  //}
   llist_foreach_safe(&block->imports, import, lln, T) {
     import_release(import);
   }
 
   llist_delete(&block->lln);
-  llist_append(&block_freelist, &block->lln);
+  llist_append(&freelist, &block->lln);
+  ASAN_TAINT(block);
 }
 
-void block_init(block * restrict b)
+static void block_init(block * restrict b)
 {
   llist_init(&b->lln);
   llist_init(&b->rules);
@@ -86,7 +57,9 @@ void block_alloc(block ** restrict blockp)
 {
   block *r;
 
-  if((r = llist_shift(&block_freelist, typeof(*r), lln)) == 0) {
+  if((r = llist_shift(&freelist, typeof(*r), lln))) {
+    ASAN_CLEAN(r);
+  } else {
     xmalloc(&r, sizeof(*r));
   }
 
@@ -104,53 +77,26 @@ void block_release_bulk(bacon_parser * restrict parser, llist * restrict list)
   }
 }
 
-void block_dispose_bulk(bacon_parser * restrict parser, llist * restrict list)
-{
-  block *block;
-
-  while((block = llist_shift(list, typeof(*block), lln))) {
-    block_dispose(parser, block);
-  }
-}
-
 void block_cleanup(void)
 {
   block * block;
 
-  while((block = llist_shift(&block_freelist, typeof(*block), lln))) {
+  while((block = llist_shift(&freelist, typeof(*block), lln))) {
+    ASAN_CLEAN(block);
     free(block);
   }
 }
 
-void block_gather_rule_edges(entlist * restrict list, block * restrict block)
+void blocks_gather_rules(vertices * restrict list, llist * restrict blocks)
 {
-  rule *rule;
+  struct rule *rule;
   struct block *sb;
-  moria_edge *edge;
-  moria_foreach_state st;
 
-  llist_foreach(&block->blocks, sb, lln) {
-    block_gather_rule_edges(list, sb);
-  }
+  llist_foreach(blocks, sb, lln) {
+    blocks_gather_rules(list, &sb->blocks);
 
-  llist_foreach(&block->rules, rule, lln) {
-    moria_foreach_edge_up(&st, &rule->vertex, edge) {
-      RUNTIME_ASSERT(edge_type_get(edge)== EDGE_RULE_RMA);
-      entlist_push(list, edge);
+    llist_foreach(&sb->rules, rule, lln) {
+      vertices_push(list, &rule->vertex);
     }
-  }
-}
-
-void block_show(block * restrict block)
-{
-  rule *rule;
-  struct block *sb;
-
-  llist_foreach(&block->blocks, sb, lln) {
-    block_show(sb);
-  }
-
-  llist_foreach(&block->rules, rule, lln) {
-    rule_show(rule);
   }
 }
