@@ -32,7 +32,6 @@ typedef union stats_filesystem {
 } stats_filesystem;
 
 extern union stats_filesystem filesystem_stats;
-extern struct moria_vertex *g_filesystem;
 extern descriptor_type descriptor_stats_filesystem;
 
 void filesystem_reconcile(void);
@@ -45,11 +44,11 @@ void filesystem_mkdir_unshift(struct fsent * restrict fse)
 
 void filesystem_setup(void);
 
-void filesystem_stats_build(bool reset, struct bacon_writer * restrict builder_writer)
+void filesystem_sys_stats_build(const struct moria_vertex * restrict, bool reset, struct bacon_writer * restrict builder_writer)
   __attribute__((nonnull));
 
-void filesystem_describe(struct bacon_writer * restrict builder_writer)
+void filesystem_sys_describe(const struct moria_vertex * restrict, struct bacon_writer * restrict builder_writer)
   __attribute__((nonnull));
 
-size_t filesystem_id_cat(char * dst, size_t sz)
+void filesystem_sys_id(const struct moria_vertex * restrict, const char ** restrict, uint16_t * restrict)
   __attribute__((nonnull));

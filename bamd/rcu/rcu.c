@@ -21,8 +21,10 @@
 #include "times.h"
 #include "rcu.h"
 #include "zcat.h"
+#include "subsys.h"
 
 union stats_rcu rcu_stats;
+subsys sys_rcu;
 
 static struct {
   /* one bit per reader thread */
@@ -298,6 +300,8 @@ void rcu_quiesce(rcu_thread * restrict self)
 
 void rcu_setup(void)
 {
+  subsys_init(&sys_rcu, VERTEX_SYS_RCU);
+  shadow_mkref(g_shadow_bm, MMS("sys-rcu"), &sys_rcu.vertex);
 }
 
 void rcu_sys_stats_build(const moria_vertex * restrict v, bool reset, bacon_writer * restrict builder_writer)

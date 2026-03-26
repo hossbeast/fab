@@ -31,6 +31,7 @@
 #include "times.h"
 #include "params.h"
 #include "graph.h"
+#include "subsys.h"
 
 uint32_t goals_id;
 struct timespec goals_time;
@@ -43,7 +44,7 @@ bool goals_build;
 static selector * goals_target_direct_selector;
 static selector * goals_target_transitive_selector;
 static selector_context goals_selector_context;
-moria_vertex *g_goals = (moria_vertex[]) {{ }};
+subsys sys_goals;
 
 //
 // static
@@ -117,7 +118,8 @@ void goals_setup()
 {
   selector_context_init(&goals_selector_context);
 
-  moria_vertex_initw(g_goals, &g_graph, VERTEX_GOALS | VERTEX_OK, MMS("(goals)"));
+  subsys_init(&sys_goals, VERTEX_SYS_GOALS);
+  shadow_mkref(g_shadow_bm, sys_goals.vertex.label, sys_goals.vertex.label_len, &sys_goals.vertex);
 }
 
 void goals_cleanup()
@@ -127,7 +129,7 @@ void goals_cleanup()
   selector_free(goals_target_transitive_selector);
 }
 
-void goals_describe(bacon_writer * restrict builder_writer)
+void goals_sys_describe(const struct moria_vertex * restrict v, bacon_writer * restrict builder_writer)
 {
   struct timespec now;
   uint64_t ns;
@@ -135,7 +137,7 @@ void goals_describe(bacon_writer * restrict builder_writer)
   narrator_fixed fixed;
 
   { MAPPING
-    STRING("//goals")
+    STRING("//bm/sys-goals")
     { SET
       { MAPPING STRING("id") UINT(goals_id) }
 
@@ -207,18 +209,18 @@ void goals_set_event()
     return;
   }
 
-  narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
+  narrator_fixed_init(&fixed, msg->text, msg->size);
   bacon_writer_init(&writer);
   builder_writer = bacon_writer_open(&writer, &fixed.base);
 
   { MAPPING
     STRING("goals-set")
     { SET
-      goals_describe(builder_writer);
+      goals_sys_describe(&sys_goals.vertex, builder_writer);
     }
   }
 
-  msg->size = fixed.l;
+  msg->len = fixed.l;
   events_publish(&ectx);
 }
 
@@ -249,7 +251,6 @@ void goals_set(
   goals_set_event();
 }
 
-void goals_stats_build(bool reset, struct bacon_writer * restrict builder_writer)
+void goals_sys_stats_build(const moria_vertex * restrict v, bool reset, struct bacon_writer * restrict builder_writer)
 {
-
 }

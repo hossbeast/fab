@@ -17,6 +17,7 @@
 #include "vertex.h"
 #include "filesystem.h"
 #include "system.h"
+#include "subsys.h"
 
 #include "zcat.h"
 
@@ -110,35 +111,33 @@ void filesystem_mkdir_unshift(struct fsent * restrict fse)
   llist_delete(&fse->fs_reconcile_lln);
   llist_unshift(&filesystem_reconcile_list, &fse->fs_reconcile_lln);
 }
+subsys sys_filesystem;
 
 void filesystem_setup(void)
 {
-  moria_vertex_initw(g_filesystem, &g_graph, VERTEX_FILESYSTEM | VERTEX_OK, MMS("(filesystem)"));
-  g_filesystem_id_len = zcatf(g_filesystem_id, sizeof(g_filesystem_id), "%016"PRIx64, hash64(0x1234, MMS("(filesystem)")));
+  subsys_init(&sys_filesystem, VERTEX_SYS_FILESYSTEM);
+
+  shadow_mkref(g_shadow_bm, sys_filesystem.vertex.label, sys_filesystem.vertex.label_len, &sys_filesystem.vertex);
 }
 
-void filesystem_stats_build(bool reset, bacon_writer * restrict builder_writer)
+void filesystem_sys_stats_build(const moria_vertex * restrict v, bool reset, bacon_writer * restrict builder_writer)
 {
   stats_build(&filesystem_stats.record, &descriptor_stats_filesystem, builder_writer);
 }
 
-void filesystem_describe(struct bacon_writer * restrict builder_writer)
+void filesystem_sys_describe(const moria_vertex * restrict v, struct bacon_writer * restrict builder_writer)
 {
   { MAPPING
-    vertex_path_describe(g_filesystem, builder_writer);
+    vertex_path_describe(v, builder_writer);
     { SET
-      vertex_mappings(g_filesystem, builder_writer);
+      vertex_mappings(v, builder_writer);
       { MAPPING
         STRING("stats")
         { SET
-          filesystem_stats_build(false, builder_writer);
+          filesystem_sys_stats_build(v, false, builder_writer);
         }
       }
+      vertex_relations_describe(v, builder_writer);
     }
   }
-}
-
-size_t filesystem_id_cat(char * dst, size_t sz)
-{
-  return zcatw(dst, sz, g_filesystem_id, g_filesystem_id_len);
 }
