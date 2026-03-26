@@ -21,6 +21,7 @@ struct llist;
 struct bacon_writer;
 struct moria_vertex_traversal_state;
 struct channel;
+struct request_handler;
 
 enum buildplan_state {
     NOOP          // nothing to do
@@ -39,9 +40,7 @@ typedef union stats_buildplan {
 extern descriptor_type descriptor_stats_buildplan;
 
 extern selection buildplan_selection;
-extern uint16_t buildplan_id;
 extern enum buildplan_state buildplan_state;
-extern struct moria_vertex *g_buildplan;
 
 void buildplan_create(void);
 void buildplan_setup(void);
@@ -70,14 +69,14 @@ void buildplan_select_direct(struct llist * restrict selection)
 void buildplan_add_transitive(struct moria_vertex * restrict v, struct moria_vertex_traversal_state * restrict state)
   __attribute__((nonnull(1)));
 
-void buildplan_describe(struct bacon_writer * restrict builder_writer)
+void plan_sys_describe(const struct moria_vertex * restrict, struct bacon_writer * restrict builder_writer)
   __attribute__((nonnull));
 
-void buildplan_tell(struct channel * restrict channel)
+void plan_sys_tell(const struct moria_vertex * restrict, struct request_handler * restrict handler)
   __attribute__((nonnull));
 
-void buildplan_stats_build(bool reset, struct bacon_writer * restrict)
+void plan_sys_stats_build(const struct moria_vertex * restrict, bool reset, struct bacon_writer * restrict)
   __attribute__((nonnull));
 
-size_t buildplan_id_cat(char *dst, size_t sz)
+void plan_sys_id(const struct moria_vertex * restrict, const char ** restrict, uint16_t * restrict)
   __attribute__((nonnull));

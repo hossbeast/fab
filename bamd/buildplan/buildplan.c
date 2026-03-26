@@ -9,34 +9,78 @@
 #include "bacon/builder.h"
 #include "narrator/fixed.h"
 #include "moria/vertex.h"
-#include "common/hash.h"
 
 #include "buildplan.h"
 #include "dependency.h"
 #include "formula.h"
-#include "buildplan_entity.h"
+#include "bpe.h"
 #include "fsent.h"
 #include "vertex.h"
 #include "channel.h"
+#include "request_handler.h"
 #include "zcat.h"
 #include "common/attrs.h"
-#include "events.h"
+#include "events/events.h"
 #include "system.h"
-#include "rule_module_association.h"
+#include "rma.h"
+#include "shadow.h"
+#include "subsys.h"
+
+static uint16_t buildplan_counter;
 
 selection buildplan_selection;
-uint16_t buildplan_id;
 enum buildplan_state buildplan_state;
 
 union stats_buildplan buildplan_stats;
-moria_vertex *g_buildplan = (moria_vertex[]) {{ }};
-char g_buildplan_id[40];
-uint16_t g_buildplan_id_len;
+subsys sys_plan;
 
 typedef struct traverse_context {
   moria_vertex *stack[32];
   int32_t stack_depth;
 } traverse_context;
+
+static void error_build(bacon_writer * restrict builder_writer, const fsent * restrict fse, const traverse_context * restrict ctx)
+{
+  int x;
+
+  { MAPPING
+    STRING("cannot update")
+    { SET
+      { MAPPING
+        STRING("trail")
+        { LIST
+          if(ctx && ctx->stack_depth >= 0) {
+            for(x = 0; x <= ctx->stack_depth; x++) {
+              vertex_identity_describe(ctx->stack[x], builder_writer);
+            }
+          } else {
+            vertex_identity_describe(&fse->vertex, builder_writer);
+          }
+        }
+      }
+    }
+  }
+}
+
+static void buildplan_error(const fsent * restrict fse, const traverse_context * restrict ctx)
+{
+  events_context ectx;
+  bamipc_message *msg;
+  bacon_writer writer, *builder_writer;
+  narrator_fixed fixed;
+
+  msg = system_error_event(&ectx);
+  narrator_fixed_init(&fixed, msg->text, msg->size);
+  bacon_writer_init(&writer);
+  builder_writer = bacon_writer_open(&writer, &fixed.base);
+
+  error_build(builder_writer, fse, ctx);
+
+  bacon_writer_close(builder_writer);
+  msg->len = fixed.l;
+  msg->code = -1;
+  events_publish(&ectx);
+}
 
 /*
  * Add a node to the plan
@@ -46,11 +90,6 @@ typedef struct traverse_context {
 static void buildplan_add(moria_vertex *v, int distance, traverse_context *ctx)
 {
   fsent *fse;
-  events_context ectx;
-  event_bacon *msg;
-  bacon_writer writer, *builder_writer;
-  narrator_fixed fixed;
-  int x;
 
   if(!vertex_invalid_get(v)) {
     return;
@@ -68,37 +107,13 @@ static void buildplan_add(moria_vertex *v, int distance, traverse_context *ctx)
   {
     buildplan_state = UNSATISFIED;
 
-    if(fse->bp_plan_id == buildplan_id) {
+    if(fse->bp_plan_id == buildplan_counter) {
       /* already issued the error for this node */
       return;
     }
-    fse->bp_plan_id = buildplan_id;
+    fse->bp_plan_id = buildplan_counter;
 
-    msg = system_error_event(&ectx);
-    narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
-    bacon_writer_init(&writer);
-    builder_writer = bacon_writer_open(&writer, &fixed.base);
-    { MAPPING
-      STRING("cannot update")
-      { SET
-        { MAPPING
-          STRING("trail")
-          { LIST
-            if(ctx && ctx->stack_depth >= 0) {
-              for(x = 0; x <= ctx->stack_depth; x++) {
-                vertex_identity_describe(ctx->stack[x], builder_writer);
-              }
-            } else {
-              vertex_identity_describe(&fse->vertex, builder_writer);
-            }
-          }
-        }
-      }
-    }
-    bacon_writer_close(builder_writer);
-    msg->size = fixed.l;
-    msg->code = -1;
-    events_publish(&ectx);
+    buildplan_error(fse, ctx);
     return;
   }
 
@@ -136,10 +151,10 @@ static void buildplan_visitor_direct(
 void buildplan_setup()
 {
   selection_init(&buildplan_selection);
-  buildplan_id = 1;
+  buildplan_counter = 1;
 
-  moria_vertex_initw(g_buildplan, &g_graph, VERTEX_BUILDPLAN | VERTEX_OK, MMS("(buildplan)"));
-  g_buildplan_id_len = zcatf(g_buildplan_id, sizeof(g_buildplan_id), "%016"PRIx64, hash64(0x2345, MMS("(buildplan)")));
+  subsys_init(&sys_plan, VERTEX_SYS_PLAN);
+  shadow_mkref(g_shadow_bm, sys_plan.vertex.label, sys_plan.vertex.label_len, &sys_plan.vertex);
 }
 
 void buildplan_cleanup()
@@ -150,14 +165,13 @@ void buildplan_cleanup()
 void buildplan_reset()
 {
   selection_reset(&buildplan_selection, SELECTION_ITERATION_TYPE_RANK);
-  buildplan_id++;
+  buildplan_counter++;
   buildplan_state = NOOP;
 }
 
 void buildplan_finalize()
 {
   selection_finalize(&buildplan_selection);
-  buildplan_show();
 }
 
 void buildplan_show()
@@ -198,7 +212,7 @@ void buildplan_add_transitive(moria_vertex * restrict v, moria_vertex_traversal_
         , vertex_visit_mask : VERTEX_KIND_OPT
         , vertex_visit : VERTEX_KIND_FSENT
       }}
-    , MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE | MORIA_TRAVERSE_EXHAUSTIVE
+    , MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE | MORIA_TRAVERSE_EXHAUSTIVE | MORIA_TRAVERSE_NOFOLLOW
     , &ctx
   );
 }
@@ -207,9 +221,15 @@ void buildplan_select_transitive(llist * restrict selection)
 {
   selected *sn;
   moria_vertex_traversal_state *state;
+  fsent *fse;
 
   moria_vertex_traversal_begin(&g_graph, &state);
   llist_foreach(selection, sn, lln) {
+    fse = containerof(sn->v, typeof(*fse), vertex);
+    if(!fse->bpe && !vertex_shadow_get(&fse->vertex)) {
+      buildplan_error(fse, 0);
+      break;
+    }
     buildplan_add_transitive(sn->v, state);
   }
   moria_vertex_traversal_end(&g_graph, state);
@@ -218,34 +238,41 @@ void buildplan_select_transitive(llist * restrict selection)
 void buildplan_select_direct(llist * restrict selection)
 {
   selected *sn;
+  fsent *fse;
 
   llist_foreach(selection, sn, lln) {
+    fse = containerof(sn->v, typeof(*fse), vertex);
+    if(!fse->bpe && !vertex_shadow_get(&fse->vertex)) {
+      buildplan_error(fse, 0);
+      break;
+    }
     buildplan_add(sn->v, 0, 0);
   }
 }
 
-void buildplan_stats_build(bool reset, bacon_writer * restrict builder_writer)
+void plan_sys_stats_build(const moria_vertex * restrict v, bool reset, bacon_writer * restrict builder_writer)
 {
   stats_build(&buildplan_stats.record, &descriptor_stats_buildplan, builder_writer);
 }
 
-void buildplan_describe(struct bacon_writer * restrict builder_writer)
+void plan_sys_describe(const moria_vertex * restrict v, struct bacon_writer * restrict builder_writer)
 {
   { MAPPING
-    vertex_path_describe(g_buildplan, builder_writer);
+    vertex_path_describe(v, builder_writer);
     { SET
-      vertex_mappings(g_buildplan, builder_writer);
+      vertex_mappings(v, builder_writer);
       { MAPPING
         STRING("stats")
         { SET
-          buildplan_stats_build(false, builder_writer);
+          plan_sys_stats_build(v, false, builder_writer);
         }
       }
+      vertex_relations_describe(v, builder_writer);
     }
   }
 }
 
-void buildplan_tell(struct channel * restrict channel)
+void plan_sys_tell(const moria_vertex * restrict v, struct request_handler * restrict handler)
 {
   bamipc_message *msg;
   selected *sn;
@@ -255,11 +282,9 @@ void buildplan_tell(struct channel * restrict channel)
   size_t z;
 
   llist_foreach(&buildplan_selection.list, sn, lln) {
-    msg = channel_produce(channel);
-    msg->type = BAMIPC_MSG_RESULT;
-    msg->attrs = 0;
+    msg = request_handler_tx(handler, BAMIPC_MSG_RESULT, BAMIPC_MSG_BACON, 0);
     dst = msg->text;
-    sz = sizeof(msg->text);
+    sz = msg->size;
     z = 0;
 
     z += zcatf(dst + z, sz - z, "%-3d ", sn->rank);
@@ -274,12 +299,7 @@ void buildplan_tell(struct channel * restrict channel)
         break;
         RTA;
     }
-    msg->size = z;
-    channel_post(channel, msg);
+    msg->len = z;
+    request_handler_post(handler, msg);
   }
-}
-
-size_t buildplan_id_cat(char *dst, size_t sz)
-{
-  return zcatw(dst, sz, g_buildplan_id, g_buildplan_id_len);
 }
