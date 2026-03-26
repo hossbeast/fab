@@ -41,16 +41,16 @@ void fsedge_connect(
 )
   __attribute__((nonnull));
 
-/*
- * unlink edges in the filesystem subgraph from a starting edge, downwards, transitively
- *
- * fse - edge to begin with
- */
-void fsedge_disintegrate(fsedge * restrict fse, struct graph_invalidation_context * restrict invalidation)
-  __attribute__((nonnull(1)));
-
-void fsedge_disintegrate_bulk(struct entlist * restrict edges, struct graph_invalidation_context * restrict invalidation)
+void fsedge_connect_ctx(
+    struct fsent * restrict B
+  , struct fsent * restrict A
+  , struct moria_connect_context * restrict ctx
+  , struct graph_invalidation_context * restrict invalidation
+)
   __attribute__((nonnull));
 
 void fsedge_release(fsedge * restrict fse)
+  __attribute__((nonnull));
+
+void fsedge_disconnecting(fsedge * restrict fse, graph_invalidation_context * restrict invalidation)
   __attribute__((nonnull));

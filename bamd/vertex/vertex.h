@@ -11,6 +11,7 @@
 #include "stats.h"
 
 struct graph_invalidation_context;
+struct graph_disintegrate_context;
 struct bacon_writer;
 enum moria_traversal_mode;
 struct channel;
@@ -143,6 +144,16 @@ static inline vertex_state vertex_state_get(const moria_vertex * restrict v)
   attrs &= VERTEX_STATE_OPT;
 
   return attrs;
+}
+
+static inline bool vertex_is_unlinked(const moria_vertex * restrict v)
+{
+  uint32_t attrs;
+
+  attrs = v->attrs;
+  attrs &= VERTEX_UNLINKED_BIT;
+
+  return !!attrs;
 }
 
 static inline bool vertex_exists_get(const moria_vertex * restrict v)
@@ -377,6 +388,15 @@ void vertex_release(moria_vertex * restrict v)
 
 moria_vertex *vertex_follow(const moria_vertex * restrict v);
 
+  __attribute__((nonnull));
+
+void vertex_unlink(moria_vertex * restrict v, struct graph_disintegrate_context * restrict ctx)
+  __attribute__((nonnull));
+
+bool vertex_reap(moria_vertex * restrict v, struct graph_disintegrate_context * restrict ctx)
+  __attribute__((nonnull));
+
+void vertex_release(moria_vertex * restrict v)
   __attribute__((nonnull));
 
 //

@@ -147,22 +147,23 @@ meta_edge *meta_connect(
 
 void meta_disconnecting(
     meta_edge * restrict me
-  , entlist * restrict edges
-  , entlist * restrict vertices
   , graph_invalidation_context * restrict invalidation
 )
 {
   buildplan_entity *bpe;
   formula *fml;
   rule_module_association *rma;
-  fsent *tgt;
+  struct fsent *fse;
 
   /* update cached fields */
   switch(edge_type_get(&me->edge)) {
-    case EDGE_RMA_RULESET:
-      rma = containerof(me->edge.B, typeof(*rma), vertex);
-      rma->rules = 0;
-      vertex_invalidate(me->edge.B, invalidation);
+    case EDGE_LOOKUP_PLUGIN_FILE:
+      fse = containerof(me->edge.B, typeof(*fse), vertex);
+      if(edges_count_up(&fse->vertex, EDGE_LOOKUP_PLUGIN_FILE) == 1) {
+        vertex_type_set(&fse->vertex, VERTEX_FILE);
+      }
+      break;
+    case EDGE_RULE_RULESET:
       break;
     case EDGE_RULE_RMA:
       rma = containerof(me->edge.A, typeof(*rma), vertex);
@@ -175,25 +176,16 @@ void meta_disconnecting(
       rma = containerof(me->edge.A, typeof(*rma), vertex);
       rma->fml = 0;
       rma->fml_rma_me = 0;
-      vertex_invalidate(me->edge.B, invalidation);
+      formula_rma_unref(fml);
       vertex_invalidate(me->edge.A, invalidation);
       break;
     case EDGE_RMA_BPE:
       bpe = containerof(me->edge.A, typeof(*bpe), vertex);
       bpe->rma = 0;
       bpe->rma_bpe_me = 0;
-
-      vertex_state_set(&bpe->vertex, VERTEX_UNLINKED);
-
-      /* also consider incident EDGE_SRC_BPE edges */
-      buildplan_entity_source_edges(bpe, edges);
-      /* also consider incident EDGE_BPE_TGT edges */
-      buildplan_entity_target_edges(bpe, edges);
       break;
-    case EDGE_RMA_TGT:
-      tgt = containerof(me->edge.A, typeof(*tgt), vertex);
-      /* also release the target */
-      entlist_push(edges, moria_edge_between(&tgt->vertex, &fsent_parent(tgt)->vertex));
+    case EDGE_RMA_BIND:
+    case EDGE_LOOKUP:
     case EDGE_RMA_MOD:
     case EDGE_FSNAME_RMA:
     case EDGE_FSNAME_MOD:

@@ -12,7 +12,8 @@ struct formula;
 struct buildplan_entity;
 struct module;
 enum edge_type;
-struct entlist;
+struct edges;
+struct vertices;
 
 /*
 meta-edge types
@@ -48,8 +49,6 @@ void meta_edge_cleanup(void);
 
 void meta_disconnecting(
     meta_edge * restrict me
-  , struct entlist * restrict edges
-  , struct entlist * restrict vertices
   , struct graph_invalidation_context * restrict invalidation
 )
   __attribute__((nonnull));

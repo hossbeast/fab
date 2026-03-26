@@ -16,6 +16,10 @@
 #include "edge.h"
 #include "entlist.h"
 #include "formula.h"
+#include "varset.h"
+#include "configset.h"
+#include "ruleset.h"
+#include "module.h"
 #include "config_system.h"
 
 static llist special_edge_list = LLIST_INITIALIZER(special_edge_list);          // active list
@@ -56,7 +60,7 @@ void special_edge_release(special_edge * restrict se)
   special_edge_dispose(se);
 }
 
-void special_connect_type(
+void special_connect(
     moria_vertex * restrict B
   , moria_vertex * restrict A
   , edge_type type
@@ -64,33 +68,45 @@ void special_connect_type(
 )
 {
   special_edge *se;
-  moria_edge *e;
+  moria_edge *ep;
   moria_connect_context ctx;
+  module *mod;
+  fsent *fse;
   int r;
 
-  RUNTIME_ASSERT(vertex_kind_get(A) == VERTEX_KIND_SPECIAL);
-  RUNTIME_ASSERT(vertex_special_get(A));
   RUNTIME_ASSERT(vertex_kind_get(B) == VERTEX_KIND_FSENT);
-  RUNTIME_ASSERT((type & EDGE_KIND_OPT) == EDGE_KIND_SPECIAL);
+  RUNTIME_ASSERT(type & EDGE_SPECIALS);
 
-  r = moria_preconnect(&ctx, &g_graph, B, A, type, &e);
+  r = moria_preconnect(&ctx, &g_graph, B, A, type, &ep);
   if(r == MORIA_HASEDGE) {
+    se = containerof(ep, typeof(*se), edge);
+    se->epoch = reconciliation_epoch;
     return;
   }
   RUNTIME_ASSERT(r == MORIA_NOEDGE);
   special_edge_alloc(&se);
   moria_connect(&ctx, &g_graph, &se->edge, B, A, type);
+  se->epoch = reconciliation_epoch;
 
   vertex_invalidate(se->edge.A, invalidation);
-}
 
-void special_connect(
-    moria_vertex * restrict B
-  , moria_vertex * restrict A
-  , graph_invalidation_context * restrict invalidation
-)
-{
-  special_connect_type(B, A, EDGE_SPECIAL, invalidation);
+  fse = containerof(se->edge.B, typeof(*fse), vertex);
+  mod = containerof(se->edge.A, typeof(*mod), vertex);
+
+  /* update/verify cached fields */
+  switch(edge_type_get(&se->edge)) {
+    case EDGE_BUILD_DIR_MOD:
+      RUNTIME_ASSERT(mod->build_dir == 0 || mod->build_dir == fse);
+      mod->build_dir = fse;
+      RUNTIME_ASSERT(vertex_type_get(&mod->build_dir->vertex) == VERTEX_DIR);
+      break;
+    case EDGE_ANCHOR_DIR_MOD:
+      mod->anchor_dir = fse;
+      RUNTIME_ASSERT(vertex_type_get(&mod->anchor_dir->vertex) == VERTEX_DIR);
+      break;
+    default:
+      break;
+  }
 }
 
 void special_edge_cleanup()
@@ -108,15 +124,46 @@ void special_edge_cleanup()
 }
 
 
-void special_disconnecting(
-    special_edge * restrict se
-  , graph_invalidation_context * restrict invalidation
-)
+void special_disconnecting(special_edge * restrict se, graph_invalidation_context * restrict invalidation)
 {
+  formula *fml;
+  struct varset *varset;
+  struct configset *configset;
+  struct ruleset *ruleset;
+  fsent *fse;
+
   if(vertex_type_get(se->edge.B) == VERTEX_CONFIGSET) {
     config_system_invalidate();
   }
 
   vertex_invalidate(se->edge.A, invalidation);
-  vertex_state_set(se->edge.A, VERTEX_UNLINKED);
+
+  fml = containerof(se->edge.A, typeof(*fml), vertex);
+  varset = containerof(se->edge.A, typeof(*varset), vertex);
+  configset = containerof(se->edge.A, typeof(*configset), vertex);
+  ruleset = containerof(se->edge.A, typeof(*ruleset), vertex);
+
+  fse = containerof(se->edge.B, typeof(*fse), vertex);
+
+  /* update cached fields */
+  switch(edge_type_get(&se->edge)) {
+    case EDGE_ANCHOR_DIR_MOD:
+    case EDGE_BUILD_DIR_MOD:
+      RUNTIME_ASSERT(vertex_type_get(&fse->vertex) == VERTEX_DIR);
+      break;
+    case EDGE_FSENT_FML:
+      fml->self_node = 0;
+      break;
+    case EDGE_FSENT_VARSET:
+      varset->self_node = 0;
+      break;
+    case EDGE_FSENT_CONFIGSET:
+      configset->self_node = 0;
+      break;
+    case EDGE_FSENT_RULESET:
+      ruleset->self_node = 0;
+      break;
+    default:
+      break;
+  }
 }

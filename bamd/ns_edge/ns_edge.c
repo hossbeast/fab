@@ -87,3 +87,8 @@ ns_edge *ns_connect(
 
   return nse;
 }
+
+
+void ns_edge_disconnecting(ns_edge * restrict nse, graph_invalidation_context * restrict invalidation)
+{
+}

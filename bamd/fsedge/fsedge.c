@@ -204,32 +204,8 @@ void fsedge_disintegrate(fsedge * restrict fse, graph_invalidation_context * res
   entlist_destroy(&edges);
 }
 
-void fsedge_disintegrate_bulk(entlist * restrict edges, graph_invalidation_context * restrict invalidation)
+void fsedge_disconnecting(fsedge * restrict fse, graph_invalidation_context * restrict invalidation)
 {
-  entlist *eln;
-  moria_edge *e;
-  entlist vertices;
-  entlist subedges;
-
-  // visit this edge and all edges below it, in reverse depth order
-  entlist_init(&subedges);
-  entlist_foreach(edges, e, eln) {
-    moria_traverse_edges(
-        &g_graph
-      , e
-      , entlist_visitor_edge
-      , 0
-      , (moria_traversal_criteria[]) {{
-            edge_travel: EDGE_KIND_FSTREE
-          , edge_visit : EDGE_KIND_FSTREE
-        }}
-      , MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_POST | MORIA_TRAVERSE_NOFOLLOW
-      , &subedges
-    );
-  }
-
-  entlist_init(&vertices);
-  graph_disintegrate_bulk(&subedges, &vertices, invalidation);
-  entlist_destroy(&vertices);
-  entlist_destroy(&subedges);
+  /* dirnode is not invalidated here, but when the fsent is unlinked. Thats the point
+   * after which it wont be matched by a subsequent search rule */
 }

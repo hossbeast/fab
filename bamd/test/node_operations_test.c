@@ -101,12 +101,21 @@ static void node_operations_invalidate_vertex(moria_parser * restrict parser, mo
 
 static void node_operations_disconnect(moria_parser * restrict parser, moria_edge * restrict e)
 {
-  if(edge_type_get(e) == EDGE_FSTREE) {
-    /* walker.c */
-    fsedge_disintegrate(containerof(e, fsedge, edge), &invalidation);
+  edges edges;
+  vertices unlinking;
+  vertices releasing;
+
+  edges_init(&edges);
+  vertices_init(&unlinking);
+  vertices_init(&releasing);
+
+  if(edge_type_get(e) == EDGE_FS) {
+    vertices_push(&unlinking, e->B);
   } else {
-    graph_disintegrate(e, &invalidation);
+    edges_push(&edges, e);
   }
+
+  graph_disintegrate(&edges, &unlinking, &releasing, &invalidation);
 }
 
 static void create_vertex(

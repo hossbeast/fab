@@ -339,17 +339,3 @@ void graph_invalidation_begin(graph_invalidation_context * restrict context)
 
 void graph_invalidation_end(graph_invalidation_context * restrict context)
   __attribute__((nonnull));
-
-/* disconnect an fsedge or dependency edge and cascade */
-void graph_disintegrate(struct moria_edge * restrict ne, struct graph_invalidation_context * restrict context)
-  __attribute__((nonnull(1)));
-
-void graph_disintegrate_bulk(
-    struct entlist * restrict edges
-  , struct entlist * restrict vertices
-  , struct graph_invalidation_context * restrict context
-)
-  __attribute__((nonnull(1)));
-
-void graph_edge_visitor(moria_edge * e, void * ctx, moria_traversal_mode mode, int distance, struct moria_traverse_result * restrict)
-  __attribute__((nonnull));

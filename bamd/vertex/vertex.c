@@ -1284,6 +1284,10 @@ struct module *vertex_module_of(const moria_vertex * restrict v)
     fse = fsent_parent(fse);
   }
 
+  if(!fse) {
+    return 0;
+  }
+
   shadow = !!(fse->vertex.attrs & VERTEX_SHADOW_BIT);
 
   while(fse) {
@@ -1330,6 +1334,10 @@ struct fstree *vertex_fstree_of(const moria_vertex * restrict v)
   filetype = vertex_filetype_get(&fse->vertex);
   if(filetype != VERTEX_FILETYPE_DIR) {
     fse = fsent_parent(fse);
+  }
+
+  if(!fse) {
+    return 0;
   }
 
   RUNTIME_ASSERT(fse->fst);
@@ -1482,6 +1490,263 @@ void vertex_id(const moria_vertex * restrict v, const char ** restrict id, uint1
       return subsys_id(containerof(v, subsys, vertex), id, idl);
 
     case VERTEX_CONTEXT_MODULE:
+      RTA;
+  }
+}
+
+bool vertex_reap(moria_vertex * restrict v, struct graph_disintegrate_context * restrict ctx)
+{
+  RUNTIME_ASSERT(!vertex_is_unlinked(v));
+
+  switch(vertex_type_get(v)) {
+    case VERTEX_FORMULA:
+      return formula_reap(containerof(v, formula, vertex), ctx);
+    case VERTEX_RULE:
+      return rule_reap(containerof(v, rule, vertex), ctx);
+    case VERTEX_RULESET:
+      return ruleset_reap(containerof(v, ruleset, vertex), ctx);
+    case VERTEX_DIR:
+      return fsent_dir_reap(containerof(v, fsent, vertex), ctx);
+    case VERTEX_SYMLINK:
+      return fsent_symlink_reap(containerof(v, fsent, vertex), ctx);
+    case VERTEX_FSNAME:
+      return fsname_reap(containerof(v, fsname, vertex), ctx);
+    case VERTEX_VARSET:
+      return varset_reap(containerof(v, varset, vertex), ctx);
+    case VERTEX_MODULE:
+      return module_reap(containerof(v, module, vertex), ctx);
+    case VERTEX_MODULE_VARS:
+    case VERTEX_MODULE_ENVS:
+    case VERTEX_FORMULA_STDIN:
+    case VERTEX_FORMULA_STDOUT:
+    case VERTEX_FORMULA_STDERR:
+    case VERTEX_FORMULA_AUXOUT:
+    case VERTEX_FORMULA_ARGS:
+    case VERTEX_FORMULA_ENVS:
+    case VERTEX_FORMULA_FILE:
+    case VERTEX_FORMULA_CWD:
+    case VERTEX_PLUGIN_STDIN:
+    case VERTEX_PLUGIN_STDOUT:
+    case VERTEX_PLUGIN_STDERR:
+    case VERTEX_PLUGIN_AUXOUT:
+      return detail_reap(containerof(v, detail, vertex), ctx);
+    case VERTEX_BPE:
+      return bpe_reap(containerof(v, buildplan_entity, vertex), ctx);
+    case VERTEX_FILE:
+    case VERTEX_SHADOW_DIR:
+    case VERTEX_SHADOW_FILE:
+    case VERTEX_SHADOW_LINK:
+    case VERTEX_CLIENT:
+    case VERTEX_BUILD_RECORD:
+    case VERTEX_FORMULA_RECORD:
+    case VERTEX_RMA:
+    case VERTEX_FSTREE:
+    case VERTEX_CONFIGSET:
+    case VERTEX_PLUGIN:
+    case VERTEX_NAMESPACE:
+    case VERTEX_CONTEXT_MODULE:
+    case VERTEX_SYS_NOTIFY:
+    case VERTEX_SYS_BUILD:
+    case VERTEX_SYS_PLAN:
+    case VERTEX_SYS_SYSTEM:
+    case VERTEX_SYS_FILESYSTEM:
+    case VERTEX_SYS_RCU:
+    case VERTEX_SYS_GOALS:
+    case VERTEX_SYS_CONFIG:
+      break;
+  }
+
+  return false;
+}
+
+void vertex_unlink(moria_vertex * restrict v, struct graph_disintegrate_context * restrict ctx)
+{
+  bamipc_message *msg;
+  uint16_t z;
+  events_context ectx;
+  moria_foreach_state st;
+  moria_edge *edge;
+
+  /*
+   * N.B. this function ONLY to be called from graph_disintegrate
+   */
+
+  RUNTIME_ASSERT(vertex_exists_get(v));
+
+#if 0
+  /* idempotency */
+  if(!vertex_exists_get(v)) {
+    return;
+  }
+#endif
+
+  vertex_invalidate(v, ctx->invalidation);
+  vertex_state_set(v, VERTEX_UNLINKED);
+  vertex_unlink_probe(v);
+
+  moria_foreach_edge_down(&st, v, edge) {
+    if(edge->attrs & EDGE_UNLINK) {
+      edges_push(ctx->edges, edge);
+      vertices_push(ctx->unlinking, edge->B);
+    }
+  }
+
+  switch(vertex_type_get(v)) {
+    /* fsents */
+    case VERTEX_DIR:
+    case VERTEX_FILE:
+    case VERTEX_SYMLINK:
+    case VERTEX_SHADOW_DIR:
+    case VERTEX_SHADOW_FILE:
+    case VERTEX_SHADOW_LINK:
+      fsent_unlink(containerof(v, fsent, vertex), ctx);
+      break;
+    case VERTEX_FORMULA:
+      formula_unlink(containerof(v, formula, vertex), ctx);
+      break;
+    case VERTEX_RULESET:
+      ruleset_unlink(containerof(v, ruleset, vertex), ctx);
+      break;
+    case VERTEX_BUILD_RECORD:
+      build_record_unlink(containerof(v, build_record, vertex), ctx);
+      break;
+    case VERTEX_FORMULA_RECORD:
+      formula_record_unlink(containerof(v, formula_record, vertex), ctx);
+      break;
+    case VERTEX_RMA:
+      rma_unlink(containerof(v, rule_module_association, vertex), ctx);
+      break;
+    case VERTEX_BPE:
+      bpe_unlink(containerof(v, buildplan_entity, vertex), ctx);
+      break;
+    case VERTEX_FSTREE:
+      fstree_unlink(containerof(v, fstree, vertex), ctx);
+      break;
+    case VERTEX_MODULE:
+      module_unlink(containerof(v, module, vertex), ctx);
+      break;
+    case VERTEX_PLUGIN:
+      plugin_unlink(containerof(v, plugin, vertex), ctx);
+      break;
+    case VERTEX_FSNAME:
+      fsname_unlink(containerof(v, fsname, vertex), ctx);
+      break;
+    case VERTEX_VARSET:
+      varset_unlink(containerof(v, varset, vertex), ctx);
+      break;
+    case VERTEX_RULE:
+      rule_unlink(containerof(v, rule, vertex), ctx);
+      break;
+    case VERTEX_CLIENT:
+    case VERTEX_CONFIGSET:
+    case VERTEX_NAMESPACE:
+    case VERTEX_MODULE_VARS:
+    case VERTEX_MODULE_ENVS:
+    case VERTEX_FORMULA_STDIN:
+    case VERTEX_FORMULA_STDOUT:
+    case VERTEX_FORMULA_STDERR:
+    case VERTEX_FORMULA_AUXOUT:
+    case VERTEX_FORMULA_ARGS:
+    case VERTEX_FORMULA_ENVS:
+    case VERTEX_FORMULA_FILE:
+    case VERTEX_FORMULA_CWD:
+    case VERTEX_PLUGIN_STDIN:
+    case VERTEX_PLUGIN_STDOUT:
+    case VERTEX_PLUGIN_STDERR:
+    case VERTEX_PLUGIN_AUXOUT:
+    case VERTEX_CONTEXT_MODULE:
+    case VERTEX_SYS_NOTIFY:
+    case VERTEX_SYS_BUILD:
+    case VERTEX_SYS_PLAN:
+    case VERTEX_SYS_SYSTEM:
+    case VERTEX_SYS_FILESYSTEM:
+    case VERTEX_SYS_RCU:
+    case VERTEX_SYS_GOALS:
+    case VERTEX_SYS_CONFIG:
+      break;
+  }
+
+  if((msg = events_bacon_would(&ectx, BAMIPC_EVENT_NODE_DELETE))) {
+    z = vertex_path_cat(msg->text, msg->size, v);
+    msg->len = z;
+    msg->id = 0;
+    events_publish(&ectx);
+  }
+}
+
+void vertex_release(moria_vertex * restrict v)
+{
+  vertex_free_probe(v);
+
+  /* should have been unlinked first/separately */
+  RUNTIME_ASSERT(!vertex_exists_get(v));
+
+  switch(vertex_type_get(v)) {
+    /* records */
+    case VERTEX_BUILD_RECORD:
+      return build_record_release(containerof(v, build_record, vertex));
+    case VERTEX_FORMULA_RECORD:
+      return formula_record_release(containerof(v, formula_record, vertex));
+    /* specials */
+    case VERTEX_CONTEXT_MODULE:
+    case VERTEX_DIR:
+    case VERTEX_FILE:
+    case VERTEX_SHADOW_DIR:
+    case VERTEX_SHADOW_FILE:
+    case VERTEX_SHADOW_LINK:
+    case VERTEX_SYMLINK:
+      return fsent_release(containerof(v, fsent, vertex));
+    case VERTEX_BPE:
+      return bpe_release(containerof(v, buildplan_entity, vertex));
+    case VERTEX_CLIENT:
+      return client_release(containerof(v, client, vertex));
+    case VERTEX_RMA:
+      return rma_release(containerof(v, rule_module_association, vertex));
+    case VERTEX_RULE:
+      return rule_release(containerof(v, rule, vertex));
+    case VERTEX_FORMULA:
+      return formula_release(containerof(v, formula, vertex));
+    case VERTEX_CONFIGSET:
+      return configset_release(containerof(v, configset, vertex));
+    case VERTEX_VARSET:
+      return varset_release(containerof(v, varset, vertex));
+    case VERTEX_MODULE:
+      return module_release(containerof(v, module, vertex));
+    case VERTEX_NAMESPACE:
+      return namespace_release(containerof(v, namespace, vertex));
+    case VERTEX_RULESET:
+      return ruleset_release(containerof(v, ruleset, vertex));
+    case VERTEX_FSNAME:
+      return fsname_release(containerof(v, fsname, vertex));
+    case VERTEX_FSTREE:
+      return fstree_release(containerof(v, fstree, vertex));
+    case VERTEX_PLUGIN:
+      return plugin_release(containerof(v, plugin, vertex));
+    /* details */
+    case VERTEX_MODULE_VARS:
+    case VERTEX_MODULE_ENVS:
+    case VERTEX_PLUGIN_STDIN:
+    case VERTEX_PLUGIN_STDOUT:
+    case VERTEX_PLUGIN_STDERR:
+    case VERTEX_PLUGIN_AUXOUT:
+    case VERTEX_FORMULA_STDIN:
+    case VERTEX_FORMULA_STDOUT:
+    case VERTEX_FORMULA_STDERR:
+    case VERTEX_FORMULA_AUXOUT:
+    case VERTEX_FORMULA_ARGS:
+    case VERTEX_FORMULA_ENVS:
+    case VERTEX_FORMULA_FILE:
+    case VERTEX_FORMULA_CWD:
+      return detail_release(containerof(v, detail, vertex));
+    /* globals / subsystems */
+    case VERTEX_SYS_SYSTEM:
+    case VERTEX_SYS_BUILD:
+    case VERTEX_SYS_CONFIG:
+    case VERTEX_SYS_FILESYSTEM:
+    case VERTEX_SYS_GOALS:
+    case VERTEX_SYS_NOTIFY:
+    case VERTEX_SYS_PLAN:
+    case VERTEX_SYS_RCU:
       RTA;
   }
 }

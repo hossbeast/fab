@@ -56,6 +56,8 @@
 #include "config_system.h"
 #include "ns_edge.h"
 #include "notify.h"
+#include "symlink.h"
+#include "disintegrate.h"
 
 #include "common/attrs.h"
 #include "zcat.h"
@@ -600,7 +602,7 @@ void fsent_formula_bootstrap(fsent * restrict fse, graph_invalidation_context * 
 
   fml->self_node = fse;
   fse->self_fml = fml;
-  special_connect(&fse->vertex, &fml->vertex, invalidation);
+  special_connect(&fse->vertex, &fml->vertex, EDGE_FSENT_FML, invalidation);
 
   /* shadow link to the special node itself */
   shadow_link(g_shadow_formulas, fml->id, fml->id_len, &fml->vertex, &fml->link);
@@ -627,8 +629,7 @@ void fsent_varset_bootstrap(fsent * restrict fse, graph_invalidation_context * r
   var->vertex.label_len = var->id_len;
 
   fse->self_var = var;
-  var->self_node = fse;
-  special_connect(&fse->vertex, &var->vertex, invalidation);
+  special_connect(&fse->vertex, &var->vertex, EDGE_FSENT_VARSET, invalidation);
 
   /* shadow link to the special node itself */
   shadow_link(g_shadow_varsets, var->id, var->id_len, &var->vertex, &var->link);
@@ -655,8 +656,7 @@ void fsent_configset_bootstrap(fsent * restrict fse, graph_invalidation_context 
   cfg->vertex.label_len = cfg->id_len;
 
   fse->self_configset = cfg;
-  cfg->self_node = fse;
-  special_connect(&fse->vertex, &cfg->vertex, invalidation);
+  special_connect(&fse->vertex, &cfg->vertex, EDGE_FSENT_CONFIGSET, invalidation);
 
   /* shadow link to the special node itself */
   shadow_link(g_shadow_configsets, cfg->id, cfg->id_len, &cfg->vertex, &cfg->link);
@@ -683,80 +683,73 @@ void fsent_plugin_bootstrap(fsent * restrict fse, graph_invalidation_context * r
   plugin->vertex.label_len = plugin->id_len;
 
   fse->self_plugin = plugin;
-  plugin->self_node = fse;
-  special_connect(&fse->vertex, &plugin->vertex, invalidation);
+  special_connect(&fse->vertex, &plugin->vertex, EDGE_FSENT_PLUGIN, invalidation);
 
   /* shadow link to the special node itself */
   shadow_link(g_shadow_plugins, plugin->id, plugin->id_len, &plugin->vertex, &plugin->link);
   vertex_type_set(&fse->vertex, VERTEX_PLUGIN_FILE);
 }
 
-uint64_t fsent_abspath_hash(const fsent * restrict fse)
+void fsent_unlink(fsent * restrict n, struct graph_disintegrate_context * restrict ctx)
 {
-  char path[PATH_MAX];
-  size_t path_len;
-  uint64_t u64;
-
-  // realpath hash
-  path_len = fsent_absolute_path_cat(path, sizeof(path), fse);
-  u64 = hash64(0, path, path_len);
-
-  return u64;
-}
-
-void fsent_unlink(fsent *n, entlist * restrict edges, graph_invalidation_context * restrict invalidation)
-{
-  event_bacon *msg;
-  uint16_t z;
-  moria_vertex *v;
-  moria_edge *edge;
-  moria_foreach_state st;
   fsent *p;
-  events_context ectx;
+  moria_foreach_state st;
+  moria_edge *edge;
 
-  fsindex_del(n, invalidation);
-  llist_delete(&n->fs_reconcile_lln);
-
-  v = &n->vertex;
-  if(!vertex_exists_get(v)) {
-    /* idempotency */
-    return;
-  }
-
-  /* RMAs attached to the directory must be re-run */
+  /* invalidate the dirnode */
   if((p = fsent_parent(n))) {
-    vertex_invalidate_direct(&fsent_parent(n)->vertex, invalidation);
-  } else {
-    RUNTIME_ASSERT(vertex_type_get(v) == VERTEX_SHADOW_LINK);
+    vertex_invalidate(&p->vertex, ctx->invalidation);
   }
 
-  n->path_hash = 0;
-  vertex_invalidate(v, invalidation);
+  /* if the directory is queued up for unlinking, cancel that */
+  llist_delete(&n->fs_mkdir_lln);
+  llist_delete(&n->fs_readlink_lln);
 
-  /* proactive edge disconnect - remove the edges that should not prevent the fsent
-   * from actually being deleted, as opposed to be marked as not exists */
-  moria_foreach_edge_up(&st, v, edge) {
+  /* if this node has a pending event in the sweeper thread, cancel it */
+  sweeper_thread_cancel(n);
+
+  /* no need to readlink */
+  symlink_readlink_cancel(n);
+
+  moria_foreach_edge(&st, &n->vertex, edge) {
     switch(edge_type_get(edge)) {
-      case EDGE_SPECIAL:
+      case EDGE_FSENT_FML:
+      case EDGE_FSENT_VARSET:
+      case EDGE_FSENT_CONFIGSET:
+      case EDGE_FSENT_RULESET:
+        vertices_push(ctx->unlinking, edge->A);
+      case EDGE_SHADOW_REF:
       case EDGE_DIR_RMA:
-        entlist_push(edges, edge);
-    /* NOTE dependency edges are preserved here. Those will be reaped the next time
-     * the rule which created them is run and fails to match the file since it is now
-     * VERTEX_UNLINKED */
+      case EDGE_DIR_FSNAME:
+
+      /* comment */
+      case EDGE_REF_SYMLINK:
+      case EDGE_BUILD_DIR_MOD:
+
+      /* ?? */
+      case EDGE_LOOKUP:
+
+/* re
+ *    case EDGE_SRC_BPE:
+ *    case EDGE_BPE_TGT:
+ *
+ * its necessary to OMIT these here, to retain nodes in the unlinked state
+ * which are still the source or target of some dependency
+ *
+ * when the rule that created them is run again, the bpe is not refreshed
+ * because now the fsent is unlinked and rules dont match it. when that bpe
+ * is destroyed, then these edges are removed, and with them this node
+ */
+        edges_push(ctx->edges, edge);
       default:
         break;
     }
   }
+}
 
-  vertex_state_set(v, VERTEX_UNLINKED);
-  vertex_unlinked_probe(&n->vertex);
-
-  if((msg = events_bacon_would(&ectx, BAMIPC_EVENT_NODE_DELETE))) {
-    z = vertex_path_cat(msg->text, sizeof(msg->text), &n->vertex);
-    msg->size = z;
-    msg->id = 0;
-    events_publish(&ectx);
-  }
+bool fsent_dir_reap(struct fsent * restrict dir, struct graph_disintegrate_context * restrict ctx)
+{
+  return false; // retain empty directory nodes
 }
 
 fsent *fsent_translate(fsent * fse, const fsent *origin, const fsent *target, graph_invalidation_context * restrict invalidation)

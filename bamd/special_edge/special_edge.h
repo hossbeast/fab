@@ -5,6 +5,7 @@
 
 #include "types.h"
 #include "moria.h"
+#include "valyria/llist.h"
 
 struct graph_invalidation_context;
 struct entlist;
@@ -15,7 +16,11 @@ enum edge_type;
  */
 typedef struct special_edge {
   struct moria_edge edge;
+
+  uint16_t epoch;
 } special_edge;
+
+extern llist special_edge_list;
 
 void special_edge_cleanup(void);
 
@@ -26,13 +31,6 @@ void special_disconnecting(
   __attribute__((nonnull));
 
 void special_connect(
-    struct moria_vertex * restrict B
-  , struct moria_vertex * restrict A
-  , struct graph_invalidation_context * restrict invaliation
-)
-  __attribute__((nonnull));
-
-void special_connect_type(
     struct moria_vertex * restrict B
   , struct moria_vertex * restrict A
   , enum edge_type type

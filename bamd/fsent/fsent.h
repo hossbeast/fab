@@ -33,6 +33,7 @@ struct filesystem;
 struct formula;
 struct fsedge;
 struct fstree;
+struct graph_disintegrate_context;
 struct graph_invalidation_context;
 struct narrator;
 struct plugin;
@@ -313,7 +314,10 @@ void fsent_plugin_bootstrap(fsent * restrict n, struct graph_invalidation_contex
 /*
  * the delete event is fired when the node becomes unlinked though it may actually be released later
  */
-void fsent_unlink(fsent *n, struct entlist * restrict edges, graph_invalidation_context * restrict invalidation)
+void fsent_unlink(fsent * restrict n, struct graph_disintegrate_context * restrict ctx)
+  __attribute__((nonnull));
+
+bool fsent_dir_reap(struct fsent * restrict dir, struct graph_disintegrate_context * restrict ctx)
   __attribute__((nonnull));
 
 fsent *fsent_translate(fsent * fse, const fsent *origin, const fsent *target, struct graph_invalidation_context * restrict invalidation)
