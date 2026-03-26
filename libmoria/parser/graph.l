@@ -20,9 +20,6 @@
 
 %x multilinecomment
 
-/* bytes that cannot appear in the input */
-ILL   [\x00-\x08\x0B-\x1F\x7F-\xFF]
-
 %%
 
  /* single-line comments */
