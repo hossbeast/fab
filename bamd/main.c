@@ -92,12 +92,14 @@ static void xmain()
   // allow creation of world+rw files
   umask(0);
   sigutil_install_handlers();
+  timers_setup();
 
   sigemptyset(&sigs);
   sigaddset(&sigs, SIGINT);
   sigaddset(&sigs, SIGTERM);
   sigaddset(&sigs, SIGQUIT);
   sigaddset(&sigs, SIGUSR1);
+  sigaddset(&sigs, SIGUSR2);    /* see timers */
   sigaddset(&sigs, SIGCHLD);
   sigaddset(&sigs, SIGRTMIN);
 
