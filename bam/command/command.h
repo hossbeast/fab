@@ -93,8 +93,6 @@ void client_post(struct bam_client * restrict client, struct bamipc_message * re
 void command_context(struct command * restrict cmd, struct bacon_writer * restrict builder_writer)
   __attribute__((nonnull));
 
-#define CASE2(x, y) ((((uint32_t)x) << 16) | ((uint32_t)y))
-
 size_t command_identify_result_parse(struct bamipc_message * restrict msg, char *dst, size_t dst_size)
   __attribute__((nonnull))
   __attribute__((warn_unused_result));

@@ -168,3 +168,5 @@ static inline uint32_t alignp(const void *x, uint32_t pow2)
 
   return pow2 - r;
 }
+
+#define CASE2(x, y) (((uint64_t)x << 32) | (y))

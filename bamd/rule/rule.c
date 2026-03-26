@@ -1348,7 +1348,6 @@ void rule_say(const rule * restrict r, narrator * restrict N)
     pattern_say(r->search, N);
   }
 
-#define CASE2(x, y) ((x << 16) | (y << 8))
   switch(CASE2(r->card, r->dir)) {
     case CASE2(RULE_ONE_TO_ONE, RULE_LTR):
       xsays(" -> ");

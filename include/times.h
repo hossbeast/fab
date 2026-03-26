@@ -8,18 +8,25 @@
 #include "types.h"
 #include "zcat.h"
 
-#define NSEC_PER_SEC (1000ULL * 1000 * 1000)
-#define NSEC_PER_MIN (NSEC_PER_SEC * 60)
+/* conversion constants */
+#define NSEC_PER_SEC (1000UL * 1000UL * 1000UL)
+#define NSEC_PER_MIN (1000UL * 1000UL * 1000UL * 60UL)
 
-#define USEC_PER_NSEC 1000ULL
-#define MSEC_PER_USEC 1000ULL
+#define USEC_PER_NSEC (1000UL)
+#define MSEC_PER_USEC (1000UL)
+#define NSEC_PER_MSEC (1000UL * 1000UL)
 
-#define MSEC_PER_SEC  1000ULL
+#define MSEC_PER_SEC  (1000UL)
 
-#define MSEC_AS_NSEC(x) (MSEC_PER_USEC * USEC_PER_NSEC * (x))
-#define SEC_AS_MSEC(x)  (MSEC_PER_SEC * (x))
-#define SEC_AS_NSEC(x)  (NSEC_PER_SEC * (x))
-#define MIN_AS_NSEC(x)  (NSEC_PER_MIN * (x))
+/* milliseconds */
+#define SEC_AS_MSEC(x)  ((x) * MSEC_PER_SEC)
+#define MSEC_AS_MSEC(x) (x)
+
+/* nanoseconds */
+#define MIN_AS_NSEC(x)  ((x) * NSEC_PER_MIN)
+#define SEC_AS_NSEC(x)  ((x) * NSEC_PER_SEC)
+#define MSEC_AS_NSEC(x) ((x) * NSEC_PER_MSEC)
+#define NSEC_AS_NSEC(x) (x)
 
 static inline uint64_t timespec_delta(const struct timespec * restrict start, const struct timespec * restrict end)
 {
@@ -43,7 +50,7 @@ static inline void timespec_add(struct timespec * restrict dst, uint64_t nsec)
 {
   dst->tv_nsec += nsec;
 
-  while(dst->tv_nsec > (1000 * 1000 * 1000))
+  while(dst->tv_nsec >= (1000 * 1000 * 1000))
   {
     dst->tv_nsec -= (1000 * 1000 * 1000);
     dst->tv_sec += 1;
@@ -74,9 +81,8 @@ static inline size_t timespec_ns_cat(void * restrict dst, size_t sz, uint64_t ns
   us = ns / 1000;
   ns -= us * 1000;
 
-  return zcatf(dst, sz, "%02"PRIu64".%03"PRIu64".%03"PRIu64".%03"PRIu64"", s, ms, us, ns);
+  return zcatf(dst, sz, "%02"PRIu64"s.%03"PRIu64"ms.%03"PRIu64"us.%03"PRIu64"ns", s, ms, us, ns);
 }
-
 
 static inline size_t timespec_cat(void * restrict dst, size_t sz, struct timespec * restrict interval)
 {

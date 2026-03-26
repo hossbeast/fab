@@ -8,4 +8,5 @@ CFLAGS       : {
   -include/home/todd/bam/include/tracef.h
   -include/home/todd/bam/include/hexdump.h
   -include/home/todd/bam/include/backtracef.h
+  -include/home/todd/bam/include/asan.h
 }
