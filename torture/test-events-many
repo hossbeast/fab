@@ -1,0 +1,129 @@
+#!/usr/bin/env perl
+
+#
+# subscribe to and print events
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_bampath;
+our $bam_basedir;
+our $bam_dir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use bam::bam;
+use integ;
+
+init();
+setup(<<'TREE');
+|-- system-config <<
+filesystem : {
+  fstrees : {
+    $bm_basedir : {
+      mount : true
+      invalidation : always
+    }
+  }
+}
+>>
+|-- module.bam%devel <<
+rule (*).c -> $1.o : ./cat.bam+(.)
+rule *.o [*] -> blob : ./cat.bam+(.)
+>>
+|-- cat.bam << 0777
+#!/usr/bin/env perl
+open B, ">", $ENV{bm_target0} or die $!;
+for my $f (split(/ /, $ENV{files})) {
+  open A, "<", $f or die $!;
+  while(<A>)
+  {
+    print B "$_";
+  }
+  close A;
+}
+__DATA__
+envs : {
+  files : {
+    sequence : [
+      select : [
+        target
+        traverse : {
+          direction : down
+          graph : depends
+          min-distance : 2
+          max-distance : 2
+        }
+      ]
+      property : relpath
+    ]
+  }
+}
+>>
+TREE
+
+my $child;
+
+#
+# 1. initial
+#
+print("\n >> 1 - SETUP <<\n\n");
+
+#
+# 2. create a bunch of primary files
+#
+for(my $x = 0; $x < 100; $x++) {
+  open FH, ">$bam_basedir/$x.c";
+  print FH ("$x\n");
+  close FH;
+}
+
+for(my $i = 0; $i < 10; $i++)
+{
+  # because of invalidation=always, this rebuilds
+  reconcile();
+
+  #
+  # fork off an event listener
+  #
+  $child = spawn({ cwd => $bam_dir }
+    , $bam_bampath
+    , "--no-launch"
+    , "--no-color"
+    , "events"
+    , "stale"
+    , "fresh"
+  );
+
+  print(">> $i.2 - BUILD <<\n");
+  build();
+
+  print(">> $i.3 - INVALIDATE <<\n");
+  for(my $x = 10; $x < 30; $x++) {
+    open FH, ">$bam_basedir/$x.c";
+    print FH ("$x\n");
+    close FH;
+  }
+
+  print(">> $i.4 - HARVEST <<\n");
+  kill(15, $$child{pid});
+  while(1)
+  {
+    my $r = poll($child);
+    last if exists $$child{status};
+  }
+}
+
+teardown();
