@@ -56,6 +56,23 @@ struct futexlock {
   int32_t i32;
 };
 
+static inline bool futexlock_try(struct futexlock * restrict lock)
+{
+  int32_t prev;
+
+  RUNTIME_ASSERT(tid);
+
+  while(1) {
+    if((prev = atomic_exchange(&lock->i32, tid)) == 0) {
+      return true;
+    } else if(prev == tid) {
+      return false;
+    }
+
+    syscall(SYS_futex, &lock->i32, FUTEX_WAIT, prev, 0, 0, 0);
+  }
+}
+
 static inline void futexlock_acquire(struct futexlock * restrict lock)
 {
   int32_t prev;

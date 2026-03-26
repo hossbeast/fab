@@ -43,7 +43,8 @@ void notify_thread_probe(const struct inotify_event * restrict ev, const fsent *
     z += zcats(s + z, sz - z, "/");
     z += zcatw(s + z, sz - z, ev->name, len);
   }
+  z += zcatf(s + z, sz - z, " fse %p", fse);
 
-  PROBE1(notify_thread, event, buf);
 printf("%.*s\n", (int)z, buf);
+  PROBE1(notify_thread, event, buf);
 }

@@ -4,13 +4,20 @@
 #include <unistd.h>
 #include <sys/inotify.h>
 #include <errno.h>
+#include <sys/stat.h>
 
 #include "narrator.h"
+#include "narrator/fixed.h"
 #include "xlinux/xpthread.h"
 #include "xlinux/xstdlib.h"
 #include "xlinux/xtime.h"
+#include "xlinux/xstat.h"
 #include "xlinux/xunistd.h"
+#include "xlinux/xsignal.h"
 #include "bacon/writer.h"
+#include "bacon/value.h"
+#include "bacon/location.h"
+#include "bacon/builder.h"
 
 #include "sweeper_thread.h"
 #include "args.h"
@@ -20,6 +27,7 @@
 #include "vertex/probes.h"
 #include "goals.h"
 #include "graph.h"
+#include "disintegrate.h"
 #include "run_thread.h"
 #include "params.h"
 #include "rcu.h"
@@ -31,21 +39,42 @@
 #include "atomics.h"
 #include "threads.h"
 #include "times.h"
+#include "filesystem.h"
 #include "inotify_mask.h"
+#include "edges.h"
+#include "vertices.h"
+#include "config.h"
+#include "timers.h"
+#include "events/events.h"
+#include "system.h"
+#include "symlink.h"
+
+/* duration of sleeps in the sweeper thread, which forms the maximum precision of the sweeper clock
+ *  100ms */
+#define NOTIFY_PERIOD_MINIMUM_NSEC MSEC_AS_NSEC(100)
+
+/* effective sweep interval */
+uint64_t sweeper_thread_interval = MSEC_AS_NSEC(500);
+uint32_t sweeper_thread_clock;      // advances in units of the interval
 
 static llist event_queue = LLIST_INITIALIZER(event_queue);
 static llist child_event_freelist = LLIST_INITIALIZER(child_event_freelist);
 static struct futexlock event_queue_lock;
-static uint32_t event_era;
+static bool relaunch;
 
 static void process_event(sweeper_event * restrict ev, graph_invalidation_context * restrict invalidation)
 {
   char path[PATH_MAX];
+  uint16_t path_len;
   moria_vertex *v;
   moria_edge *ue;
   fsent *n;
+  struct vertices unlinking;
+  struct vertices releasing;
+  struct edges edges;
   sweeper_child_event *cev;
   size_t z;
+  struct stat stb;
 
   sweeper_thread_probe(ev);
 
@@ -76,8 +105,7 @@ static void process_event(sweeper_event * restrict ev, graph_invalidation_contex
     {
       RUNTIME_ASSERT(ev->kind == SWEEPER_EVENT_CHILD);
       v = &cev->parent->vertex;
-      if((v = moria_vertex_downw(v, cev->name, cev->name_len)) == 0)
-      {
+      if((v = moria_vertex_downw(v, cev->name, cev->name_len)) == 0) {
         /* delete event for an fsent which no longer exists */
         return;
       }
@@ -88,26 +116,53 @@ static void process_event(sweeper_event * restrict ev, graph_invalidation_contex
     /* deleted the root node ?? */
     RUNTIME_ASSERT(ue);
 
-    fsedge_disintegrate(containerof(ue, fsedge, edge), invalidation);
+    vertices_init(&unlinking);
+    vertices_init(&releasing);
+    edges_init(&edges);
+    vertices_push(&unlinking, v);
+    graph_disintegrate(&edges, &unlinking, &releasing, invalidation);
   }
-  else if(ev->mask & (IN_CREATE | IN_MOVED_TO) && ev->kind == SWEEPER_EVENT_CHILD)
+  else if((ev->mask & (IN_CREATE | IN_MOVED_TO)) && ev->kind == SWEEPER_EVENT_CHILD)
   {
-    /* entity was created */
+    /* absolute path to the child */
+    z = fsent_absolute_path_cat(path, sizeof(path), cev->parent);
+    z += zcatc(path + z, sizeof(path) - z, '/');
+    z += zcatw(path + z, sizeof(path) - z, cev->name, cev->name_len);
+    path[z] = 0;
+    path_len = z;
+
     if(ev->mask & IN_ISDIR)
     {
-      z = fsent_absolute_path_cat(path, sizeof(path), cev->parent);
-      z += zcatc(path + z, sizeof(path) - z, '/');
-      z += zcatw(path + z, sizeof(path) - z, cev->name, cev->name_len);
-      path[z] = 0;
+      /* cev->parent is the parent of the newly created directory */
+      fsent_create(&n, VERTEX_FILETYPE_DIR, VERTEX_OK, cev->name, cev->name_len);
+      fsedge_connect(n, cev->parent, invalidation);
+      vertex_alloc_probe(&n->vertex);
 
-      /* traverse the directory (recursively) and attach at cev->parent */
-      walker_descend(cev->parent, path, 0, invalidation);
+      walker_descend(n, path, 0, invalidation);
     }
     else
     {
-      fsent_create(&n, VERTEX_KIND_FSENT, VERTEX_OK, cev->name, cev->name_len);
+      /* unfortunately the inotify event itself cannot distinguish symlinks */
+      if(uxfstatats(INT32_MAX, AT_SYMLINK_NOFOLLOW, &stb, path) != 0) {
+        /* fsent no longer exists */
+        return;
+      }
+
+      if((stb.st_mode & S_IFMT) == S_IFLNK) {
+        /* symlink was created */
+        fsent_create(&n, VERTEX_SYMLINK, VERTEX_UNCREATED, cev->name, cev->name_len);
+      } else {
+        /* file was created */
+        fsent_create(&n, VERTEX_FILE, VERTEX_UNCREATED, cev->name, cev->name_len);
+      }
+
       fsedge_connect(n, cev->parent, invalidation);
       vertex_alloc_probe(&n->vertex);
+      walker_poke(n, path, path_len, invalidation);
+
+      if((stb.st_mode & S_IFMT) == S_IFLNK) {
+        symlink_readlink_push(n); /* resolve the symlink */
+      }
     }
   }
   else
@@ -115,6 +170,26 @@ static void process_event(sweeper_event * restrict ev, graph_invalidation_contex
     /* entity was modified */
     vertex_exists_set(&n->vertex, true);
     vertex_invalidate(&n->vertex, invalidation);
+    if(vertex_type_get(&n->vertex) == VERTEX_SYMLINK) {
+      symlink_readlink_push(n);
+    }
+  }
+}
+
+static void event_free(sweeper_event *ev)
+{
+  sweeper_child_event *ce;
+
+  /*
+   * holds event_queue_lock
+   */
+
+  if(ev->kind == SWEEPER_EVENT_SELF) {
+    ev->time = 0;
+  } else if(ev->kind == SWEEPER_EVENT_CHILD) {
+    llist_append(&child_event_freelist, &ev->lln);
+    ce = containerof(ev, sweeper_child_event, sweep_event);
+    rbtree_delete(&ce->parent->pending_child, &ce->rbn);
   }
 }
 
@@ -122,82 +197,96 @@ static void sweep()
 {
   graph_invalidation_context invalidation = { };
   sweeper_event *ev;
-  sweeper_child_event *ce;
-  llist *cursor;
 
   graph_invalidation_begin(&invalidation);
 
-  llist_foreach_safe(&event_queue, ev, lln, cursor) {
-    /* subsequent events have not yet expired */
-    if((event_era - ev->era) < 2) {
+  while((ev = llist_shift(&event_queue, typeof(*ev), lln))) {
+    /* events past this point in the list are not yet old enough to process */
+    if(ev->time > sweeper_thread_clock) {
+      llist_unshift(&event_queue, &ev->lln);
       break;
     }
 
     process_event(ev, &invalidation);
-
-    llist_delete(&ev->lln);
-    if(ev->kind == SWEEPER_EVENT_SELF) {
-      ev->era = 0;
-    } else if(ev->kind == SWEEPER_EVENT_CHILD) {
-      llist_append(&child_event_freelist, &ev->lln);
-      ce = containerof(ev, sweeper_child_event, sweep_event);
-      rbtree_delete(&ce->parent->pending_child, &ce->rbn);
-    }
+    event_free(ev);
   }
 
   graph_invalidation_end(&invalidation);
 }
 
+static void timer_handler(int token, int overruns)
+{
+  sweeper_thread_clock++;
+  sweeper_thread_clock += overruns;
+}
+
 static void sweeper_thread()
 {
   sigset_t sigs;
-  struct timespec deadline;
-  sigset_t orig;
-  int r;
-  uint64_t period;
-  rcu_thread rcu_self = {};
+  rcu_thread rcu_self = { };
+  sweeper_event *ev;
+  struct timespec interval;
+  timer_t timerid;
 
   // signals handled on this thread
-  sigfillset(&sigs);
-  sigdelset(&sigs, SIGUSR1);
+  sigemptyset(&sigs);
+  sigaddset(&sigs, SIGUSR1);
+  sigaddset(&sigs, SIGUSR2);
 
-  period = g_args.sweeper_period_nsec;
+  /* rcu-respecting sleep */
+  interval.tv_sec = 0;
+  interval.tv_nsec = MSEC_AS_NSEC(125);
 
-  xclock_gettime(CLOCK_MONOTONIC, &deadline);
-  timespec_add(&deadline, period);
+  timers_periodic_create(&timerid, tid, 0x1, timer_handler);
 
+  /* to publish events, sweeper thread is an rcu reader
+   * this imposes a maximum limit on the time it can be suspended */
   rcu_enter(&rcu_self);
   while(!g_params.shutdown)
   {
-    rcu_quiesce(&rcu_self);
+    /* reset the clock and discard any events which had been enqueued under the old clock */
     futexlock_acquire(&event_queue_lock);
-    event_era++;
-
-    if(!llist_empty(&event_queue))
-    {
-      sweep();
-      if(llist_empty(&event_queue) && run_thread_autorun)
-      {
-        run_thread_launch(0, COMMAND_AUTORUN);
-      }
+    while((ev = llist_shift(&event_queue, typeof(*ev), lln))) {
+      event_free(ev);
     }
-
     futexlock_release(&event_queue_lock);
 
-    /* sleep */
-    xpthread_sigmask(SIG_SETMASK, &sigs, &orig);
-    r = uxclock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &deadline, 0);
-    xpthread_sigmask(SIG_SETMASK, &orig, 0);
+    /* arm or re-arm the timer according to the new clock configuration */
+    sweeper_thread_clock = 0;
+    timers_periodic_put(timerid, sweeper_thread_interval);
 
-    /* only advance the deadline if the sleep was not interrupted */
-    if(r) {
-      continue;
+    relaunch = false;
+    while(!g_params.shutdown && !relaunch)
+    {
+      rcu_quiesce(&rcu_self);
+
+      if(llist_empty(&event_queue)) {
+        goto next;
+      }
+
+      futexlock_acquire(&event_queue_lock);
+
+      if(llist_empty(&event_queue)) {
+        futexlock_release(&event_queue_lock);
+        goto next;
+      }
+
+      sweep();
+      if(llist_empty(&event_queue) && run_thread_autorun) {
+        /* optimistic launch ; missed events are fine and ignored */
+        run_thread_launch(0, 0, COMMAND_AUTORUN);
+      }
+
+      futexlock_release(&event_queue_lock);
+
+next:
+      /* rcu-respecting sleep */
+      xpthread_sigmask(SIG_UNBLOCK, &sigs, 0);
+      uxclock_nanosleep(CLOCK_MONOTONIC, 0, &interval, 0);
+      xpthread_sigmask(SIG_BLOCK, &sigs, 0);
     }
-
-    timespec_add(&deadline, period);
   }
 
-  futexlock_release(&event_queue_lock);
   rcu_leave(&rcu_self);
 }
 
@@ -242,7 +331,7 @@ void sweeper_thread_enqueue(fsent *n, uint32_t mask, const char * restrict name,
 
   if(name)
   {
-    /* event for an fsent in the watchd directory */
+    /* event for an fsent in the watched directory */
     RUNTIME_ASSERT((mask & (IN_DELETE_SELF | IN_MOVE_SELF)) == 0);
 
     /* lookup the event record for this name, under this directory */
@@ -278,7 +367,7 @@ void sweeper_thread_enqueue(fsent *n, uint32_t mask, const char * restrict name,
   else
   {
     e = &n->pending;
-    if(e->era == 0) {
+    if(e->time == 0) {
       e->mask = 0;
     }
   }
@@ -291,13 +380,28 @@ void sweeper_thread_enqueue(fsent *n, uint32_t mask, const char * restrict name,
   e->mask |= mask;
 
   /* refresh timer */
-  e->era = event_era;
+  e->time = sweeper_thread_clock + 2;
 
   /* push to the end */
   llist_delete(&e->lln);
   llist_append(&event_queue, &e->lln);
 
   futexlock_release(&event_queue_lock);
+}
+
+void sweeper_thread_cancel(fsent * restrict fse)
+{
+  if(!llist_attached(&fse->pending.lln)) {
+    return;
+  }
+
+  /* if running on the sweeper thread itself, the lock is already held */
+  if(futexlock_try(&event_queue_lock)) {
+    llist_delete(&fse->pending.lln);
+    futexlock_release(&event_queue_lock);
+  } else {
+    llist_delete(&fse->pending.lln);
+  }
 }
 
 void sweeper_thread_launch()
@@ -312,6 +416,53 @@ void sweeper_thread_launch()
   xpthread_create(&pthread_id, &attr, sweeper_thread_jump, 0);
 
   pthread_attr_destroy(&attr);
+}
+
+void sweeper_thread_reconfigure(struct config * restrict cfg, bool dryrun)
+{
+  uint64_t period_nsec;
+  events_context ectx;
+  bamipc_message *msg;
+  narrator_fixed fixed;
+  bacon_writer writer, *builder_writer;
+  const bacon_location *loc;
+
+  period_nsec = cfg->notify.interval.u32 * NSEC_PER_MSEC;
+  if(period_nsec == 0) {
+    period_nsec = g_args.sweeper_period_nsec;
+  }
+
+  if(dryrun) {
+    if(period_nsec < NOTIFY_PERIOD_MINIMUM_NSEC) {
+      msg = system_error_event(&ectx);
+      narrator_fixed_init(&fixed, msg->text, msg->size);
+      bacon_writer_init(&writer);
+      builder_writer = bacon_writer_open(&writer, &fixed.base);
+
+      { MAPPING STRING("invalid")
+        { SET
+          { MAPPING STRING("interval")
+            UINT(period_nsec)
+          }
+          { MAPPING STRING("location")
+            loc = cfg->notify.interval.v->loc;
+            LOADF("%s [%d,%d - %d,%d]", loc->fname, loc->f_lin + 1, loc->f_col + 1, loc->l_lin + 1, loc->l_col + 1);
+          }
+        }
+      }
+
+      bacon_writer_close(&writer);
+      msg->code = EINVAL;
+      msg->len = fixed.l;
+      events_publish(&ectx);
+    }
+
+    return;
+  }
+
+  sweeper_thread_interval = period_nsec;
+  relaunch = true;
+  uxtgkill(g_params.pid, g_params.thread_sweeper, SIGUSR1);
 }
 
 void sweeper_thread_cleanup()

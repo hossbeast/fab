@@ -17,6 +17,8 @@
 
 PROBE_SEM(sweeper_thread, event) = 0;
 
+static uint32_t event_counter;
+
 void sweeper_thread_probe(const sweeper_event * restrict ev)
 {
   char buf[PATH_MAX];
@@ -60,12 +62,17 @@ void sweeper_thread_probe(const sweeper_event * restrict ev)
     event = "MODIFY";
   }
 
-  z += zcatf(s + z, sz - z, " era %5"PRIu32" %9s ", ev->era, event);
+  z += zcatf(s + z, sz - z, "%8u ", ++event_counter);
+  z += zcatf(s + z, sz - z, "time %5"PRIu32" %9s ", ev->time, event);
+  z += zcatf(s + z, sz - z, "%p ", n);
   z += fsent_base_relative_path_cat(s + z, sz - z, n);
   if(cev)
   {
     z += zcats(s + z, sz - z, "//");
     z += zcatw(s + z, sz - z, cev->name, cev->name_len);
+    if(cev->parent) {
+      z += zcatf(s + z, sz - z, " parent %p", &cev->parent->vertex);
+    }
   }
 
 printf("%.*s\n", (int)z, buf);
