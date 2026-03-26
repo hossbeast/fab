@@ -78,50 +78,14 @@ fsent *user_config_dirnode;
 
 static uint16_t render_pathspec(char path[PATH_MAX], const char * restrict pathspec)
 {
-  char text[PATH_MAX];
-  size_t pathspec_len;
-  const char *src;
-  size_t src_len;
-  size_t z;
+  path_normalize_context ctx;
 
-  pathspec_len = strlen(pathspec);
-  RUNTIME_ASSERT(pathspec_len > 1);
+  ctx.home = g_params.homedir;
+  ctx.home_len = g_params.homedir_len;
+  ctx.base = g_base_dir;
+  ctx.base_len = g_base_dir_len;
 
-  z = 0;
-  if(pathspec_len >= 2 && memcmp(pathspec, "~/", 2) == 0)
-  {
-    z += zcats(text + z, sizeof(text) - z, g_params.homedir);
-    z += zcats(text + z, sizeof(text) - z, "/");
-    z += zcats(text + z, sizeof(text) - z, pathspec + 2);
-    text[z] = 0;
-    src = text;
-    src_len = z;
-  }
-  else if(pathspec_len >= 6 && memcmp(pathspec, "$HOME/", 6) == 0)
-  {
-    z += zcats(text + z, sizeof(text) - z, g_params.homedir);
-    z += zcats(text + z, sizeof(text) - z, "/");
-    z += zcats(text + z, sizeof(text) - z, pathspec + 6);
-    text[z] = 0;
-    src = text;
-    src_len = z;
-  }
-  else if(pathspec[0] != '/')
-  {
-    z += zcats(text + z, sizeof(text) - z, g_base_dir);
-    z += zcats(text + z, sizeof(text) - z, "/");
-    z += zcats(text + z, sizeof(text) - z, pathspec);
-    text[z] = 0;
-    src = text;
-    src_len = z;
-  }
-  else
-  {
-    src = pathspec;
-    src_len = pathspec_len;
-  }
-
-  return path_normalize(path, PATH_MAX, src, src_len);
+  return path_normalize(&ctx, path, PATH_MAX, pathspec, strlen(pathspec));
 }
 
 //

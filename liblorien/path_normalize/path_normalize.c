@@ -7,115 +7,123 @@
 
 #include "zcat.h"
 
-//
-// api
-//
+/*
+upwards traversal by ".." input sections will not ascend past the root.
 
-size_t path_normalize(char * restrict dst, size_t sz, const char * restrict s, uint16_t sl)
+So,
+ /foo/../../bar means /bar, and
+ ./foo/../../bar means ../bar
+*/
+
+size_t path_normalize(path_normalize_context * restrict ctx, char * restrict dst, size_t sz, const char * restrict s, uint16_t sl)
 {
-  size_t dst_len = 0;
-
   const char *A;
   const char *B;
-  const char *backtrack = 0;
-  const char *t;
+  int z;
+  int z0;
+  const char *base;
+  uint16_t base_len;
 
-  bool nofile = false;
-  bool abs = false;
+  z = 0;
 
+  if(!ctx->base || ctx->base_len == 0) {
+    ctx->base = ".";
+    ctx->base_len = 1;
+  }
+  if(!ctx->home || ctx->home_len == 0) {
+    ctx->home = "~";
+    ctx->home_len = 1;
+  }
   if(sl > 0 && s[0] == '/') {
-    abs = true;
-  }
-  if(sl > 2 && s[0] == '/' && s[1] == '.' && s[2] == '.') {
-    nofile = true;
+    base = "";
+    base_len = 0;
+  } else {
+    base = ctx->base;
+    base_len = ctx->base_len;
   }
 
-  for(A = B = s; (B - s) < sl; A = B + 1)
-  {
+  for(A = B = s; (B - s) < sl; A = B + 1) {
     /* find the next slash */
     for(B = A; (B - s) < sl && *B != '/'; B++);
 
-    if((B - A) == 0)
-    {
-      // no-op
+    /* repeated slash */
+    if((B - A) == 0) {
+      continue;
     }
-    else if((B - A) == 1 && A[0] == '.')
-    {
-      // no-op
+
+    /* special sections handling */
+    if((B - A) == 1 && A[0] == '~') {
+      if(z == 0) {
+        /* leading tilde */
+        z += zcatw(dst + z, sz - z, ctx->home, ctx->home_len);
+        continue;
+      } else {
+        /* internal tilde */
+      }
+    } else if((B - A) == 5 && memcmp(A, "$HOME", 5) == 0) {
+      if(z == 0) {
+        /* leading $HOME */
+        z += zcatw(dst + z, sz - z, ctx->home, ctx->home_len);
+        continue;
+      } else {
+        /* internal $HOME */
+      }
+    } else if((B - A) == 1 && A[0] == '.') {
+      if(z == 0) {
+        /* leading dot */
+        z += zcatw(dst + z, sz - z, ctx->base, ctx->base_len);
+      } else {
+        /* internal dot */
+      }
+
+      continue;
+    } else if((B - A) == 2 && A[0] == '.' && A[1] == '.') {
+      /* dot-dot */
+      if(z == 0) {
+        z += zcatw(dst + z, sz - z, base, base_len);
+        base_len = 0;
+      }
+
+      if(z == 0) {
+        continue;
+      }
+
+      z0 = z - 1;
+      for(;z0 != 0 && dst[z0] != '/'; z0--);
+      if(dst[z0] == '/') {
+        z0++;
+      }
+      if((z - z0) == 1 && dst[z0] == '.') {
+        z += zcats(dst + z, sz - z, ".");
+      } else if((z - z0) == 2 && dst[z0] == '.' && dst[z0 + 1] == '.') {
+        z += zcats(dst + z, sz - z, "..");
+      } else {
+        z = z0 - 1;
+      }
+
+      continue;
     }
-    else if((B - A) == 2 && A[0] == '.' && A[1] == '.' && backtrack)
-    {
-      // separator following the segment
-      t = backtrack;
 
-      // first character in the segment
-      t--;
-      while(t != s && *t != '/') {
-        t--;
-      }
-      if(*t == '/') {
-        t++;
-      }
-
-      dst_len -= (backtrack - t) + 1;
-
-      if(dst_len == 4 && nofile) {
-        dst_len -= 4;
-      } else if(dst_len == 2 && !abs) {
-        dst_len -= 2;
-      }
-
-      if(t != s) {
-        t--;
-      }
-
-      // preceeding no-op text
-      while(t != s && (*t == '/' || (*t == '.' && (t[-1] == '/' || (t - s) == 1)))) {
-        t--;
-      }
-      if(t != s) {
-        t++;
-      }
-
-      if((backtrack = t) == s) {
-        backtrack = 0;
-      }
+    if(z == 0) {
+      z += zcatw(dst + z, sz - z, base, base_len);
+      base = "/";
+      base_len = 0;
     }
-    else
-    {
-      if(dst_len == 0)
-      {
-        if(nofile)
-        {
-          dst_len += zcats(dst + dst_len, sz - dst_len, "/..");
-        }
-        else if(!abs)
-        {
-          dst_len += zcats(dst + dst_len, sz - dst_len, ".");
-        }
-      }
-
-      if((B - A) == 2 && A[0] == '.' && A[1] == '.')
-      {
-        if(!abs)
-          dst_len += zcats(dst + dst_len, sz - dst_len, "/..");
-      }
-      else
-      {
-        dst_len += zcats(dst + dst_len, sz - dst_len, "/");
-        dst_len += zcatw(dst + dst_len, sz - dst_len, A, B - A);
-
-        // separator following the segment
-        backtrack = B;
-      }
-    }
+    z += zcatc(dst + z, sz - z, '/');
+    z += zcatw(dst + z, sz - z, A, B - A);
   }
 
-  if(abs && dst_len == 0) {
-    dst_len += zcatc(dst + dst_len, sz - dst_len, '/');
+  if(z == 0) {
+    z += zcatw(dst + z, sz - z, base, base_len);
   }
 
-  dst[dst_len] = 0;
+  if(z == 0 && sl > 0 && s[0] == '/') {
+    z += zcatc(dst + z, sz - z, '/');
+  } else if(z == 0) {
+    z += zcatw(dst + z, sz - z, ctx->base, ctx->base_len);
+  }
 
-  return dst_len;
+  dst[z] = 0;
+
+  return z;
 }

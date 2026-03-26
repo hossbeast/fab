@@ -17,15 +17,17 @@
 #define FTWAT_SYMLINKS  1 // visit symlinks
 #define FTWAT_FOLLOW    2 // follow symlinks
 
+#define FTWAT_OPENDIR   1
+
 typedef struct ftwinfo
 {
-  struct ftwinfo * parent;
+  struct ftwinfo *parent;
 
-  char * path;
+  char *path;
   uint16_t pathl;
   uint16_t name_off;
   uint8_t type;       // one of FTWAT_F, FTWAT_D
-  void * udata;
+  void *udata;
 } ftwinfo;
 
 /// nftwat - file tree walk with AT dirfd
@@ -61,6 +63,7 @@ void nftwat(
     int dirfd
   , const char * dirpath
   , void (*fn)(int method, ftwinfo * restrict info, void * udata, int * stop)
+  , void (*err)(int method, ftwinfo * restrict info, void * udata, int error)
   , int nopenfd
   , uint32_t flags
   , void * udata

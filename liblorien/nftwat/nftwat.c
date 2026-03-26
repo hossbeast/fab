@@ -12,10 +12,11 @@
 
 #include "zcat.h"
 
-static void __attribute__((nonnull(1, 4, 6, 8, 10))) walk(
-    void (*fn)(int method, ftwinfo * info, void * arg, int * stop)
+static int __attribute__((nonnull(1, 5, 7, 9, 11))) walk(
+    void (*fn)(int method, ftwinfo * info, void * udata, int * stop)
+  , void (*err)(int method, ftwinfo * info, void * udata, int error)
   , uint32_t flags
-  , void * arg
+  , void * udata
   , DIR *** const restrict dds
   , size_t ddsz
   , size_t * ddsp
@@ -26,7 +27,7 @@ static void __attribute__((nonnull(1, 4, 6, 8, 10))) walk(
   , ftwinfo * dirinfo
 )
 {
-  DIR * dd = 0;
+  DIR *dd = 0;
   size_t patho;
   long dirloc;
   int ddso = -1;
@@ -35,11 +36,15 @@ static void __attribute__((nonnull(1, 4, 6, 8, 10))) walk(
   uint8_t type;
   struct dirent *entp;
   int r;
+  int fd;
+  ftwinfo child;
+  int rv;
 
   patho = *pathl;
+  rv = 0;
 
   // pre-order callback for directories
-  fn(FTWAT_PRE, dirinfo, arg, &stop);
+  fn(FTWAT_PRE, dirinfo, udata, &stop);
 
   if(stop) {
     goto end;
@@ -50,12 +55,17 @@ static void __attribute__((nonnull(1, 4, 6, 8, 10))) walk(
     ixclosedir(dds[*ddsp]);
   }
 
-  dd = xopendirat(dirfd, path);
+  if((fd = openat(dirfd, path, O_RDONLY | O_DIRECTORY)) == -1) {
+    err(FTWAT_OPENDIR, dirinfo, udata, errno);
+    rv = -1;
+    goto end;
+  }
+  dd = fdopendir(fd);
   ddso = *ddsp;
   *ddsp = ((*ddsp) + 1) % ddsz;
   dds[ddso] = &dd;
 
-  ftwinfo child = {};
+  memset(&child, 0, sizeof(child));
   child.parent = dirinfo;
   child.path = path;
 
@@ -91,20 +101,21 @@ static void __attribute__((nonnull(1, 4, 6, 8, 10))) walk(
       if(type == DT_REG)
       {
         child.type = FTWAT_F;
-        fn(0, &child, arg, &stop);
+        fn(0, &child, udata, &stop);
       }
       else if(type == DT_LNK && (flags & FTWAT_SYMLINKS) != 0)
       {
         child.type = FTWAT_LNK;
-        fn(0, &child, arg, &stop);
+        fn(0, &child, udata, &stop);
       }
       else if(type == DT_DIR)
       {
         child.type = FTWAT_D;
-        walk(
+        rv = walk(
             fn
+          , err
           , flags
-          , arg
+          , udata
           , dds
           , ddsz
           , ddsp
@@ -114,6 +125,9 @@ static void __attribute__((nonnull(1, 4, 6, 8, 10))) walk(
           , pathl
           , &child
         );
+        if(rv != 0) {
+          goto end;
+        }
 
         // reopen if necessary
         if(dd == 0)
@@ -121,7 +135,14 @@ static void __attribute__((nonnull(1, 4, 6, 8, 10))) walk(
           *pathl = patho;
           path[*pathl] = 0;
 
-          dd = xopendirat(dirfd, path);
+          //dd = xopendirat(dirfd, path);
+          if((fd = openat(dirfd, path, O_RDONLY | O_DIRECTORY)) == -1) {
+            err(FTWAT_OPENDIR, dirinfo, udata, errno);
+            rv = -1;
+            goto end;
+          }
+          dd = fdopendir(fd);
+
           ddso = *ddsp;
           *ddsp = ((*ddsp) + 1) % ddsz;
           dds[ddso] = &dd;
@@ -138,22 +159,25 @@ static void __attribute__((nonnull(1, 4, 6, 8, 10))) walk(
   } while(entp);
 
   // post-order callback for directories
-  fn(FTWAT_POST, dirinfo, arg, &stop);
+  fn(FTWAT_POST, dirinfo, udata, &stop);
 
 end:
   ixclosedir(&dd);
   if(ddso > -1 && dds[ddso] == &dd) {
     dds[ddso] = 0;
   }
+
+  return rv;
 }
 
 void nftwat(
     int dirfd
   , const char * dirpath
-  , void (*fn)(int method, ftwinfo * restrict info, void * arg, int * stop)
+  , void (*fn)(int method, ftwinfo * restrict info, void * udata, int * stop)
+  , void (*err)(int method, ftwinfo * restrict info, void * udata, int error)
   , int nopenfd
   , uint32_t flags
-  , void * arg
+  , void *udata
 )
 {
   DIR *** dds = 0;
@@ -183,8 +207,9 @@ void nftwat(
 
   walk(
       fn
+    , err
     , flags
-    , arg
+    , udata
     , dds
     , nopenfd
     , &ddsp

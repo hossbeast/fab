@@ -41,5 +41,5 @@ static void fn(int method, ftwinfo * restrict info, void *arg, int * stop)
 
 void rmdirp(const char * const dirpath, int rmself)
 {
-  nftwat(AT_FDCWD, dirpath, fn, 32, FTWAT_SYMLINKS, &rmself);
+  nftwat(AT_FDCWD, dirpath, fn, NULL, 32, FTWAT_SYMLINKS, &rmself);
 }

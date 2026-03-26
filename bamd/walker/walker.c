@@ -380,7 +380,7 @@ void walker_descend(
   ctx.invalidation = invalidation;
   ctx.base = base;
 
-  nftwat(AT_FDCWD, abspath, walker_visit, 64, FTWAT_SYMLINKS | FTWAT_FOLLOW, &ctx);
+  nftwat(AT_FDCWD, abspath, walker_visit, 0, 64, FTWAT_SYMLINKS, &ctx);
 }
 
 static void special_query(
