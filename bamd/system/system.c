@@ -325,7 +325,7 @@ void system_sys_mappings(const struct moria_vertex * restrict v, struct bacon_wr
   { MAPPING STRING("autorun") BOOL(run_thread_autorun) }
 
   { MAPPING STRING("pid") UINT(g_params.pid) }
-  { MAPPING STRING("hash") HEX64(g_args.hash) }
+  { MAPPING STRING("bamd_id") BYTES(g_args.bamd_id, g_args.bamd_id_len) }
   { MAPPING STRING("basedir") BYTES(g_base_dir, g_base_dir_len) }
   { MAPPING STRING("ipcdir") BYTES(g_params.ipcdir, g_params.ipcdir_len) }
   { MAPPING STRING("homedir") BYTES(g_params.homedir, g_params.homedir_len) }

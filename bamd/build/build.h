@@ -11,21 +11,42 @@
 struct build_slot;
 struct config;
 struct rcu_thread;
+struct moria_vertex;
 
 typedef union stats_record_build {
   struct {
-      uint32_t fml_exec;                /* formula execution attempted */
-      uint32_t fml_exec_ok;             /* formula executed successfully */
-      uint32_t build;                   /* build started */
-      uint32_t build_ok;                /* build ran to completion with no errors */
-      uint32_t build_error;             /* build ran to completion ; one or more formulas failed */
+    /* cumulative */
+    uint32_t fml_exec_ok;         /* slot built successfully */
+    uint32_t fml_exec_err;        /* slot had an error */
+    uint32_t slot_ok;             /* slot built successfully */
+    uint32_t slot_err;            /* slot had an error */
+    uint32_t build;               /* build started */
+    uint32_t build_ok;            /* build ran to completion with no errors */
+    uint32_t build_err;           /* build ran to completion ; one or more slots failed */
+
+    /* most recent build */
+    union {
+      char _last;
+      uint32_t last_build_ok;
+    };
+    uint32_t last_build_err;
+    uint32_t last_fml_exec_ok;
+    uint32_t last_fml_exec_err;
+    uint32_t last_slot_ok;
+    uint32_t last_slot_err;
+    uint32_t last_slots;
+    uint32_t last_stages;
   };
 
   stats_record record;
 } stats_record_build;
 
+extern uint32_t build_system_stdout_size;
+extern uint32_t build_system_stderr_size;
+extern uint32_t build_system_auxout_size;
+extern uint32_t build_system_retention_max_entries;
+
 extern union stats_record_build build_stats;
-extern struct moria_vertex *g_build;
 extern descriptor_type descriptor_stats_record_build;
 
 extern struct build_slot *build_slots;
@@ -49,8 +70,7 @@ void build_reconfigure(struct config * restrict cfg, bool dryrun)
  * carry out the build
  */
 void build(
-    struct rcu_thread * restrict rcu_self
-  , bool autorun
+    bool autorun
   , pid_t pid
   , uint64_t token
   , const char * restrict label
@@ -59,11 +79,11 @@ void build(
   __attribute__((nonnull));
 
 
-void build_describe(struct bacon_writer * restrict builder_writer)
+void build_sys_describe(const struct moria_vertex * restrict, struct bacon_writer * restrict builder_writer)
   __attribute__((nonnull));
 
-void build_stats_build(bool reset, struct bacon_writer * restrict)
+void build_sys_stats_build(const struct moria_vertex * restrict, bool reset, struct bacon_writer * restrict)
   __attribute__((nonnull));
 
-size_t build_id_cat(char *dst, size_t sz)
+void build_sys_id(const struct moria_vertex * restrict, const char ** restrict, uint16_t * restrict)
   __attribute__((nonnull));

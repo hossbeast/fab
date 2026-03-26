@@ -20,8 +20,6 @@ extern struct g_params {
   int             thread_count;     // number of extant threads, other than the monitor/main thread
 
   struct timespec starttime;
-  char            pid_str[32];
-
   long            procs;            // detected number of processors (0 means unknown)
 
   char            ipcdir[PATH_MAX];

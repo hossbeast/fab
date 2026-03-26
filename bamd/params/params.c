@@ -42,7 +42,6 @@ void params_setup()
   const char *ipc;
 
   g_params.pid = getpid();
-  snprintf(g_params.pid_str, sizeof(g_params.pid_str), "%ld", (unsigned long)g_params.pid);
 
   // get available processors
   if((g_params.procs = sysconf(_SC_NPROCESSORS_ONLN)) == -1)
@@ -62,9 +61,9 @@ void params_setup()
 
   // ipc directory
   if((ipc = getenv("BAM_IPC_DIR"))) {
-    g_params.ipcdir_len = zcatf(g_params.ipcdir, sizeof(g_params.ipcdir), "%s/%016"PRIx64, ipc, g_args.hash);
+    g_params.ipcdir_len = zcatf(g_params.ipcdir, sizeof(g_params.ipcdir), "%s/%.*s", ipc, g_args.bamd_id_len, g_args.bamd_id);
   } else if((ipc = getenv("XDG_RUNTIME_DIR"))) {
-    g_params.ipcdir_len = zcatf(g_params.ipcdir, sizeof(g_params.ipcdir), "%s/bam/%016"PRIx64, ipc, g_args.hash);
+    g_params.ipcdir_len = zcatf(g_params.ipcdir, sizeof(g_params.ipcdir), "%s/bam/%.*s", ipc, g_args.bamd_id_len, g_args.bamd_id);
   } else {
     dprintf(2, "neither $BAM_IPC_DIR nor $XDG_RUNTIME_DIR is set, exiting\n");
     exit(1);

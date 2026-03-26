@@ -9,10 +9,11 @@
 #include "types.h"
 #include "xlinux/xstdlib.h"
 #include "xlinux/xstring.h"
+#include "xlinux/xunistd.h"
 
 #include "args.h"
 #include "common/parseint.h"
-#include "common/hash.h"
+#include "common/sha1.h"
 #include "filesystem.h"
 #include "common/attrs.h"
 #include "git-state.h"
@@ -20,7 +21,7 @@
 #include "fstree.h"
 
 struct g_args_t g_args;
-char *g_argv_base_dir_space;
+char *g_argv_basedir_space;
 
 #if CONFIG_DEVEL
 #define SYSTEM_CONFIG_PATH    "/etc/config.bam%devel"
@@ -61,12 +62,16 @@ static void args_usage()
 
 static void args_parse(int argc, char ** restrict argv)
 {
-  char *pwd = 0;
   int x;
   int longindex;
   int version = 0;
   int help = 0;
   int len;
+  sha1_ctx sha;
+  uint8_t hash[20];
+  char buf[PATH_MAX];
+  char *pwd;
+  char *basedir_real = 0;
 
   const struct option longopts[] = {
       { "help"     , no_argument , &help, 1 }
@@ -113,27 +118,42 @@ static void args_parse(int argc, char ** restrict argv)
     }
   }
 
-  if(help)
-  {
+  if(help) {
     args_usage();
   }
-  if(version)
-  {
+  if(version) {
     args_version();
   }
 
+  /* compute bamd id, if it was not provided */
   if(optind == argc) {
-    pwd = xrealpaths(0, getenv("PWD"));
-    g_args.hash = hash64(0, pwd, strlen(pwd));
-  }
-  /* optional first argument - hash */
-  if(optind < argc) {
-    if(parseuint(argv[optind], SCNx64, 1, UINT64_MAX, 1, UINT8_MAX, &g_args.hash, 0) != 0) {
-      fprintf(stderr, "invalid hash %s\n", argv[optind]);
-      exit(1);
+    if((pwd = getenv("PWD"))) {
+    } else {
+      xgetcwd(buf, sizeof(buf));
+      pwd = buf;
     }
+    basedir_real = xrealpaths(0, pwd);
+
+    sha1_init(&sha);
+    sha1_update(&sha, basedir_real, strlen(basedir_real));
+    sha1_final(hash, &sha);
+
+    g_args.bamd_id_len = zcatf(g_args.bamd_id, sizeof(g_args.bamd_id)
+      , "%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx"
+        "%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx"
+      , hash[ 0], hash[ 1], hash[ 2], hash[ 3]
+      , hash[ 4], hash[ 5], hash[ 6], hash[ 7]
+      , hash[ 8], hash[ 9], hash[10], hash[11]
+      , hash[12], hash[13], hash[14], hash[15]
+    );
+  }
+
+  /* optional first argument - bamd id */
+  if(optind < argc) {
+    g_args.bamd_id_len = zcats(g_args.bamd_id, sizeof(g_args.bamd_id), argv[optind]);
     optind++;
   }
+
   /* optional second argument - space for displaying basedir */
   if(optind < argc) {
     len = strlen(argv[optind]);
@@ -143,7 +163,7 @@ static void args_parse(int argc, char ** restrict argv)
       }
     }
     if(x == 100) {
-      g_argv_base_dir_space = argv[optind];
+      g_argv_basedir_space = argv[optind];
       optind++;
     }
   }
@@ -152,32 +172,27 @@ static void args_parse(int argc, char ** restrict argv)
     exit(1);
   }
 
-  free(pwd);
+  free(basedir_real);
 }
 
 void args_init()
 {
   g_args.default_filesystem_invalidation = FILESYSTEM_INVALIDATION_DEFAULT;
   g_args.default_filesystem_index = FILESYSTEM_INDEX_DEFAULT;
+  g_args.default_filesystem_readlink = FILESYSTEM_READLINK_DEFAULT;
   ixstrdup(&g_args.system_config_path, SYSTEM_CONFIG_PATH);
   ixstrdup(&g_args.user_config_path, USER_CONFIG_PATH);
-  g_args.sweeper_period_nsec = MSEC_AS_NSEC(250);
+  g_args.sweeper_period_nsec = MSEC_AS_NSEC(500);
 }
 
 void args_setup(int argc, char ** argv)
 {
-  char space[64];
-
   args_init();
   args_parse(argc, argv);
-
-  snprintf(space, sizeof(space), "%016"PRIx64, g_args.hash);
-  ixstrdup(&g_args.hash_str, space);
 }
 
 void args_teardown()
 {
   free(g_args.system_config_path);
   free(g_args.user_config_path);
-  free(g_args.hash_str);
 }

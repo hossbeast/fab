@@ -15,11 +15,13 @@ extern struct g_args_t {
   bool default_filesystem_index;
   uint64_t sweeper_period_nsec;
 
-  uint64_t hash;
-  char *hash_str;
+  /* unique to the bamd process */
+  /* hash of the base directory realpath */
+  char bamd_id[40];
+  uint16_t bamd_id_len;
 } g_args;
 
-extern char *g_argv_base_dir_space;
+extern char *g_argv_basedir_space;
 
 void args_init(void);
 void args_setup(int argc, char ** argv);

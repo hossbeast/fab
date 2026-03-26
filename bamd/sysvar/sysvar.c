@@ -9,132 +9,116 @@
 
 #include "sysvar.h"
 #include "build_slot.h"
-#include "buildplan_entity.h"
+#include "bpe.h"
 #include "exec_builder.h"
 #include "exec_render.h"
 #include "module.h"
-#include "buildplan_entity.h"
+#include "rma.h"
 #include "vertex.h"
-#include "entlist.h"
+#include "edges.h"
+#include "vertices.h"
 #include "params.h"
 #include "args.h"
+#include "formula_record.h"
+#include "build_record.h"
+#include "git-state.h"
+
+static bacon_parser *sysvar_parser;
+bacon_value *sysvar_globals;
 
 //
 // public
 //
 
-static void render_targets(
-    bacon_value ** restrict vars
-  , bacon_parser * restrict parser
-  , const buildplan_entity * restrict bpe
-  , const fsent * restrict base
-)
+void sysvar_setup(void)
 {
-  size_t count;
-  const fsent *fse;
-  entlist list;
-  entlist *eln;
-  bacon_value *key, *val, *mapping;
-  char path[PATH_MAX];
-  size_t z;
-  int x;
+  bacon_parser_alloc(&sysvar_parser);
 
-  buildplan_entity_targets(bpe, &list);
-  count = llist_count(&list.lln);
-
-  bacon_string_mks(parser, 0, 0, &key, "bm_targets_len");
-  bacon_string_mkf(parser, 0, 0, &val, "%zu", count);
-  bacon_mapping_mk(parser, 0, &mapping, key, val);
-  bacon_set_mkv(parser, 0, *vars, vars, mapping);
-
-  x = 0;
-  entlist_foreach(&list, fse, eln) {
-    z = fsent_relative_path_cat(path, sizeof(path), fse, base);
-    bacon_string_mkf(parser, 0, 0, &key, "bm_target%d", x++);
-    bacon_string_mkw(parser, 0, 0, &val, path, z);
-    bacon_mapping_mk(parser, 0, &mapping, key, val);
-    bacon_set_mkv(parser, 0, *vars, vars, mapping);
-  }
-
-  entlist_destroy(&list);
+  sysvar_globals = sysvar_global_render(sysvar_parser, 0);
 }
 
-static void render_sources(
-    bacon_value ** restrict vars
-  , bacon_parser * restrict parser
-  , const buildplan_entity * restrict bpe
-  , const fsent * restrict base
-)
+void sysvar_cleanup(void)
 {
-  size_t count;
-  const fsent *fse;
-  entlist list;
-  entlist *eln;
-  bacon_value *key, *val, *mapping;
-  char path[PATH_MAX];
-  size_t z;
-  int x;
-
-  buildplan_entity_sources(bpe, &list);
-  count = llist_count(&list.lln);
-
-  bacon_string_mks(parser, 0, 0, &key, "bm_sources_len");
-  bacon_string_mkf(parser, 0, 0, &val, "%zu", count);
-  bacon_mapping_mk(parser, 0, &mapping, key, val);
-  bacon_set_mkv(parser, 0, *vars, vars, mapping);
-
-  x = 0;
-  entlist_foreach(&list, fse, eln) {
-    z = fsent_relative_path_cat(path, sizeof(path), fse, base);
-    bacon_string_mkf(parser, 0, 0, &key, "bm_source%d", x++);
-    bacon_string_mkw(parser, 0, 0, &val, path, z);
-    bacon_mapping_mk(parser, 0, &mapping, key, val);
-    bacon_set_mkv(parser, 0, *vars, vars, mapping);
-  }
-
-  entlist_destroy(&list);
+  bacon_value_free(sysvar_parser, sysvar_globals);
+  bacon_parser_free(sysvar_parser);
 }
 
-void sysvar_render(
-    bacon_value ** restrict vars
-  , bacon_parser * restrict parser
-  , const build_slot * restrict bs
-  , const fsent * restrict base
-)
+bacon_value *sysvar_global_render(bacon_parser * restrict parser, bacon_value *vars)
 {
   bacon_value *key, *val, *mapping;
-  const buildplan_entity * restrict bpe;
 
-  bpe = bs->bpe;
-
-  /* properties that pertain to this bpe */
-  render_sources(vars, parser, bpe, base);
-  render_targets(vars, parser, bpe, base);
-
-  /* properties that pertain to this slot in the buildplan */
-  bacon_string_mks(parser, 0, 0, &key, "bm_slot_index");
-  bacon_string_mkf(parser, 0, 0, &val, "%"PRIu16, bs->stage_index);
-  bacon_mapping_mk(parser, 0, &mapping, key, val);
-  bacon_set_mkv(parser, 0, *vars, vars, mapping);
-
-  /* properties that pertain to this bamd instance */
+  /* global sysvars - properties that pertain to this bamd instance */
   bacon_string_mks(parser, 0, 0, &key, "bm_basedir");
-  bacon_string_mkw(parser, 0, 0, &val, g_base_dir, g_base_dir_len);
+  bacon_string_mkw(parser, 0, 0, &val, g_basedir, g_basedir_len);
   bacon_mapping_mk(parser, 0, &mapping, key, val);
-  bacon_set_mkv(parser, 0, *vars, vars, mapping);
+  bacon_set_mkv(parser, 0, vars, &vars, mapping);
 
   bacon_string_mks(parser, 0, 0, &key, "bm_homedir");
   bacon_string_mkw(parser, 0, 0, &val, g_params.homedir, g_params.homedir_len);
   bacon_mapping_mk(parser, 0, &mapping, key, val);
-  bacon_set_mkv(parser, 0, *vars, vars, mapping);
+  bacon_set_mkv(parser, 0, vars, &vars, mapping);
 
   bacon_string_mks(parser, 0, 0, &key, "bm_ipcdir");
   bacon_string_mkw(parser, 0, 0, &val, g_params.ipcdir, g_params.ipcdir_len);
   bacon_mapping_mk(parser, 0, &mapping, key, val);
-  bacon_set_mkv(parser, 0, *vars, vars, mapping);
+  bacon_set_mkv(parser, 0, vars, &vars, mapping);
 
-  bacon_string_mks(parser, 0, 0, &key, "bm_hash");
-  bacon_string_mkf(parser, 0, 0, &val, "0x%016"PRIx64, g_args.hash);
+  bacon_string_mks(parser, 0, 0, &key, "bm_bamd_id");
+  bacon_string_mkw(parser, 0, 0, &val, g_args.bamd_id, g_args.bamd_id_len);
   bacon_mapping_mk(parser, 0, &mapping, key, val);
-  bacon_set_mkv(parser, 0, *vars, vars, mapping);
+  bacon_set_mkv(parser, 0, vars, &vars, mapping);
+
+  bacon_string_mks(parser, 0, 0, &key, "bm_bamd_pid");
+  bacon_integer_mk(parser, 0, &val, g_params.pid);
+  bacon_mapping_mk(parser, 0, &mapping, key, val);
+  bacon_set_mkv(parser, 0, vars, &vars, mapping);
+
+  bacon_string_mks(parser, 0, 0, &key, "bm_git_describe");
+  bacon_string_mks(parser, 0, 0, &val, git_describe);
+  bacon_mapping_mk(parser, 0, &mapping, key, val);
+  bacon_set_mkv(parser, 0, vars, &vars, mapping);
+
+  return vars;
+}
+
+bacon_value *sysvar_module_render(bacon_parser * restrict parser, bacon_value *vars, const module * restrict mod)
+{
+  bacon_value *key, *val, *mapping;
+  char path[PATH_MAX];
+  size_t path_len;
+
+  /* module sysvars - under the module for the slot */
+  bacon_string_mks(parser, 0, 0, &key, "bm_module_id");
+  bacon_string_mkw(parser, 0, 0, &val, mod->id, mod->id_len);
+  bacon_mapping_mk(parser, 0, &mapping, key, val);
+  bacon_set_mkv(parser, 0, vars, &vars, mapping);
+
+  bacon_string_mks(parser, 0, 0, &key, "bm_module_name");
+  bacon_string_mkw(parser, 0, 0, &val, mod->name, mod->name_len);
+  bacon_mapping_mk(parser, 0, &mapping, key, val);
+  bacon_set_mkv(parser, 0, vars, &vars, mapping);
+
+  path_len = fsent_absolute_path_cat(path, sizeof(path), mod->build_dir);
+  bacon_string_mks(parser, 0, 0, &key, "bm_module_build_dir");
+  bacon_string_mkw(parser, 0, 0, &val, path, path_len);
+  bacon_mapping_mk(parser, 0, &mapping, key, val);
+  bacon_set_mkv(parser, 0, vars, &vars, mapping);
+
+  bacon_string_mks(parser, 0, 0, &key, "bm_module_build_dir_name");
+  bacon_string_mkw(parser, 0, 0, &val, mod->build_dir->vertex.label, mod->build_dir->vertex.label_len);
+  bacon_mapping_mk(parser, 0, &mapping, key, val);
+  bacon_set_mkv(parser, 0, vars, &vars, mapping);
+
+  path_len = fsent_absolute_path_cat(path, sizeof(path), mod->anchor_dir);
+  bacon_string_mks(parser, 0, 0, &key, "bm_module_anchor_dir");
+  bacon_string_mkw(parser, 0, 0, &val, path, path_len);
+  bacon_mapping_mk(parser, 0, &mapping, key, val);
+  bacon_set_mkv(parser, 0, vars, &vars, mapping);
+
+  bacon_string_mks(parser, 0, 0, &key, "bm_module_anchor_dir_name");
+  bacon_string_mkw(parser, 0, 0, &val, mod->anchor_dir->vertex.label, mod->anchor_dir->vertex.label_len);
+  bacon_mapping_mk(parser, 0, &mapping, key, val);
+  bacon_set_mkv(parser, 0, vars, &vars, mapping);
+
+  return vars;
 }
