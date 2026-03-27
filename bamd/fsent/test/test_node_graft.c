@@ -36,10 +36,13 @@ static void node_graft_test_unit_setup(xunit_unit * unit)
 
   args_init();
   fsent_root_setup();
+  shadow_root_setup();
+  fstree_root_setup();
   shadow_setup();
   fstree_setup();
-  module_setup();
   graph_setup();
+
+  extern __thread bool rcu_is_reader ; rcu_is_reader = true;
 }
 
 static void node_graft_test_unit_cleanup(xunit_unit * unit)

@@ -52,7 +52,6 @@
 #include "goals.h"
 #include "stats.h"
 #include "selection.h"
-#include "walker.h"
 #include "ruleset.h"
 #include "special_edge.h"
 #include "ns_edge.h"
@@ -215,7 +214,6 @@ int main(int argc, char ** argv)
   varset_setup();
   goals_setup();
   handler_setup();
-  walker_setup();
   ruleset_setup();
   buildplan_entity_setup();
   entlist_setup();
@@ -243,7 +241,6 @@ int main(int argc, char ** argv)
   handler_cleanup();
   selection_cleanup();
   dependency_cleanup();
-  walker_cleanup();
   request_cleanup();
   graph_cleanup();
   block_cleanup();

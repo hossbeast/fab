@@ -21,6 +21,8 @@ extern bool run_thread_autorun;
  * launch the run thread
  *
  * [handler] - handler thread to notify if any
+ *
+ * returns - true if the runlock was acquired and the run-thread was created
  */
 bool run_thread_launch(struct request_handler * restrict handler, struct channel_thread * restrict owner, command_type cmd);
 

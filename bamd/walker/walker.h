@@ -54,13 +54,23 @@ void walker_system_reconcile(struct graph_invalidation_context * restrict invali
 void walker_system_reconfigure(struct config * restrict cfg, bool dryrun)
   __attribute__((nonnull));
 
-void walker_setup(void);
-void walker_cleanup(void);
-
-uint16_t walker_begin(void);
-
-void walker_query(struct fsent * restrict n, char * restrict path, uint16_t path_len, struct graph_invalidation_context * restrict invalidation)
-  __attribute__((nonnull));
-
-void walker_poke(struct fsent * restrict n, char * restrict path, uint16_t path_len, struct graph_invalidation_context * restrict invalidation)
+/*
+ * reconcile an fsent against the filesystem, update its hash, and invalidate it as needed
+ *
+ * n            - file or symlink vertex
+ * path         - path to n if available
+ * invalidation - invalidation context
+ */
+void walker_poke(
+    struct fsent * restrict n
+  , char * restrict path
+  , uint16_t path_len
+  , struct graph_invalidation_context * restrict invalidation
+)
   __attribute__((nonnull(1, 4)));
+
+/*
+ * check whether an fsent is matched by the walker exclude list
+ */
+bool walker_exclude_list_evaluate(struct fsent * restrict n)
+  __attribute__((nonnull));

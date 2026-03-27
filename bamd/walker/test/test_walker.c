@@ -24,12 +24,12 @@
 
 #include "walker.internal.h"
 #include "fstree.h"
-#include "lookup.h"
 #include "module.h"
 #include "fsent.h"
 #include "fsedge.h"
 #include "node_operations_test.h"
-#include "entlist.h"
+#include "edges.h"
+#include "vertices.h"
 #include "args.h"
 #include "shadow.h"
 
@@ -96,12 +96,11 @@ static void walker_test_unit_setup(xunit_unit * unit)
   moria_load();
   bacon_load();
 
-  args_init();
   fsent_root_setup();
+  shadow_root_setup();
+  fstree_root_setup();
   shadow_setup();
-
-  graph_setup();
-  entlist_setup();
+  fstree_setup();
 
   /* suppress rcu-registration checks performed under devel build for events fired from the walker */
   extern __thread bool rcu_is_reader ; rcu_is_reader = true;
@@ -115,25 +114,28 @@ static void walker_test_unit_cleanup(xunit_unit * unit)
   lorien_unload();
   moria_unload();
   bacon_unload();
-  graph_cleanup();
+
+  fsent_root_cleanup();
+  shadow_cleanup();
   fstree_cleanup();
-  entlist_cleanup();
+  fsent_cleanup();
+  fsedge_cleanup();
 }
 
-static void walker_test_entry(xunit_test * _test)
+static void walker_test_entry(xunit_test *_test)
 {
-  walker_test * test = (walker_test *)_test;
+  walker_test *test = (walker_test *)_test;
 
   walker_test_context ctx = { };
   hashtable infos;
-  map * nodes = 0;
+  map *nodes = 0;
   graph_invalidation_context invalidation = { };
-  moria_parser * op_parser = 0;
-  narrator_growing * N = 0;
+  moria_parser *op_parser = 0;
+  narrator_growing *N = 0;
   int method;
   int stop;
-  char * seq;
-  const char * graph;
+  char *seq;
+  const char *graph;
   ftwinfo *A, *B, key;
   hashtable_search_context sctx;
 
@@ -149,8 +151,9 @@ static void walker_test_entry(xunit_test * _test)
 
   static int walk_ids;
   ctx.base.walk_id = ++walk_ids;
-  if(test->base)
-    resolve_fragment(MMS(test->base), &ctx.base.base);
+  if(test->base) {
+    ctx.base.base = resolve_fragment(MMS(test->base));
+   }
 
   ctx.base.invalidation = &invalidation;
 

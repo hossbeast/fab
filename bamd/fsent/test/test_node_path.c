@@ -18,7 +18,6 @@
 #include "fstree.h"
 #include "module.h"
 #include "node_operations_test.h"
-#include "lookup.h"
 #include "graph.h"
 #include "shadow.h"
 
@@ -40,11 +39,15 @@ static void node_path_test_unit_setup(xunit_unit * unit)
   bacon_load();
 
   fsent_root_setup();
+  shadow_root_setup();
+  fstree_root_setup();
   shadow_setup();
   fstree_setup();
+
   module_setup();
   graph_setup();
-  fsent_root_setup();
+
+  extern __thread bool rcu_is_reader ; rcu_is_reader = true;
 }
 
 static void node_path_test_unit_cleanup(xunit_unit * unit)
@@ -71,7 +74,7 @@ static void node_path_test_entry(xunit_test * _test)
   fsent *module_node = 0;
   fsent *base_node = 0;
   char actual[PATH_MAX];
-  module mod;
+  //module mod;
   size_t pathl;
   const char *absolute;
   const char *relative;
@@ -82,23 +85,19 @@ static void node_path_test_entry(xunit_test * _test)
   moria_parser_create(&parser, &g_graph, (llist *[]) { &fsent_list }, 1, node_operations_test_dispatch, graph_vertex_attrs, graph_edge_attrs);
   moria_parser_operations_parse(parser, MMS(test->operations));
 
-  resolve_fragment(MMS(test->node), &subject);
+  subject = resolve_fragment(MMS(test->node));
   if(test->module)
   {
-    resolve_fragment(MMS(test->module), &module_node);
+    module_node = resolve_fragment(MMS(test->module));
     assert_notnull(module_node);
-
-    subject->mod = &mod;
-    fsent_parent(subject)->mod = &mod;
   }
   if(test->base)
   {
-    resolve_fragment(MMS(test->base), &base_node);
+    base_node = resolve_fragment(MMS(test->base));
     assert_notnull(base_node);
   }
 
   g_base = base_node;
-  mod.dir_node = module_node;
 
   // act
   if(test->absolute_path)

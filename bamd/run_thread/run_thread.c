@@ -25,6 +25,7 @@
 #include "request.h"
 #include "events/events.h"
 #include "timeout_thread.h"
+#include "symlink.h"
 
 #include "threads.h"
 #include "zcat.h"
@@ -41,6 +42,7 @@ static uint16_t run_label_len;
 
 static void run_thread(channel_thread * restrict owner)
 {
+  rcu_thread rcu;
   run_lock.i32 = tid;
 
   if(run_reconcile || run_command == COMMAND_RECONCILE)
@@ -63,6 +65,11 @@ static void run_thread(channel_thread * restrict owner)
     if(system_has_error) {
       goto end;
     }
+
+    /* reconcile symlinks created by the build */
+    rcu_enter(&rcu);
+    symlink_system_reconcile();
+    rcu_leave(&rcu);
   }
 
 end:

@@ -12,7 +12,7 @@ struct fsent;
 struct graph_invalidation_context;
 struct rbtree;
 
-extern struct rbtree * walker_exclude_list;
+extern struct rbtree *walker_exclude_list;
 
 typedef struct walker_context {
   struct fsent *base;        // traversal root node
