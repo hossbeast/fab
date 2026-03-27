@@ -33,7 +33,6 @@
   #include "touch.h"
   #include "kill.h"
   #include "tree.h"
-  #include "trace.h"
   #include "plugins.h"
   #include "formulas.h"
   #include "rulesets.h"
@@ -133,7 +132,6 @@
  RECONCILE                      "reconcile"
  TRUE                           "true"
  FALSE                          "false"
- TRACE                          "trace"
  PLUGIN                         "plugin"
  PLUGINS                        "plugins"
  FORMULA                        "formula"
@@ -354,7 +352,6 @@ command-arguments
   | RULESETS     { command_set(&rulesets_command); }   rulesets-arguments
   | STATS        { command_set(&stats_command); }      stats-arguments
   | TOUCH        { command_set(&touch_command); }      touch-arguments
-  | TRACE        { command_set(&trace_command); }      trace-arguments
   | VARSET       { command_set(&varset_command); }     varset-arguments
   | VARSETS      { command_set(&varsets_command); }    varsets-arguments
   | FSNAME       { command_set(&fsname_command); }     fsname-arguments
@@ -1093,25 +1090,6 @@ info-argument
   : global-argument
   ;
 
-trace-arguments
-  : trace-script-path trace-argument-list
-  | trace-script-path
-  ;
-
-trace-argument-list
-  : trace-argument-list trace-argument
-  | trace-argument
-  ;
-
-trace-argument
-  : global-argument
-  | trace-script-path
-  ;
-
-trace-script-path
-  : bead { trace_args.script_path = $1; }
-  ;
-
 events-arguments
   : events-argument-list
   | %empty;
@@ -1169,7 +1147,6 @@ strtoken
   | STATS
   | DESCRIBE
   | INFO
-  | TRACE
   | CONFIG
   | CONFIGSET
   | CONFIGSETS
