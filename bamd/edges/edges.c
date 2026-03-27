@@ -4,8 +4,10 @@
 #include "valyria/llist.h"
 #include "xlinux/xstdlib.h"
 #include "moria/traverse.h"
+#include "moria.h"
 
-#include "entlist.h"
+#include "edges.h"
+#include "vertices.h"
 #include "locks.h"
 
 static llist freelist = LLIST_INITIALIZER(freelist);
@@ -13,9 +15,9 @@ static struct futexlock freelist_lock;
 
 // static
 
-static entlist *entlist_alloc(void)
+static edges *edges_alloc(void)
 {
-  entlist *ent = 0;
+  edges *ent = 0;
 
   if(!llist_empty(&freelist)) {
     futexlock_acquire(&freelist_lock);
@@ -27,50 +29,50 @@ static entlist *entlist_alloc(void)
     xmalloc(&ent, sizeof(*ent));
   }
 
-  entlist_init(ent);
+  edges_init(ent);
 
   return ent;
 }
 
-void entlist_setup(void)
+void edges_setup(void)
 {
 }
 
-void entlist_cleanup(void)
+void edges_cleanup(void)
 {
-  entlist *ent;
+  edges *ent;
 
   while((ent = llist_shift(&freelist, typeof(*ent), lln))) {
     free(ent);
   }
 }
 
-void entlist_init(entlist * restrict list)
+void edges_init(edges * restrict list)
 {
   llist_init(&list->lln);
   llist_init(&list->lln_sorted);
 }
 
-void entlist_destroy(entlist * restrict list)
+void edges_destroy(edges * restrict list)
 {
   futexlock_acquire(&freelist_lock);
   llist_splice_head(&freelist, &list->lln);
   futexlock_release(&freelist_lock);
 
-  entlist_init(list);
+  edges_init(list);
 }
 
-void entlist_free(entlist * restrict eln)
+void edges_free(edges * restrict eln)
 {
   futexlock_acquire(&freelist_lock);
   llist_push(&freelist, &eln->lln);
   futexlock_release(&freelist_lock);
 }
 
-void entlist_push(entlist * restrict list, const void * restrict p)
+void edges_push(edges * restrict list, const moria_edge * restrict p)
 {
-  entlist *ent;
-  entlist *eln;
+  edges *ent;
+  edges *eln;
   llist *lln;
   ptrdiff_t d;
 
@@ -85,7 +87,7 @@ void entlist_push(entlist * restrict list, const void * restrict p)
 
   lln = lln->prev;
 
-  ent = entlist_alloc();
+  ent = edges_alloc();
   ent->p = (void*)p;
   llist_insert(lln, &ent->lln_sorted, lln->next);
 
@@ -93,10 +95,10 @@ void entlist_push(entlist * restrict list, const void * restrict p)
   llist_push(&list->lln, &ent->lln);
 }
 
-void entlist_unshift(entlist * restrict list, const void * restrict p)
+void edges_unshift(edges * restrict list, const moria_edge * restrict p)
 {
-  entlist *ent;
-  entlist *eln;
+  edges *ent;
+  edges *eln;
   llist *lln;
   ptrdiff_t d;
 
@@ -111,7 +113,7 @@ void entlist_unshift(entlist * restrict list, const void * restrict p)
 
   lln = lln->prev;
 
-  ent = entlist_alloc();
+  ent = edges_alloc();
   ent->p = (void*)p;
   llist_insert(lln, &ent->lln_sorted, lln->next);
 
@@ -119,9 +121,9 @@ void entlist_unshift(entlist * restrict list, const void * restrict p)
   llist_unshift(&list->lln, &ent->lln);
 }
 
-entlist *entlist_shift(entlist * restrict list)
+edges *edges_shift(edges * restrict list)
 {
-  entlist *eln;
+  edges *eln;
 
   if(llist_empty(&list->lln)) {
     return 0;
@@ -134,7 +136,7 @@ entlist *entlist_shift(entlist * restrict list)
   return eln;
 }
 
-void entlist_visitor_edge(
+void edges_visitor_edge(
     struct moria_edge * restrict e
   , void * ctx
   , moria_traversal_mode mode
@@ -142,16 +144,16 @@ void entlist_visitor_edge(
   , moria_traverse_result * restrict result
 )
 {
-  entlist *list = ctx;
-  entlist_push(list, e);
+  edges *list = ctx;
+  edges_push(list, e);
 }
 
-size_t entlist_count(const entlist * restrict list)
+size_t edges_count(const edges * restrict list)
 {
   return llist_count(&list->lln);
 }
 
-bool entlist_empty(const entlist * restrict list)
+bool edges_empty(const edges * restrict list)
 {
   return llist_empty(&list->lln);
 }

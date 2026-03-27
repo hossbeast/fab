@@ -59,7 +59,6 @@
 #include "meta_edge.h"
 #include "rma.h"
 #include "buildplan_entity.h"
-#include "entlist.h"
 #include "fsedge.h"
 #include "rcu.h"
 #include "fsname.h"
@@ -216,7 +215,6 @@ int main(int argc, char ** argv)
   handler_setup();
   ruleset_setup();
   buildplan_entity_setup();
-  entlist_setup();
   config_system_setup();
   events_setup();
   system_setup();
@@ -256,7 +254,6 @@ int main(int argc, char ** argv)
   events_cleanup();
   fsindex_cleanup();
   notify_cleanup();
-  entlist_cleanup();
 
   // libraries
   bam_unload();

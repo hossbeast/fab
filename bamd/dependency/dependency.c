@@ -12,9 +12,10 @@
 #include "fsent.h"
 #include "vertex.h"
 #include "formula.h"
-#include "buildplan_entity.h"
+#include "bpe.h"
 #include "edge.h"
-#include "entlist.h"
+#include "edges.h"
+#include "vertices.h"
 
 llist dependency_list = LLIST_INITIALIZER(dependency_list);                 // active
 static llist dependency_freelist = LLIST_INITIALIZER(dependency_freelist);  // free
@@ -38,23 +39,8 @@ static void dependency_dispose(dependency * restrict dep)
 
 void dependency_release(dependency * restrict dep)
 {
-  int x;
-
   /* this edge must have been previously excised from the graph */
-  if(dep->edge.attrs & MORIA_EDGE_HYPER)
-  {
-    for(x = 0; x < dep->edge.Alen; x++) {
-      RUNTIME_ASSERT(!rbnode_attached(&dep->edge.Alist[x].rbn));
-    }
-    for(x = 0; x < dep->edge.Blen; x++) {
-      RUNTIME_ASSERT(!rbnode_attached(&dep->edge.Blist[x].rbn));
-    }
-  }
-  else
-  {
-    RUNTIME_ASSERT(!rbnode_attached(&dep->edge.rbn_up));
-    RUNTIME_ASSERT(!rbnode_attached(&dep->edge.rbn_down));
-  }
+  RUNTIME_ASSERT(moria_edge_degree(&dep->edge) == 0);
 
   dependency_dispose(dep);
 }
@@ -86,14 +72,9 @@ static void dependency_alloc(dependency ** restrict rv, moria_graph * restrict g
 
 void dependency_cleanup()
 {
-  llist *T;
   dependency *dep;
 
-  llist_foreach_safe(&dependency_list, dep, edge.owner, T) {
-    dependency_dispose(dep);
-  }
-
-  llist_foreach_safe(&dependency_freelist, dep, edge.owner, T) {
+  while((dep = llist_shift(&dependency_freelist, typeof(*dep), edge.owner))) {
     free(dep);
   }
 }
@@ -164,13 +145,12 @@ void dependency_hyperconnect(
 
 void dependency_disconnecting(
     dependency * restrict dep
-  , entlist * restrict edges
-  , entlist * restrict vertices
   , graph_invalidation_context * restrict invalidation
 )
 {
+  moria_vertex *v;
   fsent *A;
-  entlist list, *eln;
+  struct vertices list, *eln;
   int x;
   moria_edge *e;
   moria_foreach_state st;
@@ -179,18 +159,18 @@ void dependency_disconnecting(
     return;
   }
 
-  entlist_init(&list);
+  vertices_init(&list);
   if(!(dep->edge.attrs & MORIA_EDGE_HYPER)) {
-    entlist_push(&list, containerof(dep->edge.A, typeof(*A), vertex));
+    vertices_push(&list, dep->edge.A);
   } else {
     for(x = 0; x < dep->edge.Alen; x++) {
-      entlist_push(&list, containerof(dep->edge.Alist[x].v, typeof(*A), vertex));
+      vertices_push(&list, dep->edge.Alist[x].v);
     }
   }
 
   /* update cached fields */
-  entlist_foreach(&list, A, eln)
-  {
+  vertices_foreach(&list, v, eln) {
+    A = containerof(v, typeof(*A), vertex);
     moria_foreach_edge_down(&st, &A->vertex, e) {
       if(edge_type_get(e) != EDGE_BPE_TGT) {
         continue;
@@ -203,9 +183,12 @@ void dependency_disconnecting(
       if(A->bpe != dep->bpe) {
         continue;
       }
+      if(A->bpe != 0) {
+        fsent_unlink_candidate(A);
+      }
       A->bpe = 0;
     }
   }
 
-  entlist_destroy(&list);
+  vertices_destroy(&list);
 }

@@ -14,7 +14,7 @@ struct narrator;
 struct fsent;
 struct module_rule_edge;
 struct graph_invalidation_context;
-struct entlist;
+struct edges;
 struct buildplan_entity;
 
 // active list
@@ -67,8 +67,6 @@ void dependency_disconnect(dependency * restrict ne, struct graph_invalidation_c
 
 void dependency_disconnecting(
     dependency * restrict dep
-  , struct entlist * restrict edges
-  , struct entlist * restrict vertices
   , struct graph_invalidation_context * restrict invalidation
 )
   __attribute__((nonnull));

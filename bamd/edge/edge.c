@@ -9,7 +9,8 @@
 
 #include "edge.h"
 #include "vertex.h"
-#include "entlist.h"
+#include "edges.h"
+#include "vertices.h"
 
 void edge_describe_up(const moria_edge * restrict e, bacon_writer * restrict builder_writer)
 {
@@ -20,15 +21,17 @@ void edge_describe_up(const moria_edge * restrict e, bacon_writer * restrict bui
     { MAPPING
       STRING("up")
       { SET
-        if(!(e->attrs & MORIA_EDGE_HYPER))
-        {
+        if(e->attrs & MORIA_EDGE_IDENTITY) {
           vertex_describe(e->A, builder_writer);
-        }
-        else
-        {
-          for(x = 0; x < e->Alen; x++)
-          {
-            vertex_describe(e->Alist[x].v, builder_writer);
+        } else if(!(e->attrs & MORIA_EDGE_HYPER)) {
+          if(rbnode_attached(&e->rbn_up)) {
+            vertex_describe(e->A, builder_writer);
+          }
+        } else {
+          for(x = 0; x < e->Alen; x++) {
+            if(rbnode_attached(&e->Alist[x].rbn)) {
+              vertex_describe(e->Alist[x].v, builder_writer);
+            }
           }
         }
       }
@@ -53,15 +56,15 @@ void edge_describe_down(const moria_edge * restrict e, bacon_writer * restrict b
     { MAPPING
       STRING("down")
       { SET
-        if(!(e->attrs & MORIA_EDGE_HYPER))
-        {
-          vertex_describe(e->B, builder_writer);
-        }
-        else
-        {
-          for(x = 0; x < e->Blen; x++)
-          {
-            vertex_describe(e->Blist[x].v, builder_writer);
+        if(!(e->attrs & MORIA_EDGE_HYPER)) {
+          if(rbnode_attached(&e->rbn_down)) {
+            vertex_describe(e->B, builder_writer);
+          }
+        } else {
+          for(x = 0; x < e->Blen; x++) {
+            if(rbnode_attached(&e->Blist[x].rbn)) {
+              vertex_describe(e->Blist[x].v, builder_writer);
+            }
           }
         }
       }
@@ -79,15 +82,17 @@ void edge_describe(const moria_edge * restrict e, bacon_writer * restrict builde
       { MAPPING
         STRING("up")
         { SET
-          if(!(e->attrs & MORIA_EDGE_HYPER))
-          {
+          if(e->attrs & MORIA_EDGE_IDENTITY) {
             vertex_describe(e->A, builder_writer);
-          }
-          else
-          {
-            for(x = 0; x < e->Alen; x++)
-            {
-              vertex_describe(e->Alist[x].v, builder_writer);
+          } else if(!(e->attrs & MORIA_EDGE_HYPER)) {
+            if(rbnode_attached(&e->rbn_up)) {
+              vertex_describe(e->A, builder_writer);
+            }
+          } else {
+            for(x = 0; x < e->Alen; x++) {
+              if(rbnode_attached(&e->Alist[x].rbn)) {
+                vertex_describe(e->Alist[x].v, builder_writer);
+              }
             }
           }
         }
@@ -99,15 +104,15 @@ void edge_describe(const moria_edge * restrict e, bacon_writer * restrict builde
       { MAPPING
         STRING("down")
         { SET
-          if(!(e->attrs & MORIA_EDGE_HYPER))
-          {
-            vertex_describe(e->B, builder_writer);
-          }
-          else
-          {
-            for(x = 0; x < e->Blen; x++)
-            {
-              vertex_describe(e->Blist[x].v, builder_writer);
+          if(!(e->attrs & MORIA_EDGE_HYPER)) {
+            if(rbnode_attached(&e->rbn_down)) {
+              vertex_describe(e->B, builder_writer);
+            }
+          } else {
+            for(x = 0; x < e->Blen; x++) {
+              if(rbnode_attached(&e->Blist[x].rbn)) {
+                vertex_describe(e->Blist[x].v, builder_writer);
+              }
             }
           }
         }
@@ -124,35 +129,49 @@ void edge_identity_describe(const moria_edge * restrict e, bacon_writer * restri
     HEX(e)
     { MAPPING
       STRING("up")
-      if(!(e->attrs & MORIA_EDGE_HYPER))
-      {
+      if(e->attrs & MORIA_EDGE_IDENTITY) {
+        SET
         vertex_identity_describe(e->A, builder_writer);
-      }
-      else
-      {
+      } else if(!(e->attrs & MORIA_EDGE_HYPER)) {
+        if(rbnode_attached(&e->rbn_up)) {
+          SET
+          vertex_identity_describe(e->A, builder_writer);
+        }
+      } else {
         LIST
-        for(x = 0; x < e->Alen; x++)
-        {
-          vertex_identity_describe(e->Alist[x].v, builder_writer);
+        for(x = 0; x < e->Alen; x++) {
+          if(rbnode_attached(&e->Alist[x].rbn)) {
+            SET
+            vertex_identity_describe(e->Alist[x].v, builder_writer);
+          }
         }
       }
     }
-    { MAPPING
-      STRING("attrs")
+    { MAPPING STRING("attrs")
       attrs32_describe(e->attrs, graph_edge_attrs, builder_writer);
     }
     { MAPPING
       STRING("down")
       if(!(e->attrs & MORIA_EDGE_HYPER))
       {
-        vertex_identity_describe(e->B, builder_writer);
+        if(rbnode_attached(&e->rbn_down)) {
+          SET
+          vertex_identity_describe(e->B, builder_writer);
+        } else {
+          STRING("_")
+        }
       }
       else
       {
         LIST
         for(x = 0; x < e->Blen; x++)
         {
-          vertex_identity_describe(e->Blist[x].v, builder_writer);
+          if(rbnode_attached(&e->Blist[x].rbn)) {
+            SET
+            vertex_identity_describe(e->Blist[x].v, builder_writer);
+          } else {
+            STRING("_")
+          }
         }
       }
     }
@@ -191,18 +210,18 @@ void edge_identity_show(const moria_edge * restrict e)
   printf("\n");
 }
 
-bool edges_gather_down(const struct moria_vertex * restrict v, edge_type type, struct entlist * restrict list)
+bool edges_gather_down(const struct moria_vertex * restrict v, edge_type type, struct edges * restrict list)
 {
   moria_foreach_state st;
   moria_edge *e;
   bool b;
 
-  entlist_init(list);
+  edges_init(list);
 
   b = false;
   moria_foreach_edge_down(&st, v, e) {
     if(edge_type_get(e) == type) {
-      entlist_push(list, e);
+      edges_push(list, e);
       b = true;
     }
   }
@@ -210,18 +229,18 @@ bool edges_gather_down(const struct moria_vertex * restrict v, edge_type type, s
   return b;
 }
 
-bool edges_gather_up(const struct moria_vertex * restrict v, edge_type type, struct entlist * restrict list)
+bool edges_gather_up(const struct moria_vertex * restrict v, edge_type type, struct edges * restrict list)
 {
   moria_foreach_state st;
   moria_edge *e;
   bool b;
 
-  entlist_init(list);
+  edges_init(list);
 
   b = false;
   moria_foreach_edge_up(&st, v, e) {
     if(edge_type_get(e) == type) {
-      entlist_push(list, e);
+      edges_push(list, e);
       b = true;
     }
   }
@@ -229,12 +248,84 @@ bool edges_gather_up(const struct moria_vertex * restrict v, edge_type type, str
   return b;
 }
 
-bool edges_gather(const struct moria_vertex * restrict v, edge_type type, struct entlist * restrict list)
+moria_edge *edges_check_up(const struct moria_vertex * restrict v, edge_type type)
 {
-  bool b = false;
+  moria_foreach_state st;
+  moria_edge *e;
 
-  b |= edges_gather_down(v, type, list);
-  b |= edges_gather_up(v, type, list);
+  moria_foreach_edge_up(&st, v, e) {
+    if(edge_type_get(e) == type) {
+      return e;
+    }
+  }
 
-  return b;
+  return 0;
+}
+
+moria_edge *edges_check_down(const struct moria_vertex * restrict v, edge_type type)
+{
+  moria_foreach_state st;
+  moria_edge *e;
+
+  moria_foreach_edge_down(&st, v, e) {
+    if(edge_type_get(e) == type) {
+      return e;
+    }
+  }
+
+  return 0;
+}
+
+uint32_t edges_count_up(const struct moria_vertex * restrict v, edge_type type)
+{
+  moria_foreach_state st;
+  moria_edge *e;
+  uint32_t count;
+
+  count = 0;
+  moria_foreach_edge_up(&st, v, e) {
+    if(edge_type_get(e) == type) {
+      count++;
+    }
+  }
+
+  return count;
+}
+
+uint32_t edges_count_down(const struct moria_vertex * restrict v, edge_type type)
+{
+  moria_foreach_state st;
+  moria_edge *e;
+  uint32_t count;
+
+  count = 0;
+  moria_foreach_edge_down(&st, v, e) {
+    if(edge_type_get(e) == type) {
+      count++;
+    }
+  }
+
+  return count;
+}
+
+moria_vertex *edge_follow_up(const struct moria_vertex * restrict v, edge_type type)
+{
+  moria_edge *e;
+
+  if((e = edges_check_up(v, type)) == NULL) {
+    return 0;
+  }
+
+  return e->A;
+}
+
+moria_vertex *edge_follow_down(const struct moria_vertex * restrict v, edge_type type)
+{
+  moria_edge *e;
+
+  if((e = edges_check_down(v, type)) == NULL) {
+    return 0;
+  }
+
+  return e->B;
 }

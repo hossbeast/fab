@@ -19,7 +19,8 @@
 #include "formula.h"
 #include "rule.h"
 #include "ruleset.h"
-#include "entlist.h"
+#include "edges.h"
+#include "vertices.h"
 #include "rule_system.h"
 
 static llist meta_edge_list = LLIST_INITIALIZER(meta_edge_list);          // active list
