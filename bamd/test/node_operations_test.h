@@ -10,7 +10,8 @@ struct llist;
 /* function pointers for moria/operations which operate on g_graph */
 extern struct moria_operations_vtable * node_operations_test_dispatch;
 
-void resolve_fragment(const char *frag, uint16_t fragl, struct fsent **entp)
+/* lookup a graph node by its label */
+struct fsent *resolve_fragment(const char *frag, uint16_t fragl)
   __attribute__((nonnull));
 
 void graph_say(struct narrator * restrict N)
@@ -24,3 +25,5 @@ void graph_say_lists(
   , uint16_t edge_lists_len
 )
   __attribute__((nonnull));
+
+void graph_show(void);

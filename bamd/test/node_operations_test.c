@@ -4,12 +4,12 @@
 #include "types.h"
 
 #include "narrator.h"
-#include "moria/lookup.h"
 #include "moria/dispatch.h"
 #include "moria/graph.h"
 #include "moria/vertex.h"
 #include "moria/edge.h"
 #include "moria/parser.h"
+#include "moria/linear_search.h"
 #include "common/attrs.h"
 
 #include "node_operations_test.h"
@@ -17,14 +17,18 @@
 #include "vertex.h"
 #include "shadow.h"
 #include "fsedge.h"
+#include "ref_edge.h"
 #include "dependency.h"
 #include "filesystem.h"
 #include "graph.h"
 #include "selection.h"
 #include "dependency.h"
-#include "graph.h"
-#include "buildplan_entity.h"
+#include "disintegrate.h"
+#include "bpe.h"
 #include "edge.h"
+#include "symlink.h"
+#include "edges.h"
+#include "vertices.h"
 
 /* used in unit tests */
 static graph_invalidation_context invalidation;
@@ -63,6 +67,13 @@ static void node_operations_connect(
   else if((attrs & EDGE_DEPENDS))
   {
     dependency_connect(B, A, attrs);
+  }
+  else if(attrs == EDGE_REF_SYMLINK)
+  {
+    An = containerof(A, fsent, vertex);
+    Bn = containerof(B, fsent, vertex);
+    An->vertex.attrs = VERTEX_SYMLINK;
+    fsent_symlink_connect(Bn, An);
   }
   else
   {
@@ -151,7 +162,7 @@ static void create_vertex(
     bpe->vertex.label_len = label_len;
     *rv = &bpe->vertex;
   } else {
-    fsent_create(&n, attrs, VERTEX_OK, label, label_len);
+    fsent_create(&n, VERTEX_FILETYPE_REG, attrs | VERTEX_OK, label, label_len);
     *rv = &n->vertex;
   }
 
@@ -171,7 +182,7 @@ static void create_vertex(
   }
 }
 
-void resolve_fragment(const char *frag, uint16_t fragl, fsent **entp)
+fsent *resolve_fragment(const char *frag, uint16_t fragl)
 {
   /* skip shadow nodes */
   uint32_t masks[] = { VERTEX_SHADOW_BIT };
@@ -181,7 +192,7 @@ void resolve_fragment(const char *frag, uint16_t fragl, fsent **entp)
   moria_graph_linear_search(&fsent_list, frag, fragl, masks, bits, sizeof(masks) / sizeof(*masks), &v);
   RUNTIME_ASSERT(v);
 
-  *entp = containerof(v, fsent, vertex);
+  return containerof(v, fsent, vertex);
 }
 
 void graph_say_lists(narrator * restrict N, llist ** vertex_lists, uint16_t vertex_lists_len, llist ** edge_lists, uint16_t edge_lists_len)
@@ -208,17 +219,24 @@ void graph_say_lists(narrator * restrict N, llist ** vertex_lists, uint16_t vert
 void graph_say(narrator * restrict N)
 {
   llist *vertex_lists[2];
-  llist *edge_lists[2];
+  llist *edge_lists[3];
 
   vertex_lists[0] = &fsent_list;
   vertex_lists[1] = &bpe_list;
   edge_lists[0] = &fsedge_list;
   edge_lists[1] = &dependency_list;
+  edge_lists[2] = &ref_edge_list;
 
   graph_say_lists(N, vertex_lists, sizeof(vertex_lists) / sizeof(*vertex_lists), edge_lists, sizeof(edge_lists) / sizeof(*edge_lists));
 }
 
-moria_operations_vtable * node_operations_test_dispatch = (moria_operations_vtable[]) {{
+void graph_show()
+{
+  graph_say(g_narrator_stdout);
+  printf("\n");
+}
+
+moria_operations_vtable *node_operations_test_dispatch = (moria_operations_vtable[]) {{
     .create_vertex = create_vertex
   , .connect = node_operations_connect
   , .hyperconnect = node_operations_hyperconnect

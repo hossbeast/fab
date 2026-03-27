@@ -18,6 +18,7 @@ fsedge objects are edges in the graph which represent the filesystem tree
 struct fsent;
 struct graph_invalidation_context;
 struct entlist;
+struct moria_connect_context;
 
 // active list
 extern llist fsedge_list;
@@ -25,7 +26,6 @@ extern llist fsedge_list;
 /* EDGE_FS */
 typedef struct fsedge {
   moria_edge edge;
-  uint32_t refmark;
 } fsedge;
 
 /* release edges */

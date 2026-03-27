@@ -91,56 +91,28 @@ void fsedge_alloc(fsedge ** restrict rv)
   *rv = fse;
 }
 
-static void invalidate_modules_by_ancestry(fsent * restrict fse, graph_invalidation_context * restrict invalidation)
-{
-  module *mod;
-  fsent *p;
-
-  /* directory containing the named file*/
-  fse = fsent_parent(fse);
-
-  llist_foreach(&module_list, mod, vertex.owner) {
-    for(p = mod->dir_node; p != g_root; p = fsent_parent(p)) {
-      if(p == fse) {
-        break;
-      }
-    }
-
-    if(p == fse) {
-      vertex_invalidate(&mod->vertex, invalidation);
-    }
-  }
-}
-
-void fsedge_connect(
+void fsedge_connect_ctx(
     fsent * restrict B
   , fsent * restrict A
+  , moria_connect_context * restrict ctx
   , graph_invalidation_context * restrict invalidation
 )
 {
-  fsedge * e;
+  fsedge *e;
   bool ash;
   bool bsh;
   vertex_filetype ft;
-  moria_connect_context ctx;
-  int r;
 
-  /* links should have been resolved in the caller */
-  RUNTIME_ASSERT(!(A->vertex.attrs & MORIA_VERTEX_LINK));
-  RUNTIME_ASSERT(vertex_type_get(&A->vertex) != VERTEX_CONTEXT_MODULE);
-
-  r = moria_preconnect(&ctx, &g_graph, &B->vertex, &A->vertex, EDGE_FSTREE, 0);
-  if(r == MORIA_HASEDGE) {
-    return;
-  }
-  RUNTIME_ASSERT(r == MORIA_NOEDGE);
   fsedge_alloc(&e);
-  moria_connect(&ctx, &g_graph, &e->edge, &B->vertex, &A->vertex, EDGE_FSTREE);
+  moria_connect(ctx, &g_graph, &e->edge, &B->vertex, &A->vertex, EDGE_FS);
 
   /* compute final identifiers */
   fsent_compute_identifiers(B);
 
-  /* this is reassigned in fsent_reconcile */
+  /* fst assignment is propagated from the parent
+   * importantly, fsent_fstree_epoch is not copied, this allows another fstree to be based on this fsent later
+   * fstree assignments are overwritten in fsent_reconcile
+   * fsents allocated after that point depend on this assignment */
   B->fst = A->fst;
 
   ash = vertex_shadow_get(&A->vertex);
@@ -153,10 +125,6 @@ void fsedge_connect(
 
     /* shadow nodes can become invalid but they never actually exist */
     vertex_state_set(&B->vertex, VERTEX_OK);
-  }
-  if(ash)
-  {
-    B->mod = A->mod;
   }
 
   ft = vertex_filetype_get(&A->vertex);
@@ -178,30 +146,39 @@ void fsedge_connect(
   /* invalidate the dirnode */
   vertex_invalidate(&A->vertex, invalidation);
 
-  /* for a newly created named file, invalidate modules which would find it upon reload */
-  if(vertex_type_get(&B->vertex) != VERTEX_FILE) {
-    return;
+  /* for a newly created named file, if any module would find it upon reload, that module
+     must be invalidated here */
+  switch(vertex_type_get(&B->vertex)) {
+    case VERTEX_FILE:
+    case VERTEX_SYMLINK:
+      break;
+    default:
+      return;
   }
 
-  /*
-   * TODO this needs to also incorporate module varfiles
-   */
-  if(memncmp(B->vertex.label, B->vertex.label_len, MMS(fsent_name_var)) == 0) {
-    invalidate_modules_by_ancestry(B, invalidation);
-  }
+  modules_invalidate_for_specials(B, invalidation);
 }
 
-void fsedge_disintegrate(fsedge * restrict fse, graph_invalidation_context * restrict invalidation)
+void fsedge_connect(
+    fsent * restrict B
+  , fsent * restrict A
+  , graph_invalidation_context * restrict invalidation
+)
 {
-  entlist edges;
+  moria_connect_context ctx;
+  int r;
 
-  // visit this edge and all edges below it, in reverse depth order
-  entlist_init(&edges);
-  entlist_push(&edges, &fse->edge);
+  /* links should have been resolved in the caller */
+  RUNTIME_ASSERT(!(A->vertex.attrs & MORIA_VERTEX_LINK));
+  RUNTIME_ASSERT(vertex_type_get(&A->vertex) != VERTEX_CONTEXT_MODULE);
 
-  fsedge_disintegrate_bulk(&edges, invalidation);
+  r = moria_preconnect(&ctx, &g_graph, &B->vertex, &A->vertex, EDGE_FS, 0);
+  if(r == MORIA_HASEDGE) {
+    return;
+  }
+  RUNTIME_ASSERT(r == MORIA_NOEDGE);
 
-  entlist_destroy(&edges);
+  fsedge_connect_ctx(B, A, &ctx, invalidation);
 }
 
 void fsedge_disconnecting(fsedge * restrict fse, graph_invalidation_context * restrict invalidation)

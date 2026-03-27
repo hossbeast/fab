@@ -3,56 +3,58 @@
 
 #pragma once
 
-/*
+#if 0
 shadow filesystem layout
 
 //module           the context module
-
-//modules/<hash>   virtual directory with an entry for each loaded module
-
- module/imports/  virtual directory with an entry for each imported directory
- module/targets   virtual file for module targets
- module/scope/    generate patterns start here
- module/fs/       -> module directory node - match patterns start here
-
-*/
+//modules/<id>     virtual directory with an entry for each loaded module
+//targets          default build targets
+//bm/sys-*         subsystem nodes
+//bm/*             lists of specials
+#endif
 
 struct fsedge;
 struct fsent;
 struct module;
 enum vertex_kind;
 struct graph_invalidation_context;
+struct moria_connect_context;
 
 // globally scoped fsents
-extern struct fsent *g_shadow;                 /* shadow fs root */
+extern struct fsent *g_shadow;                        /* shadow fs root */
+extern struct fsent *g_shadow_bm;                     /* shadow bm dir */
 
 /* lists of specials */
-extern struct fsent *g_shadow_modules;         /* //modules */
-extern struct fsent *g_shadow_rulesets;        /* //rulesets */
-extern struct fsent *g_shadow_formulas;        /* //formulas */
-extern struct fsent *g_shadow_varsets;         /* //varsets */
-extern struct fsent *g_shadow_configsets;      /* //configsets */
-extern struct fsent *g_shadow_plugins;         /* //plugins */
-extern struct fsent *g_shadow_fstrees;         /* //fstrees */
-extern struct fsent *g_shadow_fsnames;         /* //fsnames */
-extern struct fsent *g_shadow_fsnames_by;      /* //fsnames-by */
-extern struct fsent *g_shadow_fsnames_byname;  /* //fsnames-by/name */
+extern struct fsent *g_shadow_modules;                /* //bm/modules */
+extern struct fsent *g_shadow_rulesets;               /* //bm/rulesets */
+extern struct fsent *g_shadow_formulas;               /* //bm/formulas */
+extern struct fsent *g_shadow_varsets;                /* //bm/varsets */
+extern struct fsent *g_shadow_configsets;             /* //bm/configsets */
+extern struct fsent *g_shadow_plugins;                /* //bm/plugins */
+extern struct fsent *g_shadow_plugins_byname;         /* //bm/plugins-by/name */
+extern struct fsent *g_shadow_fstrees;                /* //bm/fstrees */
+extern struct fsent *g_shadow_clients;                /* //bm/clients */
+extern struct fsent *g_shadow_namespaces;             /* //bm/namespaces */
+extern struct fsent *g_shadow_namespaces_byname;      /* //bm/namespaces-by/name */
+extern struct fsent *g_shadow_fsnames;                /* //bm/fsnames */
+extern struct fsent *g_shadow_build_records;          /* //bm/build-records */
+extern struct fsent *g_shadow_build_records_byorder;  /* //bm/build-records-by/order */
+extern struct fsent *g_shadow_formula_records;        /* //bm/formula-records */
 
 /* rules */
-extern struct fsent *g_shadow_rules;           /* //rules */
-extern struct fsent *g_shadow_rules_by;        /* //rules-by/ */
-extern struct fsent *g_shadow_rules_byname;    /* //rules-by/name/ */
-extern struct fsent *g_shadow_rmas;            /* //rmas */
-extern struct fsent *g_shadow_rmas_by;         /* //rmas-by */
-extern struct fsent *g_shadow_rmas_byname;     /* //rmas-by/name/ */
+extern struct fsent *g_shadow_rules;                  /* //bm/rules */
+extern struct fsent *g_shadow_rules_byname;           /* //bm/rules-by/name/ */
+extern struct fsent *g_shadow_rmas;                   /* //bm/rmas */
+extern struct fsent *g_shadow_rmas_byname;            /* //bm/rmas-by/name/ */
 
 /* other node lists */
-extern struct fsent *g_shadow_bpes;            /* //bpes */
+extern struct fsent *g_shadow_bpes;                   /* //bm/bpes */
 
 /* magic files */
-extern struct fsent *g_shadow_targets;         /* //targets */
+extern struct fsent *g_shadow_targets;                /* //targets */
 
 /* module initialization */
+void shadow_root_setup(void);
 void shadow_setup(void);
 
 /* module cleanup */
@@ -63,15 +65,7 @@ void shadow_graft_bind(
   , struct fsent * restrict ref
   , struct fsent * restrict attachment
   , struct fsent ** restrict target
-)
-  __attribute__((nonnull(1, 2, 3)));
-
-void shadow_graft_requires(
-    struct module * restrict mod
-  , struct fsent * restrict ref
-  , const char * restrict as
-  , uint16_t asl
-  , struct fsedge ** restrict ep
+  , struct graph_invalidation_context * restrict invalidation
 )
   __attribute__((nonnull(1, 2, 3)));
 
@@ -85,11 +79,38 @@ void shadow_create(
 )
   __attribute__((nonnull(1, 3, 6)));
 
-void shadow_link(
+struct moria_vertex *shadow_link(
+    /* 1 */ struct moria_connect_context * restrict ctx
+  , /* 2 */ struct fsent * restrict parent
+  , /* 3 */ const char * restrict name
+  , /* 4 */ uint16_t namel
+)
+  __attribute__((nonnull(2, 3)));
+
+void shadow_mkref(
     /* 1 */ struct fsent * restrict parent
   , /* 2 */ const char * restrict name
   , /* 3 */ uint16_t namel
   , /* 4 */ struct moria_vertex * restrict ref
-  , /* 5 */ struct fsedge ** restrict ep
 )
   __attribute__((nonnull(1, 2, 4)));
+
+void shadow_mkref_new(
+    /* 1 */ struct fsent * restrict parent
+  , /* 2 */ const char * restrict name
+  , /* 3 */ uint16_t namel
+  , /* 4 */ struct moria_vertex * restrict ref
+)
+  __attribute__((nonnull(1, 2, 4)));
+
+void shadow_link_noref(
+    /* 1 */ struct fsent * restrict parent
+  , /* 2 */ const char * restrict name
+  , /* 3 */ uint16_t namel
+  , /* 4 */ struct moria_vertex * restrict ref
+  , /* 5 */ struct fsent ** restrict linkp
+)
+  __attribute__((nonnull));
+
+void fsent_shadow_link_describe(struct fsent * restrict fse, struct bacon_writer * restrict builder_writer)
+  __attribute__((nonnull));
