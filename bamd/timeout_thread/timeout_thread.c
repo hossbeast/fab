@@ -19,7 +19,7 @@
 #include "config.h"
 #include "system.h"
 #include "channel.h"
-#include "events.h"
+#include "events/events.h"
 
 #include "atomics.h"
 #include "times.h"
@@ -33,10 +33,12 @@
 /* 90 days : max timeout when negative value specified */
 #define TIMEOUT_PERIOD_MAX (1000ULL * 1000 * 1000 * 60 * 60 * 24 * 90)
 
-struct timespec timeout_thread_deadline;
+struct timespec timeout_thread_deadline = {};
 
 static int64_t interval;      // configured timeout interval
 static bool relaunch;
+static bool refresh_on_request;
+static bool refresh_on_autobuild;
 
 static void timeout_thread()
 {
@@ -112,7 +114,7 @@ void timeout_thread_launch()
 void timeout_thread_reconfigure(struct config * restrict cfg, bool dryrun)
 {
   events_context ectx;
-  event_bacon *msg;
+  bamipc_message *msg;
   bacon_value *val;
 
   val = cfg->timeout.interval.v;
@@ -121,9 +123,9 @@ void timeout_thread_reconfigure(struct config * restrict cfg, bool dryrun)
     if(cfg->timeout.interval.i64 > TIMEOUT_PERIOD_MAX) {
       msg = system_error_event(&ectx);
       msg->code = EINVAL;
-      msg->size = 0;
-      msg->size += zcatf(msg->text + msg->size, sizeof(msg->text) - msg->size, "interval %"PRIi64, cfg->timeout.interval.i64);
-      msg->size += zcatf(msg->text + msg->size, sizeof(msg->text) - msg->size, " location [%d,%d - %d,%d]"
+      msg->len = 0;
+      msg->len += zcatf(msg->text + msg->len, msg->size - msg->len, "interval %"PRIi64, cfg->timeout.interval.i64);
+      msg->len += zcatf(msg->text + msg->len, msg->size - msg->len, " location [%d,%d - %d,%d]"
         , val->loc->f_lin + 1
         , val->loc->f_col + 1
         , val->loc->l_lin + 1
@@ -135,7 +137,27 @@ void timeout_thread_reconfigure(struct config * restrict cfg, bool dryrun)
   }
 
   interval = cfg->timeout.interval.i64;
+  refresh_on_request = cfg->timeout.refresh_on_request.b;
+  refresh_on_autobuild = cfg->timeout.refresh_on_autobuild.b;
 
   relaunch = true;
   uxtgkill(g_params.pid, g_params.thread_timeout, SIGUSR1);
+}
+
+void timeout_thread_refresh_on_request()
+{
+  if(!refresh_on_request) {
+    return;
+  }
+
+  syscall(SYS_tgkill, g_params.pid, g_params.thread_timeout, SIGUSR1);
+}
+
+void timeout_thread_refresh_on_autobuild()
+{
+  if(!refresh_on_autobuild) {
+    return;
+  }
+
+  syscall(SYS_tgkill, g_params.pid, g_params.thread_timeout, SIGUSR1);
 }

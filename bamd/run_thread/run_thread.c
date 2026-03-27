@@ -24,6 +24,7 @@
 #include "build.h"
 #include "request.h"
 #include "events.h"
+#include "timeout_thread.h"
 
 #include "threads.h"
 #include "zcat.h"
@@ -120,6 +121,11 @@ void run_thread_launch(handler_context * restrict handler, command_type cmd)
   if(!trylock_acquire(&run_lock)) {
     fprintf(stderr, "run already in progress %d\n", run_lock.i32);
     return;
+  }
+
+  /* reset the timeout thread */
+  if(cmd == COMMAND_AUTORUN) {
+    timeout_thread_refresh_on_autobuild();
   }
 
   owner = handler;

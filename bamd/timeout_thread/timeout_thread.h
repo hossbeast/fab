@@ -12,3 +12,6 @@ extern struct timespec timeout_thread_deadline;
 
 void timeout_thread_launch(void);
 void timeout_thread_reconfigure(struct config * restrict cfg, bool dryrun);
+
+void timeout_thread_refresh_on_request(void);
+void timeout_thread_refresh_on_autobuild(void);

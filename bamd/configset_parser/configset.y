@@ -125,6 +125,8 @@
  PLUGINS                  "plugins"
  ARGS                     "args"
  ENVS                     "envs"
+ REFRESH_ON_REQUEST       "refresh-on-request"
+ REFRESH_ON_AUTOBUILD     "refresh-on-autobuild"
 
 %token
  <pattern> INCLUDE_PATTERN  "include-pattern"
@@ -343,10 +345,20 @@ timeout-settings
   ;
 
 timeout-setting
-  : INTERVAL ':' int64
+  : INTERVAL_SEC ':' int64
   {
     replace(PARSER, &PARSER->cfg->timeout.interval.v, $3);
     PARSER->cfg->timeout.interval.i64 = $3->i;
+  }
+  | REFRESH_ON_REQUEST ':' boolean
+  {
+    replace(PARSER, &PARSER->cfg->timeout.refresh_on_request.v, $3);
+    PARSER->cfg->timeout.refresh_on_request.b = $3->b;
+  }
+  | REFRESH_ON_AUTOBUILD ':' boolean
+  {
+    replace(PARSER, &PARSER->cfg->timeout.refresh_on_autobuild.v, $3);
+    PARSER->cfg->timeout.refresh_on_autobuild.b = $3->b;
   }
   ;
 

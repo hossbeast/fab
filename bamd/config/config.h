@@ -135,6 +135,14 @@ typedef struct config {
       struct bacon_value *v;
       int64_t i64;            // seconds
     } interval;
+    struct {
+      struct bacon_value *v;
+      bool b;
+    } refresh_on_request;
+    struct {
+      struct bacon_value *v;
+      bool b;
+    } refresh_on_autobuild;
   } timeout;
 
   struct {

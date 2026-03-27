@@ -26,6 +26,7 @@
 #include "server_thread.h"
 #include "times.h"
 #include "system.h"
+#include "timeout_thread.h"
 
 #include "zcat.h"
 #include "threads.h"
@@ -106,6 +107,9 @@ static void handler_thread(handler_context * restrict ctx)
     }
     else if(cmd && !ctx->chan->error)
     {
+      /* request-bearing message ; reset the timeout thread */
+      timeout_thread_refresh_on_request();
+
       if(cmd->type == COMMAND_GOALS)
       {
         /* invalidates //goals which triggers autorun */

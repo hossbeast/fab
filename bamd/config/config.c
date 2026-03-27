@@ -107,6 +107,11 @@ void config_free(config * restrict cfg, configset_parser * restrict parser)
     free(fpde);
   }
 
+  /* timeout */
+  bacon_value_free(parser->bacon_parser, cfg->timeout.interval.v);
+  bacon_value_free(parser->bacon_parser, cfg->timeout.refresh_on_request.v);
+  bacon_value_free(parser->bacon_parser, cfg->timeout.refresh_on_autobuild.v);
+
   /* filesystem.exclude */
   llist_init(&list);
   rbtree_foreach(&cfg->filesystem.exclude.set, pat, rbn) {
@@ -444,6 +449,24 @@ void config_describe(const config * restrict cfg, bacon_writer * const restrict 
             }
           }
         }
+      }
+    }
+  }
+  if(cfg->timeout.interval.v || cfg->timeout.refresh_on_request.v || cfg->timeout.refresh_on_autobuild.v)
+  {
+    MAPPING STRING("timeout")
+    { SET
+      if(cfg->timeout.interval.v) {
+        MAPPING STRING("interval-sec")
+        UINT(cfg->timeout.interval.i64)
+      }
+      if(cfg->timeout.refresh_on_request.v) {
+        MAPPING STRING("refresh-on-request")
+        BOOL(cfg->timeout.refresh_on_request.b)
+      }
+      if(cfg->timeout.refresh_on_autobuild.v) {
+        MAPPING STRING("refresh-on-autobuild")
+        BOOL(cfg->timeout.refresh_on_autobuild.b)
       }
     }
   }
