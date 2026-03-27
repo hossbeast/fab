@@ -55,8 +55,6 @@ void command_describe(command * const restrict cmd, bacon_writer * const restric
 
   switch(cmd->type)
   {
-    case COMMAND_GLOBAL_STATS_READ:
-    case COMMAND_GLOBAL_STATS_RESET:
     case COMMAND_STATS_READ:
     case COMMAND_STATS_RESET:
     case COMMAND_RESET_SELECTION:

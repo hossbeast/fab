@@ -15,8 +15,6 @@ struct bacon_writer;
 
 #define COMMAND_TYPE_OPT 0xff
 #define COMMAND_TYPE_TABLE                                                                                                            \
-  DEF(COMMAND_GLOBAL_STATS_READ         , "global-stats-read"         , 0x01) /* retrieve global stats */                             \
-  DEF(COMMAND_GLOBAL_STATS_RESET        , "global-stats-reset"        , 0x02) /* reset global stats, retrieve previous values */      \
   DEF(COMMAND_STATS_READ                , "stats-read"                , 0x03) /* retrieve node stats */                               \
   DEF(COMMAND_STATS_RESET               , "stats-reset"               , 0x04) /* reset node stats, retrieve previous values */        \
   DEF(COMMAND_SELECT                    , "select"                    , 0x05) /* add nodes to the selection */                        \

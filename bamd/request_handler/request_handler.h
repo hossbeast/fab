@@ -20,6 +20,7 @@ struct command;
 struct module;
 struct channel_thread;
 struct plugin_thread;
+enum bamipc_msg_type;
 
 typedef struct request_handler {
   llist lln;      /* freelist */
@@ -70,7 +71,7 @@ void request_handler_reset(request_handler * restrict ctx)
 void request_handler_process_command(struct request_handler * restrict ctx, struct command* restrict cmd)
   __attribute__((nonnull));
 
-struct bamipc_message *request_handler_tx(request_handler * restrict handler)
+struct bamipc_message *request_handler_tx(request_handler * restrict handler, enum bamipc_msg_type type, uint32_t format, int32_t code)
   __attribute__((nonnull));
 
 void request_handler_post(request_handler * restrict handler, struct bamipc_message * restrict msg)

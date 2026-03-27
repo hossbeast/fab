@@ -69,7 +69,6 @@
 
 %type <yyu.umax> uint hex64
 %type <eventtype> eventname
-%type <yyu.t> string quoted-string unquoted-string
 
 %destructor { selector_free($$); } <selector>
 
@@ -82,13 +81,11 @@
   LIST                       "list"
   TELL                       "tell"
   INVALIDATE                 "invalidate"
-  INVALIDATE_PRIMARY         "invalidate-primary"
+  MODULES_INVALIDATE_PRIMARY "modules-invalidate-primary"
   TREE_LIST                  "tree-list"
   RESET_SELECTION            "reset-selection"
   RUN                        "run"
   SELECT                     "select"
-  GLOBAL_STATS_READ          "global-stats-read"
-  GLOBAL_STATS_RESET         "global-stats-reset"
   STATS_READ                 "stats-read"
   STATS_RESET                "stats-reset"
   RECONCILE                  "reconcile"
@@ -98,8 +95,7 @@
   SPECIAL_ONLY               "special-only"
   NO_SPECIAL                 "no-special"
   NO_STATS                   "no-stats"
-  CONTEXT                    "context"
-  MODULE                     "module"
+  CONTEXT_MODULE             "context-module"
   TOKEN                      "token"
   ID                         "id"
   PID                        "pid"
@@ -110,12 +106,11 @@
   NODE_FRESH                 "node-fresh"
   NODE_CREATE                "node-create"
   NODE_DELETE                "node-delete"
-  GLOBAL_INVALIDATION        "global-invalidation"
   GOALS_SET                  "goals-set"
   AUTORUN_SET                "autorun-set"
   SYSTEM_STATE_CHANGE        "system-state-change"
   FORMULA_FORK               "formula-fork"
-  FORMULA_WAIT               "formula-wait"
+  FORMULA_REAP               "formula-reap"
   BUILD_START                "build-start"
   BUILD_END                  "build-end"
 
@@ -162,8 +157,7 @@ command-branch
   | invalidate-cmd
   | modules-invalidate-primary-cmd
   | stats-cmd
-  | global-stats-cmd
-  | context-cmd
+  | context-module-cmd
   | select-cmd
   | reset-selection-cmd
   | goals-cmd
@@ -174,27 +168,10 @@ command-branch
   | plugin-ready-cmd
   ;
 
-context-cmd
-  : CONTEXT ':' '{' context-list '}'
+context-module-cmd
+  : CONTEXT_MODULE
   {
-    PARSER->command->type = COMMAND_CONTEXT;
-  }
-  ;
-
-context-list
-  : context-list context-mapping
-  | context-mapping
-  ;
-
-context-mapping
-  : MODULE ':' string
-  {
-    PARSER->command->context.module_id_len = zcatw(
-        PARSER->command->context.module_id
-      , sizeof(PARSER->command->context.module_id)
-      , $3.s
-      , $3.l
-    );
+    PARSER->command->type = COMMAND_CONTEXT_MODULE;
   }
   ;
 
@@ -323,11 +300,6 @@ stats-arg
   }
   ;
 
-global-stats-cmd
-  : GLOBAL_STATS_READ { PARSER->command->type = COMMAND_GLOBAL_STATS_READ; }
-  | GLOBAL_STATS_RESET { PARSER->command->type = COMMAND_GLOBAL_STATS_RESET; }
-  ;
-
 goals-cmd
   : GOALS ':' '{' goals-cmd-list '}'
   {
@@ -360,7 +332,7 @@ goals-label-cmd
   ;
 
 goals-token-cmd
-  : TOKEN ':' hex64
+  : TOKEN ':' uint
   {
     PARSER->command->goals.token = $3;
   }
@@ -403,12 +375,11 @@ eventname
   | NODE_FRESH            { $$ = BAMIPC_EVENT_NODE_FRESH; }
   | NODE_CREATE           { $$ = BAMIPC_EVENT_NODE_CREATE; }
   | NODE_DELETE           { $$ = BAMIPC_EVENT_NODE_DELETE; }
-  | GLOBAL_INVALIDATION   { $$ = BAMIPC_EVENT_GLOBAL_INVALIDATION; }
   | GOALS_SET             { $$ = BAMIPC_EVENT_GOALS_SET; }
   | AUTORUN_SET           { $$ = BAMIPC_EVENT_AUTORUN_SET; }
   | SYSTEM_STATE_CHANGE   { $$ = BAMIPC_EVENT_SYSTEM_STATE_CHANGE; }
   | FORMULA_FORK          { $$ = BAMIPC_EVENT_FORMULA_FORK; }
-  | FORMULA_WAIT          { $$ = BAMIPC_EVENT_FORMULA_WAIT; }
+  | FORMULA_REAP          { $$ = BAMIPC_EVENT_FORMULA_REAP; }
   | BUILD_START           { $$ = BAMIPC_EVENT_BUILD_START; }
   | BUILD_END             { $$ = BAMIPC_EVENT_BUILD_END; }
   ;
@@ -448,30 +419,4 @@ hex64
   | HEX16
   | HEX32
   | HEX64
-  ;
-
-string
-  : unquoted-string
-  | quoted-string
-  ;
-
-unquoted-string
-  : strpart
-  {
-    $$.s = @1.s;
-    $$.l = @1.l;
-  }
-  ;
-
-quoted-string
-  : '"' strpart '"'
-  {
-    $$.s = @2.s;
-    $$.l = @2.l;
-  }
-  ;
-
-strpart
-  : STR
-  | uint
   ;

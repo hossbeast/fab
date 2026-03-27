@@ -93,7 +93,7 @@ static xunit_unit xunit = {
               " path : {"
                 " pattern : ./foo/bar/main.o"
               " }"
-              " all"
+              " targets"
             " ]"
             " describe"
             " invalidate"
@@ -135,9 +135,7 @@ static xunit_unit xunit = {
     , (request_parser_test[]) {{
           text : (char[]) {
             "["
-            " context : {"
-            "   module : 0x0aab0455ef80cdb1"
-            " }"
+            " context-module"
             " describe"
             "]\0\0"
           }

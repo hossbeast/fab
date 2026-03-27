@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
+#include <errno.h>
+
 #include "common/attrs.h"
 #include "moria/foreach.h"
 #include "bam/ipc.h"
@@ -12,7 +14,6 @@
 #include "xlinux/xstdlib.h"
 #include "bacon/value.h"
 #include "bacon/builder.h"
-#include "common/hash.h"
 
 #include "request_handler.h"
 #include "filesystem.h"
@@ -21,7 +22,7 @@
 #include "config.h"
 #include "describe.h"
 #include "plugin.h"
-#include "events.h"
+#include "events/events.h"
 #include "goals.h"
 #include "module.h"
 #include "meta_edge.h"
@@ -45,7 +46,9 @@
 #include "shadow.h"
 #include "buildplan.h"
 #include "tree_list.h"
-#include "events.h"
+#include "events/events.h"
+#include "fstree.h"
+#include "module_system.h"
 
 #include "marshal.h"
 #include "zcat.h"
@@ -57,55 +60,27 @@ static struct futexlock freelist_lock;
 // handlers
 //
 
-static void handler_context_cmd(request_handler * restrict ctx, command * restrict cmd)
+static void handler_context_module_cmd(request_handler * restrict ctx, command * restrict cmd)
 {
-  moria_vertex *v;
-  fsent *fse;
-  bamipc_message *msg;
-  narrator_fixed fixed;
-  bacon_writer writer, *builder_writer;
-  const char *code;
+  selected *sn;
 
-  if((v = moria_vertex_downw(&g_shadow_modules->vertex, cmd->context.module_id, cmd->context.module_id_len)) == 0) {
-    msg = request_handler_tx(ctx);
-    msg->code = BAMIPC_MSG_ENOENT;
-    msg->type = BAMIPC_MSG_RESPONSE;
-
-    narrator_fixed_init(&fixed, msg->text, msg->size);
-    bacon_writer_init(&writer);
-    builder_writer = bacon_writer_open(&writer, &fixed.base);
-    { MAPPING
-      STRING("error")
-      { SET
-        { MAPPING STRING("code")
-          if((code = attrs32_name_byvalue(&bamipc_msg_code_attrs, msg->code))) {
-            STRING(code)
-          } else {
-            UINT(msg->code)
-          }
-        }
-        { MAPPING STRING("msg")
-          LOADF("module not found %.*s", cmd->context.module_id_len, cmd->context.module_id)
-        }
-      }
-    }
-    bacon_writer_close(&writer);
-
-    msg->len = fixed.l;
-    request_handler_post(ctx, msg);
+  ctx->mod = 0;
+  if(llist_count(&ctx->selection->list) != 1) {
     return;
   }
-
-  fse = containerof(v, typeof(*fse), vertex);
-  ctx->mod = fse->self_mod;
+  sn = llist_first(&ctx->selection->list, typeof(*sn), lln);
+  if(vertex_type_get(sn->v) != VERTEX_MODULE) {
+    return;
+  }
+  ctx->mod = containerof(sn->v, typeof(*ctx->mod), vertex);
 }
 
 static void handler_select(request_handler * restrict ctx, command * restrict cmd)
 {
+  ctx->sel_ctx.fst = 0;
   ctx->sel_ctx.bpe = 0;
   ctx->sel_ctx.mod = ctx->mod;
   ctx->sel_ctx.cwd = g_base;
-//  ctx->sel_ctx.channel = ctx->channel;
   ctx->sel_ctx.handler = ctx;
   ctx->sel_ctx.iteration_type = SELECTION_ITERATION_TYPE_ORDER;
 
@@ -122,9 +97,9 @@ static void handler_reset_selection(request_handler * restrict ctx, command * re
 
 static void handler_list(request_handler * restrict ctx, command * restrict cmd)
 {
-  bamipc_message *msg;
+  bamipc_message *msg = 0;
   selected *sn;
-  bacon_writer writer, *builder_writer;
+  bacon_writer writer, *builder_writer = 0;
   narrator_fixed fixed;
   int x;
 
@@ -135,15 +110,18 @@ static void handler_list(request_handler * restrict ctx, command * restrict cmd)
     if((x % 64) == 0) {
       if(x) {
         bacon_writer_destroy(&writer);
-        msg->type = BAMIPC_MSG_RESULT;
         msg->len = fixed.l;
         request_handler_post(ctx, msg);
       }
 
-      msg = request_handler_tx(ctx);
+      msg = request_handler_tx(ctx, BAMIPC_MSG_RESULT, BAMIPC_MSG_BACON, 0);
       narrator_fixed_init(&fixed, msg->text, msg->size);
       bacon_writer_init(&writer);
+      writer.flat = true;
       builder_writer = bacon_writer_open(&writer, &fixed.base);
+    }
+    if(x) {
+      bacon_writer_flat_newline(builder_writer);
     }
     vertex_identity_describe(sn->v, builder_writer);
     x++;
@@ -164,8 +142,7 @@ static void handler_identify(request_handler * restrict ctx, command * restrict 
   bacon_writer writer, *builder_writer;
   narrator_fixed fixed;
 
-  msg = request_handler_tx(ctx);
-  msg->type = BAMIPC_MSG_RESULT;
+  msg = request_handler_tx(ctx, BAMIPC_MSG_RESULT, BAMIPC_MSG_BACON, 0);
 
   narrator_fixed_init(&fixed, msg->text, msg->size);
   bacon_writer_init(&writer);
@@ -241,8 +218,8 @@ static void handler_destroy(request_handler * restrict ctx)
 void request_handler_process_command(request_handler * restrict ctx, command * restrict cmd)
 {
   switch(cmd->type) {
-    case COMMAND_CONTEXT:
-      handler_context_cmd(ctx, cmd);
+    case COMMAND_CONTEXT_MODULE:
+      handler_context_module_cmd(ctx, cmd);
       break;
     case COMMAND_SELECT:
       handler_select(ctx, cmd);
@@ -271,8 +248,6 @@ void request_handler_process_command(request_handler * restrict ctx, command * r
     case COMMAND_MODULES_INVALIDATE_PRIMARY:
       handler_modules_invalidate_primary(ctx, cmd);
       break;
-    case COMMAND_GLOBAL_STATS_READ:
-    case COMMAND_GLOBAL_STATS_RESET:
     case COMMAND_STATS_READ:
       stats_handler(ctx, cmd, false);
       break;
@@ -289,7 +264,6 @@ void request_handler_process_command(request_handler * restrict ctx, command * r
     case COMMAND_GOALS:
     case COMMAND_RECONCILE:
     case COMMAND_RUN:
-    //default:
       RTA;
   }
 }
@@ -303,6 +277,7 @@ void request_handler_cleanup()
   request_handler *handler;
 
   while((handler = llist_shift(&freelist, typeof(*handler), lln))) {
+    ASAN_CLEAN(handler);
     handler_destroy(handler);
     free(handler);
   }
@@ -319,6 +294,7 @@ request_handler *request_handler_alloc()
   }
 
   if(handler) {
+    ASAN_CLEAN(handler);
     memset(handler, 0, sizeof(*handler) - offsetof(typeof(*handler), scratch_space));
   } else {
     xmalloc(&handler, sizeof(*handler));
@@ -327,8 +303,6 @@ request_handler *request_handler_alloc()
     selector_context_init(&handler->sel_ctx);
   }
 
-  //llist_init(&handler->events_txq);
-
   return handler;
 }
 
@@ -336,6 +310,7 @@ void request_handler_release(request_handler * restrict handler)
 {
   futexlock_acquire(&freelist_lock);
   llist_push(&freelist, &handler->lln);
+  ASAN_TAINT(handler);
   futexlock_release(&freelist_lock);
 }
 
@@ -347,7 +322,7 @@ void request_handler_reset(request_handler * restrict handler)
   handler->request_error = false;
 }
 
-struct bamipc_message *request_handler_tx(request_handler * restrict handler)
+struct bamipc_message *request_handler_tx(request_handler * restrict handler, bamipc_msg_type type, uint32_t format, int32_t code)
 {
   bamipc_message *msg;
 
@@ -356,6 +331,12 @@ struct bamipc_message *request_handler_tx(request_handler * restrict handler)
   } else {
     bamipc_tx(handler->pipe, 0, &msg);
   }
+
+  msg->type = type;
+  msg->format = format;
+  msg->code = code;
+  msg->attrs = 0;
+  msg->len = 0;
 
   return msg;
 }
