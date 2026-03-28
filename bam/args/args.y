@@ -3,6 +3,7 @@
 
 %code requires {
   #include <stdlib.h>
+  #include <inttypes.h>
 
   #include "yyutil/parser.h"
   #include "yyutil/grammar.h"
@@ -16,14 +17,17 @@
   #include "adhoc.h"
   #include "autobuild.h"
   #include "build.h"
-  #include "buildplan.h"
+  #include "plan.h"
   #include "describe.h"
+  #include "show.h"
   #include "fstrees.h"
+  #include "namespaces.h"
   #include "events.h"
   #include "config.h"
   #include "configsets.h"
   #include "vars.h"
   #include "varsets.h"
+  #include "build_records.h"
   #include "envs.h"
   #include "goals.h"
   #include "rules.h"
@@ -44,7 +48,8 @@
 
 %code top {
   extern int args_yylex(void *lval, void *loc, void *scanner);
-  #define ARGS (&g_args)
+  #define G_ARGS (&g_args)
+  #define PARSER ((yyu_parser*)parser)
   #define CMD (g_cmd)
   #define ARGS_YYLTYPE yyu_location
 }
@@ -53,38 +58,28 @@
 %define parse.error verbose
 %locations
 %define api.prefix {args_yy}
-%parse-param { void* scanner }
-%parse-param { void* parser }
-%lex-param { void* scanner }
+%parse-param { void *scanner }
+%parse-param { void *parser }
+%lex-param { void *scanner }
 
 /* zero based lines and columns */
 %initial-action { yyu_loc_initialize(parser, &@$); (void)yynerrs; }
 
 %union {
   yyu_lval yyu;
-  bead bead;
 }
 
-%type <bead> bead
-%type <yyu.umax> hex64
 %type <yyu.umax> uint64
 %type <yyu.umax> uint16
 %type <yyu.b> bool
 
 /* terminals */
 %token             STR "string"
-%token <yyu.umax>  HEX8
-%token <yyu.umax>  HEX16
-%token <yyu.umax>  HEX32
-%token <yyu.umax>  HEX64
+%token             BECH32 "bech32"
 %token <yyu.umax>  UINTMAX8
 %token <yyu.umax>  UINTMAX16
 %token <yyu.umax>  UINTMAX32
 %token <yyu.umax>  UINTMAX64
-%token <yyu.imax>  INTMIN8
-%token <yyu.imax>  INTMIN16
-%token <yyu.imax>  INTMIN32
-%token <yyu.imax>  INTMIN64
 %token <yyu.imax>  INTMAX8
 %token <yyu.imax>  INTMAX16
 %token <yyu.imax>  INTMAX32
@@ -93,18 +88,15 @@
 /* words */
 %token
  BUILD                          "build"
- BUILDPLAN                      "buildplan"
+ PLAN                           "plan"
  DEPENDS                        "depends"
  SPECIAL                        "special"
  DIRECTORY                      "directory"
- MODULE_DIR                     "module-dir"
  FS                             "fs"
  FSTREE                         "fstree"
  FSTREES                        "fstrees"
- RELATION                       "relation"
- DIRTREE                        "dirtree"
- MODTREE                        "modtree"
- IMPORTS                        "imports"
+ NAMESPACE                      "namespace"
+ NAMESPACES                     "namespaces"
  MODULES                        "modules"
  MODULE                         "module"
  REQUIRES                       "requires"
@@ -118,12 +110,18 @@
  EVENTS                         "events"
  STATS                          "stats"
  DESCRIBE                       "describe"
+ SHOW                           "show"
  INFO                           "info"
  CONFIG                         "config"
  CONFIGSET                      "configset"
  CONFIGSETS                     "configsets"
+ BUILD_RECORD                   "build-record"
+ BUILD_RECORDS                  "build-records"
  VARS                           "vars"
  ENVS                           "envs"
+ ARGS                           "args"
+ D_FILE                         "file"
+ CWD                            "cwd"
  GOALS                          "goals"
  RULE                           "rule"
  RULES                          "rules"
@@ -142,20 +140,37 @@
  VARSETS                        "varsets"
  FSNAME                         "fsname"
  FSNAMES                        "fsnames"
+ STDIN                          "stdin"
+ STDOUT                         "stdout"
+ STDERR                         "stderr"
+ AUXOUT                         "auxout"
+ RUN                            "run"
+
 /* events */
  STALE                          "stale"
  FRESH                          "fresh"
  CREATE                         "create"
  DELETE                         "delete"
- GLOBAL_INVALIDATION            "global-invalidation"
- EXEC_FORKED                    "exec-fork"
- EXEC_WAITED                    "exec-wait"
- EXEC_STDOUT                    "exec-stdout"
- EXEC_STDERR                    "exec-stderr"
- EXEC_AUXOUT                    "exec-auxout"
  GOALS_SET                      "goals-set"
  AUTORUN_SET                    "autorun-set"
  SYSTEM_STATE_CHANGE            "system-state-change"
+ FORMULA_FORK                   "formula-fork"
+ FORMULA_REAP                   "formula-reap"
+ BUILD_START                    "build-start"
+ BUILD_END                      "build-end"
+ RECONCILE_START                "reconcile-start"
+ RECONCILE_END                  "reconcile-end"
+ EXEC_FORK                      "exec-fork"
+ EXEC_WAIT                      "exec-wait"
+ EXEC_STDOUT                    "exec-stdout"
+ EXEC_STDERR                    "exec-stderr"
+ EXEC_AUXOUT                    "exec-auxout"
+ RMA_START                      "rma-start"
+ RMA_END                        "rma-end"
+ RMA_SEARCH                     "rma-search"
+ RMA_GENERATE                   "rma-generate"
+ RMA_RESOLVE                    "rma-resolve"
+ RMA_BIND                       "rma-bind"
 
 /* long options */
 %token
@@ -166,8 +181,10 @@
  lup                            "--up"
  ldown                          "--down"
  lhidden                        "--hidden"
+ lno_hidden                     "--no-hidden"
  lgraph                         "--graph"
  lvisit                         "--visit"
+ lids                           "--ids"
  lpaths                         "--paths"
  llabels                        "--labels"
  lspecial                       "--special"
@@ -179,12 +196,25 @@
  lno_module                     "--no-module"
  lmax_distance                  "--max-distance"
  lmin_distance                  "--min-distance"
+ lmax_depth                     "--max-depth"
+ lmin_depth                     "--min-depth"
+ lprimary                       "--primary"
+ lno_primary                    "--no-primary"
+ lrecursive                     "--recursive"
+ lno_recursive                  "--no-recursive"
+ lcross_module                  "--cross-module"
+ lno_cross_module               "--no-cross-module"
+ lcross_fstree                  "--cross-fstree"
+ lno_cross_fstree               "--no-cross-fstree"
+ lreset                         "--reset"
+ lno_reset                      "--no-reset"
 
  lon_success_show_path                "--on-success-show-path"
  lon_success_show_cwd                 "--on-success-show-cwd"
  lon_success_show_command             "--on-success-show-command"
  lon_success_show_arguments           "--on-success-show-arguments"
  lon_success_show_environment         "--on-success-show-environment"
+ lon_success_show_nodes               "--on-success-show-nodes"
  lon_success_show_sources             "--on-success-show-sources"
  lon_success_show_targets             "--on-success-show-targets"
  lon_success_show_status              "--on-success-show-status"
@@ -203,6 +233,7 @@
  lon_error_show_command               "--on-error-show-command"
  lon_error_show_arguments             "--on-error-show-arguments"
  lon_error_show_environment           "--on-error-show-environment"
+ lon_error_show_nodes                 "--on-error-show-nodes"
  lon_error_show_sources               "--on-error-show-sources"
  lon_error_show_targets               "--on-error-show-targets"
  lon_error_show_status                "--on-error-show-status"
@@ -236,7 +267,8 @@
  px   "+x"
  ss   "-s"
  sS   "-S"
- sL   "-L"
+ sR   "-R"
+ sr   "-r"
 
 /* these are devel only */
 %token
@@ -247,41 +279,39 @@
 
 %%
 utterance
-  : arguments
+  : cmdline
+  {
+    yyu_loc_final(PARSER, &@1);
+  }
   ;
 
-arguments
-  : initial-arguments command-arguments
-  | initial-arguments
-  ;
-
-initial-arguments
-  : initial-arguments-list
-  | %empty
-  ;
-
-initial-arguments-list
-  : initial-arguments-list global-argument
-  | global-argument
+cmdline
+  /* build is the default command */
+  : global-arguments build-argument build-argument-list
+  | global-arguments command
+  | global-arguments
   ;
 
 global-argument
-  : help            { ARGS->help = true; }
-  | version         { ARGS->version = true; }
-  | sv              { ARGS->verbose++; }
-  | svv             { ARGS->verbose += 2; }
-  | svvv            { ARGS->verbose += 3; }
-  | sK              { ARGS->kill = true; }
-  | sm bead         { args_set_module_path($2.s, $2.len); }
-  | lmodule bead    { args_set_module_path($2.s, $2.len); }
+  : lhelp           { G_ARGS->help = true; }
+  | sh              { G_ARGS->help = true; }
+  | lversion        { G_ARGS->version = true; }
+  | sV              { G_ARGS->version = true; }
+  | sv              { G_ARGS->verbose++; }
+  | svv             { G_ARGS->verbose += 2; }
+  | svvv            { G_ARGS->verbose += 3; }
+  | sK              { G_ARGS->kill = true; }
+  | sm STR          { args_set_module_path(@2.s, @2.l); }
+  | lmodule STR     { args_set_module_path(@2.s, @2.l); }
   | lno_module      { args_set_no_module(); }
-  | lno_launch      { ARGS->no_launch = true; }
-  | lno_color       { ARGS->no_color = true; }
+  | lno_launch      { G_ARGS->no_launch = true; }
+  | lno_color       { G_ARGS->no_color = true; }
   | lon_success_show_path bool                  { build_args.success.show_path = $2; }
   | lon_success_show_cwd bool                   { build_args.success.show_cwd = $2; }
   | lon_success_show_command bool               { build_args.success.show_command = $2; }
   | lon_success_show_arguments bool             { build_args.success.show_arguments = $2; }
   | lon_success_show_environment bool           { build_args.success.show_environment = $2; }
+  | lon_success_show_nodes bool                 { build_args.success.show_nodes = $2; }
   | lon_success_show_sources bool               { build_args.success.show_sources = $2; }
   | lon_success_show_targets bool               { build_args.success.show_targets = $2; }
   | lon_success_show_status bool                { build_args.success.show_status = $2; }
@@ -299,6 +329,7 @@ global-argument
   | lon_error_show_command bool                 { build_args.error.show_command = $2; }
   | lon_error_show_arguments bool               { build_args.error.show_arguments = $2; }
   | lon_error_show_environment bool             { build_args.error.show_environment = $2; }
+  | lon_error_show_nodes bool                   { build_args.error.show_nodes = $2; }
   | lon_error_show_sources bool                 { build_args.error.show_sources = $2; }
   | lon_error_show_targets bool                 { build_args.error.show_targets = $2; }
   | lon_error_show_status bool                  { build_args.error.show_status = $2; }
@@ -313,58 +344,63 @@ global-argument
   | lon_error_show_auxout_limit_bytes uint16    { build_args.error.show_auxout_limit_bytes = $2; }
 
  /* devel only */
-  | lsystem_config_path bead              { ARGS->system_config_path = $2; }
-  | luser_config_path bead                { ARGS->user_config_path = $2; }
-  | ldefault_filesystem_invalidation bead { ARGS->default_filesystem_invalidation = $2; }
-  | lsweeper_period_nsec uint64           { ARGS->sweeper_period_nsec = (bead) { @2.s, @2.l }; }
+  | lsystem_config_path STR               { G_ARGS->system_config_path = @2.s; G_ARGS->system_config_path_len = @2.l; }
+  | luser_config_path STR                 { G_ARGS->user_config_path = @2.s; G_ARGS->user_config_path_len = @2.l; }
+  | ldefault_filesystem_invalidation STR  { G_ARGS->default_filesystem_invalidation = @2.s; G_ARGS->default_filesystem_invalidation_len = @2.l; }
+  | lsweeper_period_nsec uint64           { G_ARGS->sweeper_period_nsec = @2.s; G_ARGS->sweeper_period_nsec_len = @2.l; }
   ;
 
-help
-  : lhelp
-  | sh
+global-arguments
+  : global-argument-list
+  | %empty
   ;
 
-version
-  : lversion
-  | sV
+global-argument-list
+  : global-argument-list global-argument
+  | global-argument
   ;
 
-command-arguments
-  : ADHOC        { command_set(&adhoc_command); }      adhoc-arguments
-  | AUTOBUILD    { command_set(&autobuild_command); }  build-arguments
-  | BUILD        { command_set(&build_command); }      build-arguments
-  | BUILDPLAN    { command_set(&buildplan_command); }  buildplan-arguments
-  | CONFIGSET    { command_set(&configset_command); }  configset-arguments
-  | CONFIGSETS   { command_set(&configsets_command); } configsets-arguments
-  | DESCRIBE     { command_set(&describe_command); }   describe-arguments
-  | EVENTS       { command_set(&events_command); }     events-arguments
-  | FORMULA      { command_set(&formula_command); }    formula-arguments
-  | FORMULAS     { command_set(&formulas_command); }   formulas-arguments
-  | FSTREE       { command_set(&fstree_command); }     fstree-arguments
-  | FSTREES      { command_set(&fstrees_command); }    fstrees-arguments
-  | GOALS        { command_set(&goals_command); }      goals-arguments
-  | INFO         { command_set(&info_command); }       info-arguments
-  | MODULES      { command_set(&modules_command); }    modules-arguments
-  | PLUGIN       { command_set(&plugin_command); }     plugin-arguments
-  | PLUGINS      { command_set(&plugins_command); }    plugins-arguments
-  | RECONCILE    { command_set(&reconcile_command); }  reconcile-arguments
-  | RULESET      { command_set(&ruleset_command); }    ruleset-arguments
-  | RULESETS     { command_set(&rulesets_command); }   rulesets-arguments
-  | STATS        { command_set(&stats_command); }      stats-arguments
-  | TOUCH        { command_set(&touch_command); }      touch-arguments
-  | VARSET       { command_set(&varset_command); }     varset-arguments
-  | VARSETS      { command_set(&varsets_command); }    varsets-arguments
-  | FSNAME       { command_set(&fsname_command); }     fsname-arguments
-  | FSNAMES      { command_set(&fsnames_command); }    fsnames-arguments
-  | rules-command
-  | rule-command
-  | rmas-command
-  | rma-command
+command
+  : ADHOC          { command_set(&adhoc_command); }          adhoc-arguments
+  | AUTOBUILD      { command_set(&autobuild_command); }      build-arguments
+  | BUILD          { command_set(&build_command); }          build-arguments
+  | BUILD_RECORD   { command_set(&build_record_command); }   build-record-arguments
+  | BUILD_RECORDS  { command_set(&build_records_command); }  build-records-arguments
   | config-command
-  | tree-command
-  | ls-command
+  | CONFIGSET      { command_set(&configset_command); }      configset-arguments
+  | CONFIGSETS     { command_set(&configsets_command); }     configsets-arguments
+  | DESCRIBE       { command_set(&describe_command); }       describe-arguments
+  | EVENTS         { command_set(&events_command); }         events-arguments
+  | FORMULA        { command_set(&formula_command); }        formula-arguments
+  | FORMULAS       { command_set(&formulas_command); }       formulas-arguments
+  | fsname-command
+  | fsnames-command
+  | FSTREE         { command_set(&fstree_command); }         fstree-arguments
+  | FSTREES        { command_set(&fstrees_command); }        fstrees-arguments
+  | GOALS          { command_set(&goals_command); }          goals-arguments
+  | INFO           { command_set(&info_command); }           info-arguments
   | kill-command
+  | ls-command
   | module-command
+  | MODULES        { command_set(&modules_command); }        modules-arguments
+  | namespace-command
+  | NAMESPACES     { command_set(&namespaces_command); }     namespaces-arguments
+  | PLAN           { command_set(&plan_command); }           plan-arguments
+  | plugin-command
+  | PLUGINS        { command_set(&plugins_command); }        plugins-arguments
+  | RECONCILE      { command_set(&reconcile_command); }      reconcile-arguments
+  | rma-command
+  | rmas-command
+  | rule-command
+  | rules-command
+  | RULESET        { command_set(&ruleset_command); }        ruleset-arguments
+  | RULESETS       { command_set(&rulesets_command); }       rulesets-arguments
+  | SHOW           { command_set(&show_command); }           show-arguments
+  | STATS          { command_set(&stats_command); }          stats-arguments
+  | TOUCH          { command_set(&touch_command); }          touch-arguments
+  | tree-command
+  | VARSET         { command_set(&varset_command); }         varset-arguments
+  | VARSETS        { command_set(&varsets_command); }        varsets-arguments
   ;
 
 config-command
@@ -387,34 +423,31 @@ ls-command
   ;
 
 module-command
-  : MODULE { command_set(&module_command); } module-arguments module-subcommand
+  : MODULE { command_set(&module_command); } module-arguments
   ;
 
 module-arguments
-  : module-argument-list
+  : global-arguments module-target global-arguments module-subcommand
+  | global-arguments module-target global-arguments
+  | global-arguments module-subcommand
   | %empty
   ;
 
-module-argument-list
-  : module-argument-list module-argument
-  | module-argument
-  ;
-
-module-argument
-  : global-argument
-  | hex64 { CMD->target = @1.s; CMD->target_len = @1.l; }
-  | bead { CMD->target = @1.s; CMD->target_len = @1.l; }
+module-target
+  : BECH32 { CMD->target = @1.s; CMD->target_len = @1.l; }
+  | word { CMD->target = @1.s; CMD->target_len = @1.l; }
   ;
 
 module-subcommand
-  : envs-command
-  | vars-command
+  : module-envs-command
+  | module-vars-command
   | module-rules-command
+  | module-rulesets-command
   | module-rmas-command
-  | %empty
+  | module-rma-command
   ;
 
-envs-command
+module-envs-command
   : ENVS { command_sub_set(&envs_command); } envs-arguments
   ;
 
@@ -432,7 +465,7 @@ envs-argument
   : global-argument
   ;
 
-vars-command
+module-vars-command
   : VARS { command_sub_set(&vars_command); } vars-arguments
   ;
 
@@ -447,6 +480,24 @@ vars-argument-list
   ;
 
 vars-argument
+  : global-argument
+  ;
+
+module-rulesets-command
+  : RULESETS { command_sub_set(&module_rulesets_command); } module-rulesets-arguments
+  ;
+
+module-rulesets-arguments
+  : module-rulesets-argument-list
+  | %empty
+  ;
+
+module-rulesets-argument-list
+  : module-rulesets-argument-list module-rulesets-argument
+  | module-rulesets-argument
+  ;
+
+module-rulesets-argument
   : global-argument
   ;
 
@@ -486,6 +537,58 @@ module-rmas-argument
   : global-argument
   ;
 
+
+module-rma-command
+  : RMA { command_sub_set(&module_rma_command); } module-rma-arguments module-rma-subcommand
+  ;
+
+module-rma-arguments
+  : module-rma-argument-list
+  | %empty
+  ;
+
+module-rma-argument-list
+  : module-rma-argument-list module-rma-argument
+  | module-rma-argument
+  ;
+
+module-rma-argument
+  : global-argument
+  | BECH32 { CMD->rma_id_len = zcatw(CMD->rma_id, sizeof(CMD->rma_id), @1.s, @1.l); }
+  | word { CMD->rma_name = @1.s; CMD->rma_name_len = @1.l; }
+  ;
+
+module-rma-subcommand
+  : module-rma-run-command
+  | %empty
+  ;
+
+module-rma-run-command
+  : RUN { command_sub_set(&module_rma_run_command); } module-rma-run-arguments
+  ;
+
+module-rma-run-arguments
+  : module-rma-run-argument-list
+  | %empty
+  ;
+
+module-rma-run-argument-list
+  : module-rma-run-argument-list module-rma-run-argument
+  | module-rma-run-argument
+  ;
+
+module-rma-run-argument
+  : global-argument
+  | lpaths
+  {
+    rma_run_args.show_paths = true;
+  }
+  | lids
+  {
+    rma_run_args.show_ids = true;
+  }
+  ;
+
 tree-arguments
   : tree-argument-list
   | %empty
@@ -498,6 +601,9 @@ tree-argument-list
 
 tree-argument
   : global-argument
+  | word { tree_args.targets[tree_args.targets_len] = @1.s; tree_args.targets_lens[tree_args.targets_len++] = @1.l; }
+  | BECH32 { tree_args.targets[tree_args.targets_len] = @1.s; tree_args.targets_lens[tree_args.targets_len++] = @1.l; }
+
   | graph graph-type
   {
     tree_args.graph = @2.s;
@@ -534,17 +640,17 @@ tree-argument
     tree_args.show_paths = false;
     tree_args.show_labels = true;
   }
-  | bead
-  {
-    tree_args.target = $1;
-  }
-  | lmin_distance uint16
+  | lmindist uint16
   {
     tree_args.min_distance = $2;
   }
-  | lmax_distance uint16
+  | lmaxdist uint16
   {
     tree_args.max_distance = $2;
+  }
+  | lfollow
+  {
+    tree_args.nofollow = false;
   }
   | lno_follow
   {
@@ -553,6 +659,26 @@ tree-argument
   | lhidden
   {
     tree_args.hidden = true;
+  }
+  | lno_hidden
+  {
+    tree_args.hidden = false;
+  }
+  | ss
+  {
+    tree_args.special += 1;
+  }
+  | sS
+  {
+    tree_args.special += 2;
+  }
+  | lspecial
+  {
+    tree_args.special++;
+  }
+  | lno_special
+  {
+    tree_args.special = 0;
   }
   ;
 
@@ -563,12 +689,12 @@ build-arguments
 
 build-argument-list
   : build-argument-list build-argument
+  | build-argument-list global-argument
   | build-argument
   ;
 
 build-argument
-  : global-argument
-  | build-target
+  : build-target
   | sx build-target
   {
     build_args.targets[build_args.targets_len].mode = 'x';
@@ -588,13 +714,20 @@ build-argument
   ;
 
 build-target
-  : bead
+  : build-target-name
   {
     build_args.targets[build_args.targets_len].s = @1.s;
     build_args.targets[build_args.targets_len].sl = @1.l;
-    build_args.targets[build_args.targets_len].mode = build_args.mode;
+    if(build_args.targets[build_args.targets_len].mode == 0) {
+      build_args.targets[build_args.targets_len].mode = build_args.mode;
+    }
     build_args.targets_len++;
   }
+  ;
+
+build-target-name
+  : word
+  | BECH32
   ;
 
 graph
@@ -637,32 +770,97 @@ visit-type
   | CONFIGSET
   | PLUGIN
   | DIRECTORY
-  | MODULE_DIR
   | RULE
   | RMA
   ;
 
 touch-arguments
-  : touch-arguments touch-argument
+  : touch-argument-list
+  | %empty
+  ;
+
+touch-argument-list
+  : touch-argument-list touch-argument
   | touch-argument
   ;
 
 touch-argument
   : global-argument
-  | bead { touch_args.targets[touch_args.targets_len++] = $1; }
+  | word { touch_args.targets[touch_args.targets_len] = @1.s; touch_args.targets_lens[touch_args.targets_len++] = @1.l; }
+  | BECH32 { touch_args.targets[touch_args.targets_len] = @1.s; touch_args.targets_lens[touch_args.targets_len++] = @1.l; }
+  | lfollow
+  {
+    touch_args.nofollow = false;
+  }
+  | lno_follow
+  {
+    touch_args.nofollow = true;
+  }
+  | sR
+  {
+    touch_args.recursive = true;
+  }
+  | lrecursive
+  {
+    touch_args.recursive = true;
+  }
+  | lno_recursive
+  {
+    touch_args.recursive = false;
+  }
+  | lprimary
+  {
+    touch_args.primary = true;
+  }
+  | lno_primary
+  {
+    touch_args.primary = false;
+  }
+  | lcross_module
+  {
+    touch_args.cross_module = true;
+  }
+  | lno_cross_module
+  {
+    touch_args.cross_module = false;
+  }
+  | lcross_fstree
+  {
+    touch_args.cross_fstree = true;
+  }
+  | lno_cross_fstree
+  {
+    touch_args.cross_fstree = false;
+  }
+  | lmindist uint16
+  {
+    touch_args.min_distance = $2;
+  }
+  | lmaxdist uint16
+  {
+    touch_args.max_distance = $2;
+  }
+  | lhidden
+  {
+    touch_args.hidden = true;
+  }
+  | lno_hidden
+  {
+    touch_args.hidden = false;
+  }
   ;
 
-buildplan-arguments
-  : buildplan-argument-list
+plan-arguments
+  : plan-argument-list
   | %empty
   ;
 
-buildplan-argument-list
-  : buildplan-argument-list buildplan-argument
-  | buildplan-argument
+plan-argument-list
+  : plan-argument-list plan-argument
+  | plan-argument
   ;
 
-buildplan-argument
+plan-argument
   : global-argument
   ;
 
@@ -680,19 +878,97 @@ plugins-argument
   : global-argument
   ;
 
+plugin-command
+  : PLUGIN { command_set(&plugin_command); } global-arguments plugin-arguments
+  ;
+
 plugin-arguments
-  : plugin-argument-list
+  : plugin-target global-arguments plugin-subcommand
   ;
 
-plugin-argument-list
-  : plugin-argument-list plugin-argument
-  | plugin-argument
+plugin-subcommand
+  : plugin-stdin-command
+  | plugin-stdout-command
+  | plugin-stderr-command
+  | plugin-auxout-command
+  | %empty
   ;
 
-plugin-argument
+plugin-target
+  : BECH32 { CMD->target = @1.s; CMD->target_len = @1.l; }
+  | word { CMD->target = @1.s; CMD->target_len = @1.l; }
+  ;
+
+plugin-stdin-command
+  : STDIN { command_sub_set(&plugin_stdin_command); } plugin-stdin-arguments
+  ;
+
+plugin-stdin-arguments
+  : plugin-stdin-argument-list
+  | %empty
+  ;
+
+plugin-stdin-argument-list
+  : plugin-stdin-argument-list plugin-stdin-argument
+  | plugin-stdin-argument
+  ;
+
+plugin-stdin-argument
   : global-argument
-  | hex64 { CMD->id = $1; }
-  | bead { CMD->special_target = $1; }
+  ;
+
+plugin-stdout-command
+  : STDOUT { command_sub_set(&plugin_stdout_command); } plugin-stdout-arguments
+  ;
+
+plugin-stdout-arguments
+  : plugin-stdout-argument-list
+  | %empty
+  ;
+
+plugin-stdout-argument-list
+  : plugin-stdout-argument-list plugin-stdout-argument
+  | plugin-stdout-argument
+  ;
+
+plugin-stdout-argument
+  : global-argument
+  ;
+
+plugin-stderr-command
+  : STDERR { command_sub_set(&plugin_stderr_command); } plugin-stderr-arguments
+  ;
+
+plugin-stderr-arguments
+  : plugin-stderr-argument-list
+  | %empty
+  ;
+
+plugin-stderr-argument-list
+  : plugin-stderr-argument-list plugin-stderr-argument
+  | plugin-stderr-argument
+  ;
+
+plugin-stderr-argument
+  : global-argument
+  ;
+
+plugin-auxout-command
+  : AUXOUT { command_sub_set(&plugin_auxout_command); } plugin-auxout-arguments
+  ;
+
+plugin-auxout-arguments
+  : plugin-auxout-argument-list
+  | %empty
+  ;
+
+plugin-auxout-argument-list
+  : plugin-auxout-argument-list plugin-auxout-argument
+  | plugin-auxout-argument
+  ;
+
+plugin-auxout-argument
+  : global-argument
   ;
 
 varsets-arguments
@@ -720,37 +996,37 @@ varset-argument-list
 
 varset-argument
   : global-argument
-  | hex64 { CMD->id = $1; }
-  | bead { CMD->special_target = $1; }
+  | BECH32 { CMD->id_len = zcatw(CMD->id, sizeof(CMD->id), @1.s, @1.l); }
+  | word { CMD->special_target = @1.s; CMD->special_target_len = @1.l; }
   ;
 
-fsnames-arguments
-  : fsnames-argument-list
+build-records-arguments
+  : build-records-argument-list
   | %empty
   ;
 
-fsnames-argument-list
-  : fsnames-argument-list fsnames-argument
-  | fsnames-argument
+build-records-argument-list
+  : build-records-argument-list build-records-argument
+  | build-records-argument
   ;
 
-fsnames-argument
+build-records-argument
   : global-argument
   ;
 
-fsname-arguments
-  : fsname-argument-list
+build-record-arguments
+  : build-record-argument-list
   ;
 
-fsname-argument-list
-  : fsname-argument-list fsname-argument
-  | fsname-argument
+build-record-argument-list
+  : build-record-argument-list build-record-argument
+  | build-record-argument
   ;
 
-fsname-argument
+build-record-argument
   : global-argument
-  | hex64 { CMD->target = @1.s; CMD->target_len = @1.l; }
-  | bead { CMD->target = @1.s; CMD->target_len = @1.l; }
+  | BECH32 { CMD->build_record_id_len = zcatw(CMD->build_record_id, sizeof(CMD->build_record_id), @1.s, @1.l); }
+  | uint16 { CMD->build_record_order = $1; }
   ;
 
 rulesets-arguments
@@ -778,8 +1054,8 @@ ruleset-argument-list
 
 ruleset-argument
   : global-argument
-  | hex64 { CMD->id = $1; }
-  | bead { CMD->special_target = $1; }
+  | BECH32 { CMD->id_len = zcatw(CMD->id, sizeof(CMD->id), @1.s, @1.l); }
+  | word { CMD->special_target = @1.s; CMD->special_target_len = @1.l; }
   ;
 
 formulas-arguments
@@ -807,8 +1083,8 @@ formula-argument-list
 
 formula-argument
   : global-argument
-  | hex64 { CMD->id = $1; }
-  | bead { CMD->special_target = $1; }
+  | BECH32 { CMD->id_len = zcatw(CMD->id, sizeof(CMD->id), @1.s, @1.l); }
+  | word { CMD->special_target = @1.s; CMD->special_target_len = @1.l; }
   ;
 
 modules-arguments
@@ -864,6 +1140,20 @@ stats-argument-list
 
 stats-argument
   : global-argument
+  | word  { CMD->targets[CMD->targets_len] = @1.s; CMD->targets_lens[CMD->targets_len++] = @1.l; }
+  | BECH32 { CMD->targets[CMD->targets_len] = @1.s; CMD->targets_lens[CMD->targets_len++] = @1.l; }
+  | sr
+  {
+    CMD->reset = true;
+  }
+  | lreset
+  {
+    CMD->reset = true;
+  }
+  | lno_reset
+  {
+    CMD->reset = false;
+  }
   | ss
   {
     CMD->special += 1;
@@ -880,14 +1170,42 @@ stats-argument
   {
     CMD->special = 0;
   }
-  | bead
+  | lhidden
   {
-    CMD->targets[CMD->targets_len++] = $1;
+    CMD->hidden = true;
+  }
+  | lno_hidden
+  {
+    CMD->hidden = false;
   }
   ;
 
 adhoc-arguments
-  : bead { adhoc_args.request = $1; }
+  : STR { adhoc_args.request = @1.s; adhoc_args.request_len = @1.l; }
+  ;
+
+show-arguments
+  : global-arguments word global-arguments show-detail global-arguments
+  {
+    CMD->target = @2.s; CMD->target_len = @2.l;
+    CMD->show_detail = @4.s;
+    CMD->show_detail_len = @4.l;
+  }
+  | global-arguments word global-arguments
+  {
+    CMD->target = @2.s; CMD->target_len = @2.l;
+  }
+  ;
+
+show-detail
+  : STDIN
+  | STDOUT
+  | STDERR
+  | AUXOUT
+  | ARGS
+  | ENVS
+  | D_FILE
+  | CWD
   ;
 
 describe-arguments
@@ -897,6 +1215,8 @@ describe-arguments
 
 describe-argument
   : global-argument
+  | word { CMD->targets[CMD->targets_len] = @1.s; CMD->targets_lens[CMD->targets_len++] = @1.l; }
+  | BECH32 { CMD->targets[CMD->targets_len] = @1.s; CMD->targets_lens[CMD->targets_len++] = @1.l; }
   | ss
   {
     CMD->special += 1;
@@ -913,7 +1233,86 @@ describe-argument
   {
     CMD->special = 0;
   }
-  | bead { CMD->targets[CMD->targets_len++] = $1; }
+  | lfollow
+  {
+    CMD->nofollow = false;
+  }
+  | lno_follow
+  {
+    CMD->nofollow = true;
+  }
+  | lhidden
+  {
+    CMD->hidden = true;
+  }
+  | lno_hidden
+  {
+    CMD->hidden = false;
+  }
+  ;
+
+namespaces-arguments
+  : global-arguments
+  ;
+
+namespace-command
+  : NAMESPACE { command_set(&namespace_command); } global-arguments namespace-arguments
+  ;
+
+namespace-arguments
+  : namespace-target global-arguments namespace-subcommand
+  ;
+
+namespace-target
+  : BECH32 { CMD->namespace_id_len = zcatw(CMD->namespace_id, sizeof(CMD->namespace_id), @1.s, @1.l); }
+  | word { CMD->namespace_name = @1.s; CMD->namespace_name_len = @1.l; }
+  ;
+
+namespace-subcommand
+  : namespace-fsnames-command
+  | namespace-fsname-command
+  | %empty
+  ;
+
+namespace-fsnames-command
+  : FSNAMES { command_sub_set(&namespace_fsnames_command); } fsnames-arguments
+  ;
+
+fsname-command
+  : FSNAME { command_set(&fsname_command); } fsname-arguments
+  ;
+
+fsname-arguments
+  : fsname-arguments fsname-argument
+  | fsname-argument
+  ;
+
+fsnames-command
+  : FSNAMES { command_set(&fsnames_command); } fsnames-arguments
+  ;
+
+fsnames-arguments
+  : global-arguments
+  ;
+
+namespace-fsname-command
+  : FSNAME { command_sub_set(&namespace_fsname_command); } namespace-fsname-arguments
+  ;
+
+namespace-fsname-arguments
+  : namespace-fsname-arguments namespace-fsname-argument
+  | namespace-fsname-argument
+  ;
+
+namespace-fsname-argument
+  : global-argument
+  | BECH32 { CMD->fsname_id_len = zcatw(CMD->fsname_id, sizeof(CMD->fsname_id), @1.s, @1.l); }
+  | word { CMD->fsname_name = @1.s; CMD->fsname_name_len = @1.l; }
+  ;
+
+fsname-argument
+  : global-argument
+  | BECH32 { CMD->fsname_id_len = zcatw(CMD->fsname_id, sizeof(CMD->fsname_id), @1.s, @1.l); }
   ;
 
 fstrees-arguments
@@ -941,8 +1340,8 @@ fstree-argument-list
 
 fstree-argument
   : global-argument
-  | hex64 { CMD->fstree_id_len = zcatw(CMD->fstree_id, sizeof(CMD->fstree_id), @1.s, @1.l); }
-  | bead { CMD->target = @1.s; CMD->target_len = @1.l; }
+  | BECH32 { CMD->fstree_id_len = zcatw(CMD->fstree_id, sizeof(CMD->fstree_id), @1.s, @1.l); }
+  | word { CMD->target = @1.s; CMD->target_len = @1.l; }
   ;
 
 config-arguments
@@ -984,8 +1383,8 @@ configset-argument-list
 
 configset-argument
   : global-argument
-  | hex64 { CMD->id = $1; }
-  | bead { CMD->special_target = $1; }
+  | BECH32 { CMD->id_len = zcatw(CMD->id, sizeof(CMD->id), @1.s, @1.l); }
+  | word { CMD->special_target = @1.s; CMD->special_target_len = @1.l; }
   ;
 
 rules-command
@@ -1021,8 +1420,8 @@ rule-argument-list
 
 rule-argument
   : global-argument
-  | hex64 { CMD->id = $1; }
-  | bead { CMD->special_target = $1; }
+  | BECH32 { CMD->rule_id_len = zcatw(CMD->rule_id, sizeof(CMD->rule_id), @1.s, @1.l); }
+  | word { CMD->rule_name = @1.s; CMD->rule_name_len = @1.l; }
   ;
 
 rmas-command
@@ -1044,7 +1443,7 @@ rmas-argument
   ;
 
 rma-command
-  : RMA { command_set(&rma_command); } rma-arguments
+  : RMA { command_set(&rma_command); } rma-arguments rma-subcommand
   ;
 
 rma-arguments
@@ -1058,8 +1457,39 @@ rma-argument-list
 
 rma-argument
   : global-argument
-  | hex64 { CMD->id = $1; }
-  | bead { CMD->special_target = $1; }
+  | BECH32 { CMD->rma_id_len = zcatw(CMD->rma_id, sizeof(CMD->rma_id), @1.s, @1.l); }
+  | word { CMD->rma_name = @1.s; CMD->rma_name_len = @1.l; }
+  ;
+
+rma-subcommand
+  : rma-run-command
+  | %empty
+  ;
+
+rma-run-command
+  : RUN { command_sub_set(&rma_run_command); } rma-run-arguments
+  ;
+
+rma-run-arguments
+  : rma-run-argument-list
+  | %empty
+  ;
+
+rma-run-argument-list
+  : rma-run-argument-list rma-run-argument
+  | rma-run-argument
+  ;
+
+rma-run-argument
+  : global-argument
+  | lpaths
+  {
+    rma_run_args.show_paths = true;
+  }
+  | lids
+  {
+    rma_run_args.show_ids = true;
+  }
   ;
 
 goals-arguments
@@ -1106,74 +1536,33 @@ events-argument
   | FRESH               { events_args.event_mask |= BAMIPC_EVENT_NODE_FRESH; }
   | CREATE              { events_args.event_mask |= BAMIPC_EVENT_NODE_CREATE; }
   | DELETE              { events_args.event_mask |= BAMIPC_EVENT_NODE_DELETE; }
-  | GLOBAL_INVALIDATION { events_args.event_mask |= BAMIPC_EVENT_GLOBAL_INVALIDATION; }
-  | EXEC_FORKED         { events_args.event_mask |= BAMIPC_EVENT_FORMULA_FORK_BIN; }
-  | EXEC_WAITED         { events_args.event_mask |= BAMIPC_EVENT_FORMULA_WAIT_BIN; }
-  | EXEC_STDOUT         { events_args.event_mask |= BAMIPC_EVENT_FORMULA_STDOUT_BIN; }
-  | EXEC_STDERR         { events_args.event_mask |= BAMIPC_EVENT_FORMULA_STDERR_BIN; }
-  | EXEC_AUXOUT         { events_args.event_mask |= BAMIPC_EVENT_FORMULA_AUXOUT_BIN; }
   | GOALS_SET           { events_args.event_mask |= BAMIPC_EVENT_GOALS_SET; }
   | AUTORUN_SET         { events_args.event_mask |= BAMIPC_EVENT_AUTORUN_SET; }
   | SYSTEM_STATE_CHANGE { events_args.event_mask |= BAMIPC_EVENT_SYSTEM_STATE_CHANGE; }
+  | FORMULA_FORK        { events_args.event_mask |= BAMIPC_EVENT_FORMULA_FORK; }
+  | FORMULA_REAP        { events_args.event_mask |= BAMIPC_EVENT_FORMULA_REAP; }
+  | BUILD_START         { events_args.event_mask |= BAMIPC_EVENT_BUILD_START; }
+  | BUILD_END           { events_args.event_mask |= BAMIPC_EVENT_BUILD_END; }
+  | RECONCILE_START     { events_args.event_mask |= BAMIPC_EVENT_RECONCILE_START; }
+  | RECONCILE_END       { events_args.event_mask |= BAMIPC_EVENT_RECONCILE_END; }
+  | EXEC_FORK           { events_args.event_mask |= BAMIPC_EVENT_FORMULA_FORK_BIN; }
+  | EXEC_WAIT           { events_args.event_mask |= BAMIPC_EVENT_FORMULA_REAP_BIN; }
+  | EXEC_STDOUT         { events_args.event_mask |= BAMIPC_EVENT_FORMULA_STDOUT_BIN; }
+  | EXEC_STDERR         { events_args.event_mask |= BAMIPC_EVENT_FORMULA_STDERR_BIN; }
+  | EXEC_AUXOUT         { events_args.event_mask |= BAMIPC_EVENT_FORMULA_AUXOUT_BIN; }
+  | RMA_START           { events_args.event_mask |= BAMIPC_EVENT_RMA_START; }
+  | RMA_END             { events_args.event_mask |= BAMIPC_EVENT_RMA_END; }
+  | RMA_SEARCH          { events_args.event_mask |= BAMIPC_EVENT_RMA_SEARCH; }
+  | RMA_GENERATE        { events_args.event_mask |= BAMIPC_EVENT_RMA_GENERATE; }
+  | RMA_RESOLVE         { events_args.event_mask |= BAMIPC_EVENT_RMA_RESOLVE; }
+  | RMA_BIND            { events_args.event_mask |= BAMIPC_EVENT_RMA_BIND; }
   ;
 
-bead
-  : strtoken
-  {
-    $$ = (bead){ s : @1.s, len : @1.l };
-  }
-  ;
-
-strtoken
+word
   : STR
-  | BUILD
-  | DEPENDS
-  | FS
-  | FSTREE
-  | RELATION
-  | DIRTREE
-  | MODTREE
-  | IMPORTS
-  | MODULES
-  | REQUIRES
-  | LS
-  | TREE
-  | USES
-  | AUTOBUILD
-  | ADHOC
-  | TOUCH
-  | KILL
-  | EVENTS
-  | STATS
-  | DESCRIBE
-  | INFO
-  | CONFIG
-  | CONFIGSET
-  | CONFIGSETS
-  | FSNAME
-  | FSNAMES
-  | VARSET
-  | VARSETS
-  | RECONCILE
-  | TRUE
-  | FALSE
-  | STALE
-  | FRESH
-  | CREATE
-  | DELETE
-  | GLOBAL_INVALIDATION
-  | EXEC_FORKED
-  | EXEC_WAITED
-  | EXEC_STDOUT
-  | EXEC_STDERR
-  | EXEC_AUXOUT
-  | GOALS_SET
-  | AUTORUN_SET
-  | SYSTEM_STATE_CHANGE
-  | PLUGIN
-  | PLUGINS
-  | uint16
-  | '+'
+  | uint64
+  | bool
+ /* why are there no rollup tokens here ? see comments in args.l */
   ;
 
 bool
@@ -1199,9 +1588,12 @@ uint64
   | UINTMAX64
   ;
 
-hex64
-  : HEX8
-  | HEX16
-  | HEX32
-  | HEX64
+lmindist
+  : lmin_distance
+  | lmin_depth
+  ;
+
+lmaxdist
+  : lmax_distance
+  | lmax_depth
   ;

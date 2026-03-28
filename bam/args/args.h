@@ -16,17 +16,16 @@ struct touch_args;
 struct tree_args;
 struct trace_args;
 
-typedef struct bead {
-  const char *s;
-  uint16_t len;
-} bead;
-
 extern struct {
   /* passthrough to bamd */
-  bead system_config_path;
-  bead user_config_path;
-  bead default_filesystem_invalidation;
-  bead sweeper_period_nsec;
+  const char *system_config_path;
+  uint16_t system_config_path_len;
+  const char *user_config_path;
+  uint16_t user_config_path_len;
+  const char *default_filesystem_invalidation;
+  uint16_t default_filesystem_invalidation_len;
+  const char *sweeper_period_nsec;
+  uint16_t sweeper_period_nsec_len;
   bool no_launch;
 
   bool kill;              // kill extant daemon if any
@@ -37,8 +36,8 @@ extern struct {
 
   char context_module_id[40];
   uint16_t context_module_id_len;
-  bool context_module;
-  bool no_context_module;
+  bool context_module_use;
+  bool context_module_expect;
 } g_args;
 
 /// args_parse
