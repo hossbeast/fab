@@ -11,155 +11,299 @@ $SIG{__WARN__} = sub { die @_ };
 use Digest::MD5;
 use File::Basename;
 use Fcntl qw|SEEK_SET|;
+use POSIX;
+use Cwd;
 
-my $src_h  = $ENV{bm_source0};
-my $desc_c; # target
-my $desc_h; # target
-if(substr($ENV{bm_target0}, -2) eq ".c") {
-  $desc_c = $ENV{bm_target0};
-  $desc_h = $ENV{bm_target1};
-} else {
-  $desc_c = $ENV{bm_target1};
-  $desc_h = $ENV{bm_target0};
+my $sfd = POSIX::open("/tmp/$$", O_WRONLY | O_CREAT | O_APPEND);
+sub say {
+  my $s = shift;
+  my ($package, $filename, $line) = caller();
+  my $msg = sprintf("[%10u] line %4u : ", $$, $line);
+  $msg .= " " . $s if $s;
+  $msg .= "\n";
+  POSIX::write($sfd, $msg, length($msg));
 }
-my ($src_h_name, $directories) = fileparse($src_h, ".h");
-my ($desc_h_name) = fileparse($desc_h, ".desc.h");
-my $path;
+#  [ 1] bm_basedir=/run/user/1000/bam-integ/testdescriptor%stat
+#  [ 2] bm_hash=5210ed3fb96e65f7
+#  [ 3] bm_homedir=/home/todd
+#  [ 4] bm_ipcdir=/run/user/1000/bam/5210ed3fb96e65f7
+#  [ 5] bm_slot_index=0
+#  [ 6] bm_source0=foo.desc.o
+#  [ 7] bm_sources_len=1
+#  [ 8] bm_target0=foo.descriptor.c
+#  [ 9] bm_target1=foo.descriptor.h
+#  [10] bm_targets_len=2
+#  [11] gcc=/usr/share/bam/base-devel/bin/gcc
+#  [12] pahole=/usr/share/bam/base-devel/bin/pahole
 
-# descriptor.h
-my %field_codes = (
-    'int'    => 1 # int
-  , 'uint'   => 2 # uint
-  , 'char*'  => 3 # string
-  , 'list'   => 4 # list
+my $DESCRIPTOR_INT = 1;
+my $DESCRIPTOR_UINT = 2;
+my $DESCRIPTOR_STRING = 3;
+my $DESCRIPTOR_LIST = 4;
+my %codes = (
+    $DESCRIPTOR_INT => "DESCRIPTOR_INT"
+  , $DESCRIPTOR_UINT => "DESCRIPTOR_UINT"
+  , $DESCRIPTOR_STRING => "DESCRIPTOR_STRING"
+  , $DESCRIPTOR_LIST => "DESCRIPTOR_LIST"
 );
 
-# search for type_descriptor declarations in the header file
-my %descriptors;
-open FH, $src_h or die "open($src_h) : $!";
-while(<FH>)
-{
-  if(/^extern descriptor_type descriptor_([a-zA-Z0-9_]+);$/)
-  {
-    $descriptors{$1} = [];
+my $desc_o_path = $ENV{bm_source0};
+my $descriptor_c_path; # target
+my $descriptor_h_path; # target
+if(substr($ENV{bm_target0}, -2) eq ".c") {
+  $descriptor_c_path = $ENV{bm_target0};
+  $descriptor_h_path = $ENV{bm_target1};
+} else {
+  $descriptor_c_path = $ENV{bm_target1};
+  $descriptor_h_path = $ENV{bm_target0};
+}
+my ($desc, $directories, undef) = fileparse($desc_o_path, ".h");
+$desc = substr($desc, 0, -7);
+
+# sigchld handler
+my %status_by_pid;
+$SIG{CHLD} = sub {
+  local ($!, $?);
+  while((my $pid = waitpid(-1, WNOHANG)) > 0) {
+    my $exit = $? >> 8;
+    my $sig = $? & 127;
+    $status_by_pid{$pid} = $?;
+
+    # affirmative murder
+    kill 9, $pid;
   }
+};
+
+# unblock sigchld
+POSIX::sigprocmask(POSIX::SIG_UNBLOCK, POSIX::SigSet->new(SIGCHLD), POSIX::SigSet->new());
+
+sub pr_set_pdeathsig
+{
+  my $sig = shift;
+
+  return unless $^O eq 'linux';
+
+  my(undef, undef, undef, undef, $machine) = POSIX::uname();
+  my $SYS_prctl = undef;
+  $SYS_prctl = 157 if $machine eq "x86_64";
+  $SYS_prctl = 172 if $machine =~ /^i[3456]86$/;
+
+  return unless $SYS_prctl;
+
+  my $PR_SET_PDEATHSIG = 1;   # at least it is on my machine
+
+  syscall($SYS_prctl, $PR_SET_PDEATHSIG, $sig) >= 0 or die "prctl failed : $!";
 }
 
-# regex to find the corresponding struct definitions
-my $type_pat = '(?:struct|union) (';
-for my $name (keys %descriptors)
+sub run
 {
-  $type_pat .= '|' if length($type_pat) > 18;
-  $type_pat .= '(?:';
-  for my $c (split(//, $name))
-  {
-    $type_pat .= "[$c]";
-  }
-  $type_pat .= '\b)';
-}
-$type_pat .= ')';
-$type_pat = qr/$type_pat/;
+  my @cmd = @_;
 
-my $type = undef;
-seek FH, 0, SEEK_SET or die $!;
-$. = 0;
-while(<FH>)
-{
-  chomp;
-  if(/^\s*\/\//) { }
-  elsif(!$type)
+  my ($out_rd_fd, $out_wr_fd) = POSIX::pipe() or die $!;
+  my ($err_rd_fd, $err_wr_fd) = POSIX::pipe() or die $!;
+  my $pid = fork();
+  if(!$pid)
   {
-    if(/$type_pat/)
+    POSIX::dup2($out_wr_fd, 1) or die $!;
+    POSIX::dup2($err_wr_fd, 2) or die $!;
+
+    for(my $x = 0; $x < 1024; $x++)
     {
-      $type = $1;
+      next if $x == 1 || $x == 2;
+      POSIX::close($x);
+    }
+
+    POSIX::open("/dev/null", O_WRONLY);
+
+    pr_set_pdeathsig(9);  # no zombies
+
+    exec { $cmd[0] } @cmd;
+    exit(1);
+  }
+
+  # close write-end of the pipes
+  POSIX::close($out_wr_fd) or die $!;
+  POSIX::close($err_wr_fd) or die $!;
+
+  my $rin = '';
+  vec($rin, $out_rd_fd, 1) = 1;
+  vec($rin, $err_rd_fd, 1) = 1;
+
+  my $buf = '';
+  my $out = '';
+  my $out_len = 0;
+  my $err = '';
+  my $err_len = 0;
+  my $text;
+  while(1)
+  {
+    my $n = select(my $rout = $rin, undef, undef, 0.125);
+    next unless ($n > 0);
+
+    my $or = 0;
+    if(vec($rout, $out_rd_fd, 1) == 1)
+    {
+      $or = POSIX::read($out_rd_fd, $buf, 0xffff);
+      $out_len += $or;
+      if($or)
+      {
+        $text = substr($buf, 0, $or);
+        $out .= $text;
+      }
+    }
+
+    my $er = 0;
+    if(vec($rout, $err_rd_fd, 1) == 1)
+    {
+      $er = POSIX::read($err_rd_fd, $buf, 0xffff);
+      $err_len += $er;
+      if($er)
+      {
+        $text = substr($buf, 0, $er);
+        POSIX::write(2, $text, length($text));
+        $err .= $text;
+      }
+    }
+
+    #
+    # once the child process has exited (which closes its fds), and pipes are drained
+    #
+    # https://man7.org/linux/man-pages/man7/pipe.7.html
+    #  If all file descriptors referring to the write end of a pipe have
+    #  been closed, then an attempt to read(2) from the pipe will see
+    #  end-of-file (read(2) will return 0).
+    #
+    last if($or == 0 && $er == 0 && exists $status_by_pid{$pid});
+  }
+
+  return $status_by_pid{$pid}, $out, $err;
+}
+
+# find descriptor symbols in the object file
+my @cmd = ($ENV{nm}, $desc_o_path);
+print(join(" ", @cmd) . "\n");
+my ($status, $out, $err) = run(@cmd);
+
+my %replicas;
+while($out =~ m/descriptor_replica_([_a-zA-Z][_0-9a-zA-Z]+)/gm) {
+  print(" - $&\n");
+  $replicas{$1} = 1;
+}
+
+# load layout of structs with descriptors from the object file
+@cmd = ($ENV{pahole}, $desc_o_path);
+print(join(" ", @cmd) . "\n");
+($status, $out, $err) = run(@cmd);
+
+my %structs;
+my $struct = undef;
+my $a = $b = 0;
+while(1)
+{
+  my $b = index($out, "\n", $a);
+  last if $b == -1;
+  my $line = substr($out, $a, $b - $a);
+
+  if($struct) {
+    if($line =~ /^[ \t]+((?:8|16|32|64|int|short|long|u|_t|const|char|void|\*| )+)[ \t]+([a-zA-Z][_0-9a-zA-Z]*);[ \t]+\/\*[ \t]+([0-9]+)[ \t]+([0-9]+)/) {
+      print("$line $$struct{name} ---- $1 $2 $3 $4 B\n");
+      my $code = 0;
+      my $type = $1;
+      my $name = $2;
+      my $offset = int($3);
+      my $size = int($4);
+      $type =~ s/^ +//g;
+      $type =~ s/ +$//g;
+      if($type =~ 'int') {
+        $code = $DESCRIPTOR_INT;
+        if($type =~ 'u') {
+          $code = $DESCRIPTOR_UINT;
+        }
+      } elsif ($type =~ /(const )?+char +\*/) {
+        $code = $DESCRIPTOR_STRING;
+      } elsif ($type =~ /void +\*/) {
+        $code = $DESCRIPTOR_LIST;
+      } else {
+        print("WTF $type\n");
+        die;
+      }
+      push @{$$struct{fields}}, {
+          type => $type
+        , code => $code
+        , name => $name
+        , offset => $offset
+        , size => $size
+      };
+    } elsif($line =~ /^};$/){
+      print("$line END $$struct{name} C\n");
+      $structs{$$struct{name}} = $struct;
+      $struct = undef;
+    } else {
+      print("$line $$struct{name}  ????\n");
+    }
+  } elsif($line =~ /^(?:struct|union) ([_a-zA-Z][_0-9a-zA-Z]+) \{/) {
+    my $name = $1;
+    if(exists $replicas{$name}) {
+      $struct = { name => $name };
+      print("$line START $$struct{name} A\n");
     }
   }
 
-  # insignificant lines
-  elsif(index($_, ";") == -1) { }
-  elsif(/^\s*};/) { }
-
-  # fields
-  elsif(/^\s*([a-zA-Z0-9_ \*]+(?: |\*))([a-zA-Z0-9_]+);/)
-  {
-    my $info = "$1";
-    my $name = "$2";
-    $info =~ s/ +/ /g;
-    $info =~ s/^enum [a-z0-9_]+ *$/int/g;
-    $info =~ s/ //g;
-    $info =~ s/const//g;
-    $info =~ s/[0-9]+_t$//g;
-
-    if($name =~ m/^(?:[a-zA-Z0-9_]+_)?list$/)
-    {
-      $info = "list";
-    }
-
-    my $field_code = $field_codes{$info};
-    if($field_code)
-    {
-      push @{$descriptors{$type}}, { name => $name, code => $field_code };
-    }
-  }
-
-  # end-of-definition
-  elsif(/^\s*}[a-zA-Z0-9_ ]+;/)
-  {
-    $type = undef;
-  }
+  $a = $b + 1;
 }
-close FH;
 
-while(my($name, $type) = each %descriptors)
+# ensure that each descriptor has a layout
+for my $name (keys %replicas)
 {
-  die "type $name not found" unless scalar(@$type) > 0;
+  die "type $name not found" unless exists $structs{$name};
 }
 
 # match up scalar/aggregate types
-while(my($name, $type) = each %descriptors)
+while(my($name, $type) = each %structs)
 {
-  for my $field (@$type)
+  my $fields = $$type{fields};
+  for my $field (@$fields)
   {
     if($$field{code} == 3)  # string
     {
       my $x;
-      for($x = 0; $x <= $#$type; $x++)
+      for($x = 0; $x <= $#$fields; $x++)
       {
-        last if($$type[$x]{name} eq "$$field{name}_len");
+        last if($$fields[$x]{name} eq "$$field{name}_len");
       }
 
-      die("subfield $$field{name}_len not found") if $x > $#$type;
-      die("subfield $$field{name}_len has wrong type $$type[$x]{code}") if $$type[$x]{code} != 2;
-      $$field{len_field} = splice(@$type, $x, 1);
+      die("subfield $$field{name}_len not found") if $x > $#$fields;
+      die("subfield $$field{name}_len has wrong type $$fields[$x]{code}") if $$fields[$x]{code} != 2;
+      $$field{len_field} = splice(@$fields, $x, 1);
     }
     elsif($$field{code} == 4)  # list
     {
       # list-size field
       my $x;
-      for($x = 0; $x <= $#$type; $x++)
+      for($x = 0; $x <= $#$fields; $x++)
       {
-        last if($$type[$x]{name} eq "$$field{name}_size");
+        last if($$fields[$x]{name} eq "$$field{name}_size");
       }
 
-      die("subfield $$field{name}_size not found") if $x > $#$type;
-      die("subfield $$field{name}_size has wrong type $$type[$x]{code}") if $$type[$x]{code} != 2;
-      $$field{size_field} = splice(@$type, $x, 1);
+      die("subfield $$field{name}_size not found") if $x > $#$fields;
+      die("subfield $$field{name}_size has wrong type $$fields[$x]{code}") if $$fields[$x]{code} != 2;
+      $$field{size_field} = splice(@$fields, $x, 1);
 
       # list-length field
-      for($x = 0; $x <= $#$type; $x++)
+      for($x = 0; $x <= $#$fields; $x++)
       {
-        last if($$type[$x]{name} eq "$$field{name}_len");
+        last if($$fields[$x]{name} eq "$$field{name}_len");
       }
 
-      die("subfield $$field{name}_len not found") if $x > $#$type;
-      die("subfield $$field{name}_len has wrong type $$type[$x]{code}") if $$type[$x]{code} != 2;
-      $$field{len_field} = splice(@$type, $x, 1);
+      die("subfield $$field{name}_len not found") if $x > $#$fields;
+      die("subfield $$field{name}_len has wrong type $$fields[$x]{code}") if $$fields[$x]{code} != 2;
+      $$field{len_field} = splice(@$fields, $x, 1);
     }
   }
 }
 
 # generated c file
-open FH, ">$desc_c" or die "open($desc_c) : $!";
+open FH, ">$descriptor_c_path" or die "open($descriptor_c_path) : $!";
 print FH <<"END";
 /* A desc definition file generated by bam. bam is free software released under the
    GNU General Public License.
@@ -171,25 +315,26 @@ print FH <<"END";
    script and distribute that work under terms of your choice. */
 
 #include "descriptor.h"
-#include "$src_h_name.h"
-#include "$desc_h_name.desc.h"
+#include "$desc.descriptor.h"
 #include "macros.h"
 
 END
 
-while(my($name, $def) = each %descriptors)
+while(my($name, $def) = each %structs)
 {
+  my $fields = $$def{fields};
+
   print FH <<"END";
 struct descriptor_type descriptor_${name} = {
     id : DESCRIPTOR_ID_${name}
   , name : "$name"
   , name_len : @{[length($name)]}
-  , members_len : @{[scalar(@$def)]}
+  , members_len : @{[scalar(@$fields)]}
   , members : (descriptor_field*[]) {
 END
 
   my $comma = '  ';
-  for my $field (@$def)
+  for my $field (@$fields)
   {
     printf FH <<"END";
     $comma&descriptor_${name}_$$field{name}
@@ -204,38 +349,33 @@ print FH <<"END";
 END
 }
 
-while(my($name, $def) = each %descriptors)
+while(my($name, $def) = each %structs)
 {
-  for my $field (@$def)
+  for my $field (@{$$def{fields}})
   {
     my $id = sprintf("0x%08x", unpack("N", Digest::MD5::md5($name . $$field{name})));
 
-    my $codestring = {
-        1 => "DESCRIPTOR_INT"
-      , 2 => "DESCRIPTOR_UINT"
-      , 3 => "DESCRIPTOR_STRING"
-      , 4 => "DESCRIPTOR_LIST"
-    }->{$$field{code}};
+    my $codestring = $codes{$$field{code}};
     print FH <<"END";
 struct descriptor_field descriptor_${name}_$$field{name} = {
     name : "$$field{name}"
   , name_len : @{[length($$field{name})]}
   , code : $codestring
-  , offset : offsetof($name, $$field{name})
+  , offset : $$field{offset}
 END
 
     if($$field{code} == 1 || $$field{code} == 2)  # int
     {
-      print FH "  , size : sizeof_member($name, $$field{name})\n";
+      print FH "  , size : $$field{size}\n";
     }
     if($$field{code} == 3)  # string
     {
-      print FH "  , len_offset : offsetof($name, $$field{len_field}{name})\n";
+      print FH "  , len_offset : $$field{len_field}{offset} /* $$field{len_field}{name} */\n";
     }
     elsif($$field{code} == 4)  # list
     {
-      print FH "  , size_offset : offsetof($name, $$field{size_field}{name})\n";
-      print FH "  , len_offset : offsetof($name, $$field{len_field}{name})\n";
+      print FH "  , size_offset : $$field{size_field}{offset} /* $$field{size_field}{name} */\n";
+      print FH "  , len_offset : $$field{len_field}{offset} /* $$field{len_field}{name} */\n";
     }
 
     print FH "};\n";
@@ -245,7 +385,7 @@ END
 close FH;
 
 # generated header file
-open FH, ">$desc_h" or die "open($desc_h) : $!";
+open FH, ">$descriptor_h_path" or die "open($descriptor_h_path) : $!";
 print FH <<"END";
 /* A desc definition file generated by bam. bam is free software released under the
    GNU General Public License.
@@ -256,14 +396,13 @@ print FH <<"END";
    definition file. You may create a larger work that contains part or all of the build
    script and distribute that work under terms of your choice. */
 
-#ifndef DESCRIPTOR_${desc_h_name}_H
-#define DESCRIPTOR_${desc_h_name}_H
+#pragma once
 
 #include "descriptor.h"
 
 END
 
-while(my($name, $def) = each %descriptors)
+while(my($name, $def) = each %structs)
 {
   my $id = sprintf("0x%08x", unpack("N", Digest::MD5::md5($name)));
 
@@ -272,7 +411,7 @@ while(my($name, $def) = each %descriptors)
 extern struct descriptor_type descriptor_${name};
 END
 
-  for my $field (@$def)
+  for my $field (@{$$def{fields}})
   {
     print FH <<"END";
 extern struct descriptor_field descriptor_${name}_$$field{name};
@@ -280,8 +419,21 @@ END
   }
 }
 
-print FH <<"END";
-
-#endif
-END
 close FH;
+
+__DATA__
+
+envs : {
+  pahole : {
+    lookup : {
+      pattern : bin/pahole+(.@)
+      namespace : base-devel
+    }
+  }
+  nm : {
+    lookup : {
+      pattern : bin/nm+(.@)
+      namespace : binutils
+    }
+  }
+}

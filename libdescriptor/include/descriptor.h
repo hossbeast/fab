@@ -18,6 +18,14 @@ DESCRIPTOR_CODE_TABLE
 #undef DEF
 } descriptor_code;
 
+#define DESCRIPTOR_REPLICA(x)                    \
+  volatile x descriptor_replica_ ## x;           \
+  void __descriptor_replica_ ## x(void);         \
+  void __descriptor_replica_ ## x(void) {        \
+    char __attribute__((unused)) a;              \
+    a = *((char*)&descriptor_replica_ ## x);     \
+  }
+
 typedef struct descriptor_field {
   const char *name;
   uint8_t name_len;

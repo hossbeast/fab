@@ -1,0 +1,130 @@
+#!/usr/bin/env perl
+
+#
+# codegen with the internal descriptor module
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+our $bam_dir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use bam::bam;
+use integ;
+
+# notify-specific stats assertions
+init();
+setup(<<"TREE");
+|-- config.bam%devel <<
+namespaces : {
+  base-devel
+  binutils
+}
+filesystem : {
+  fstrees : {
+    $repodir/builtin-modules%devel : {
+      mount : true
+      invalidation : notify
+      namespaces : {
+        modules
+      }
+    }
+    $repodir/libdescriptor/include : {
+      mount : true
+      namespaces : {
+        modules
+      }
+    }
+    $repodir/include : {
+      mount : true
+      namespaces : {
+        modules
+      }
+    }
+    $repodir/internal-modules/descriptor : {
+      mount : true
+      invalidation : notify
+      namespaces : {
+        modules
+      }
+    }
+    $repodir/usr/share/bam/binutils : {
+      mount : true
+      namespaces : {
+        binutils
+      }
+    }
+    $repodir/usr/share/bam/base-devel : {
+      mount : true
+      namespaces : {
+        base-devel
+      }
+    }
+    \$bm_basedir : {
+      mount : true
+      namespaces : {
+        modules
+      }
+    }
+  }
+}
+>>
+|-- var.bam%devel <<
+CFLAGS : { -ggdb3 }
+>>
+|-- module.bam%devel <<
+use cc
+use descriptor
+bind bam/include           => [*] //module/include
+bind libdescriptor/include => [*] //module/include
+>>
+|-- A
+|   `-- B
+|       `-- C
+|-- foo.desc.c <<
+#include "$repodir/libdescriptor/include/descriptor.h"
+
+typedef struct foo {
+  const char *path;
+  uint16_t path_len;
+  void *source_list;
+  uint16_t source_list_count;
+  uint32_t source_list_size;
+  uint16_t source_list_len;
+} foo;
+
+DESCRIPTOR_REPLICA(foo);
+>>
+TREE
+
+assert {
+  stats(undef, { modules => 1
+})};
+assert {
+  stats(".", "-S", {
+      type => 'module'
+    , state => 'fresh'
+    , reloaded => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+      type => 'ruleset'
+    , state => 'fresh'
+    , parse_err => 0
+    , parse_ok => 1
+})};
+
+build();
+
+teardown();

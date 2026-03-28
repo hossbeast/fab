@@ -11,7 +11,7 @@
 // static
 //
 
-static size_t field_unmarshal_string(void * restrict src, size_t sz, char ** textp, uint16_t *lenp)
+static size_t field_unmarshal_string(void * restrict src, size_t sz, char **textp, uint16_t *lenp)
 {
   uint32_t pad;
   size_t z;
