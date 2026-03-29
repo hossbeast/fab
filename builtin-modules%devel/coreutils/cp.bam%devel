@@ -1,0 +1,39 @@
+#!/usr/bin/env perl
+#
+# SPDX-License-Identifier: GPL-3.0
+# Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com>
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use File::Basename;
+use POSIX;
+
+die "cp not found" unless $ENV{cp};
+
+die 'expected $bm_sources_len == 1' unless int($ENV{bm_sources_len}) == 1;
+die 'expected $bm_targets_len == 1' unless int($ENV{bm_targets_len}) == 1;
+
+# build the command
+my @cmd = (
+    $ENV{cp}
+  , $ENV{bm_source0}
+  , $ENV{bm_target0}
+);
+
+my $s = join(" ", @cmd) . "\n";
+POSIX::write(1001, $s, length($s));
+exec { $cmd[0] } @cmd
+
+__DATA__
+
+envs : {
+  cp : {
+    lookup : {
+      pattern : bin/cp+(.@)
+      namespace : coreutils
+    }
+  }
+}

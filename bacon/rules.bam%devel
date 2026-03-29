@@ -2,24 +2,21 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 use git
-
-bind bam-build/asan                     => //asan-bits
-bind "builtin-modules%devel"/executable => //executable
+bind bam-build/asan => //asan-bits
 
 # includes
 rule **+(/) => [*] //module/include
 
-# invoke the compiler to build the executable
-rule $^D/**/*.o [*] -> bacon.exe # : //executable/cc.bam%devel
+# rename
+rule bacon.exe -> bacon+(@) : coreutils/symlink.bam%devel+(.)
 
 # default targets
-rule $^D/bacon -> //targets
+rule $^D/bacon+(@) -> //targets
 
 # dependencies
+rule $^D/**/*.o [*] -> bacon.exe
 rule //artifacts/*/$CONFIG_VARIANT/*.a -> bacon.exe
-
 {
   if($CONFIG_DEVEL)
-
   rule //asan-bits/devel/asan.o -> bacon.exe
 }

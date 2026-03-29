@@ -8,7 +8,6 @@ use descriptor
 
 bind bam-build/asan   => //asan-bits
 bind executable       => //executable
-bind descriptor       => //descriptor
 
 # default targets
 rule bamd -> //targets
@@ -23,29 +22,6 @@ rule $^D/**~test/(?:*~xunit-)*.o [*] -> bamd : //executable/cc.bam%devel
 rule //artifacts/*/$CONFIG_VARIANT/(*~libxunit).a -> bamd
 
 rule git-state.h -> args/args.o
-
-# descriptors
-rule $^A/build/build.h -> [*] build/build_stats.desc.[ch] : //descriptor/descriptor.bam%devel
-rule $^A/buildplan/buildplan.h -> [*] buildplan/buildplan_stats.desc.[ch] : //descriptor/descriptor.bam%devel
-rule $^A/bpe/bpe.h -> [*] bpe/stats_bpe.desc.[ch] : //descriptor/descriptor.bam%devel
-rule $^A/configset/configset.h -> [*] configset/stats_configset.desc.[ch] : //descriptor/descriptor.bam%devel
-rule $^A/filesystem/filesystem.h -> [*] filesystem/filesystem_stats.desc.[ch] : //descriptor/descriptor.bam%devel
-rule $^A/rcu/rcu.h -> [*] rcu/rcu_stats.desc.[ch] : //descriptor/descriptor.bam%devel
-rule $^A/formula/formula.h -> [*] formula/stats_formula.desc.[ch] : //descriptor/descriptor.bam%devel
-rule $^A/fstree/fstree.h -> [*] fstree/stats_fstree.desc.[ch] : //descriptor/descriptor.bam%devel
-rule $^A/client/client.h -> [*] client/stats_client.desc.[ch] : //descriptor/descriptor.bam%devel
-rule $^A/fsname/fsname.h -> [*] fsname/fsname_stats.desc.[ch] : //descriptor/descriptor.bam%devel
-rule $^A/namespace/namespace.h -> [*] namespace/namespace_stats.desc.[ch] : //descriptor/descriptor.bam%devel
-rule $^A/module/module.h -> [*] module/stats_module.desc.[ch] : //descriptor/descriptor.bam%devel
-rule $^A/notify/notify.h -> [*] notify/notify_stats.desc.[ch] : //descriptor/descriptor.bam%devel
-rule $^A/plugin/plugin.h -> [*] plugin/stats_plugin.desc.[ch] : //descriptor/descriptor.bam%devel
-rule $^A/rule/rule.h -> [*] rule/stats_rule.desc.[ch] : //descriptor/descriptor.bam%devel
-rule $^A/rma/rma.h -> [*] rma/stats_rma.desc.[ch] : //descriptor/descriptor.bam%devel
-rule $^A/ruleset/ruleset.h -> [*] ruleset/stats_ruleset.desc.[ch] : //descriptor/descriptor.bam%devel
-rule $^A/stats/stats_fsent_dir.h -> [*] build/stats_fsent_dir.desc.[ch] : //descriptor/descriptor.bam%devel
-rule $^A/system/system.h -> [*] system/system_stats.desc.[ch] : //descriptor/descriptor.bam%devel
-rule $^A/varset/varset.h -> [*] varset/stats_varset.desc.[ch] : //descriptor/descriptor.bam%devel
-rule $^A/vertex/vertex.h -> [*] vertex/stats_vertex.desc.[ch] : //descriptor/descriptor.bam%devel
 
 {
   if ($CONFIG_DEVEL)

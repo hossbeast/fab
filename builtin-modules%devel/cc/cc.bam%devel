@@ -9,7 +9,6 @@ use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
 use File::Basename;
-use Data::Dumper;
 use POSIX;
 
 die "cc not found" unless $ENV{cc};
@@ -24,8 +23,8 @@ my @cmd = (
   , "-o", $ENV{bm_target0}
 );
 
-print(join(" ", @cmd));
-
+my $s = join(" ", @cmd) . "\n";
+POSIX::write(1001, $s, length($s));
 exec { $cmd[0] } @cmd
 
 __DATA__
@@ -33,12 +32,11 @@ __DATA__
 envs : {
   cc : {
     lookup : {
-      pattern : bin/cc+(.)
-      namespace : binutils
+      pattern : bin/cc+(.@)
+      namespace : base-devel
     }
   }
 }
-
 args : [
   sequence : [
     select : [

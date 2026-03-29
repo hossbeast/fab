@@ -154,8 +154,7 @@ open EFH, ">/tmp/cc-last-err";
 if($err) {
   print EFH "$err";
   open FH, ">/tmp/cc-last-err-location";
-  #$err =~ /((?:\/|[.])[-_a-zA-Z0-9\/.]+[.]c):([0-9]+)/;
-  $err =~ /((?:\/|[.])[-_a-zA-Z0-9\/.]+[.][chy]):([0-9]+):[0-9]+:.*error: /;
+  $err =~ /([.\/][-_a-z0-9.\/]+):([0-9]+):[0-9]+:[^:]+(fatal[^:]+)?(error|warning): /i;
   my $path = $1;
   my $line = $2;
   if (substr($path, 0, 1) ne "/") {
@@ -171,8 +170,8 @@ __DATA__
 envs : {
   cc : {
     lookup : {
-      pattern : bin/cc+(.)
-      namespace : binutils
+      pattern : bin/cc+(.@)
+      namespace : base-devel
     }
   }
 }

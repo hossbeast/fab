@@ -111,7 +111,7 @@ __DATA__
 envs : {
   git : {
     lookup : {
-      pattern : bin/git+(.)
+      pattern : bin/git+(.@)
       namespace : base-devel
     }
   }
@@ -120,7 +120,7 @@ envs : {
 args : [
   sequence : [
     select : [
-      anchor 
+      anchor
     ]
     property : relpath
   ]

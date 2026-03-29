@@ -7,7 +7,11 @@ build : {
 }
 
 timeout : {
-  interval : 600  # exit after 10 minutes of inactivity
+  interval-sec : 600  # exit after 10 minutes of inactivity
+}
+
+notify : {
+  interval-msec : 500 # process events after between 1/2 - 1 seconds
 }
 
 filesystem : {
@@ -53,22 +57,14 @@ filesystem : {
         plugins
       }
     }
-    /home/todd/bam/usr/share/bam/binutils : {
+  
+    /home/todd/bam/builtin-modules%devel : {
       invalidation : stat
       mkdir : false
       mount : true
       namespaces : {
+        modules
         formulas
-        binutils
-      }
-    }
-    /home/todd/bam/usr/share/bam/base-devel : {
-      invalidation : stat
-      mkdir : false
-      mount : true
-      namespaces : {
-        formulas
-        base-devel
       }
     }
   }
@@ -77,7 +73,16 @@ filesystem : {
     /home/todd/bam/builtin-modules
     /home/todd/bam/builtin-plugins
     /usr/share/bam/modules
-    .git
+  }
+  special : {
+    var.bam.final%devel
+    var.bam.debug%devel
+    var.bam.trace%devel
+    var.bam.devel%devel
+    rules.bam.final%devel
+    rules.bam.debug%devel
+    rules.bam.trace%devel
+    rules.bam.devel%devel
   }
 }
 
@@ -94,12 +99,13 @@ plugins : {
     {
       file : {
         lookup : {
-          pattern : builtin-plugins%devel/invalidate-global+(.)
+          pattern : builtin-plugins%devel/invalidate-primary+(.)
           namespace : plugins
         }
       }
       args : [
         --suffix=h
+        --in-module
       ]
     }
   ]

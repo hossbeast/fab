@@ -1,17 +1,105 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
+
+namespaces : {
+  binutils
+  coreutils
+  base-devel
+}
+
+# file invalidation
 filesystem : {
   special : {
     var.bam%devel
     config.bam%devel
     rules.bam%devel
-    var.bam.final%devel
-    var.bam.debug%devel
-    var.bam.trace%devel
-    var.bam.devel%devel
-    rules.bam.final%devel
-    rules.bam.debug%devel
-    rules.bam.trace%devel
-    rules.bam.devel%devel
+    module.bam%devel
   }
+
+  exclude : {
+    .git
+    /usr/share/bam/modules
+  }
+
+  fstrees : {
+    / : {
+      invalidation : notify
+      mkdir : false
+    }
+
+    # commonly used executables
+    /home/todd/bam/usr/share/bam/binutils : {
+      invalidation : stat
+      mkdir : false
+      mount : true
+      namespaces : {
+        binutils
+      }
+    }
+    /home/todd/bam/usr/share/bam/coreutils : {
+      invalidation : stat
+      mkdir : false
+      mount : true
+      namespaces : {
+        coreutils
+      }
+    }
+    /home/todd/bam/usr/share/bam/base-devel : {
+      invalidation : stat
+      mkdir : false
+      mount : true
+      namespaces : {
+        base-devel
+      }
+    }
+  }
+}
+
+build : {
+  # 0=heuristic based on detected cpus
+  concurrency : 0
+
+  # size of the buffer for storing data written to stdout by formulas
+  #  max payload size of formula-stdout-bin events
+  #  max size available for subsequent inspection
+  stdout-buffer-size : 8192
+
+  # size of the buffer for storing data written to stderr by formulas */
+  #  max payload size of formula-stderr-bin events */
+  stderr-buffer-size : 8192
+
+  # size of the buffer for storing data written to auxout by formulas */
+  #  max payload size of formula-stderr-bin events */
+  auxout-buffer-size : 8192
+
+  # max number of build records to retain in memory
+  retention : {
+    max-entries : 16
+  }
+}
+
+timeout : {
+  # exit after period of inactivity of this duration
+  interval-sec : 600
+
+  # refresh the timeout when a request is received
+  refresh-on-request : true
+
+  # reset the timeout when autobuild
+  refresh-on-autobuild : true
+}
+
+plugins : {
+  # size of the buffer for storing data written to plugins on stdin
+  #  max size available for subsequent inspection
+  stdin-buffer-size : 8192
+
+  # size of the buffer for storing data written by plugins on stdout
+  stdout-buffer-size : 8192
+
+  # size of the buffer for storing data written by plugins on stderr
+  stderr-buffer-size : 8192
+
+  # size of the buffer for storing data written by plugins on auxout
+  auxout-buffer-size : 8192
 }

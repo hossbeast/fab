@@ -1,31 +1,43 @@
 #!/usr/bin/env perl
 
 #
-# When autobuild is enabled, bamd will attempt to run the build after any changes are detected.
-# Formulas in the same buildplan stage are executed in parallel, and their results will be received in a
-# non-deterministic order.
+# with autobuild in effect, bamd will run the build when changes are detected
 #
-# When you have multiple files with syntax errors, autobuild will tend to flip between errors from different files at
-# the bottom of the output.
+# build slots in the same stage run in parallel, so their results are produced in a non-deterministic order. because of
+# this, in presence of multiple files with syntax errors, autobuild will tend to flip between failing files
 #
-# The autobuild-focus plugin helps in this situation. When autobuild has failed multiple slots in the same stage, pick
-# one of them at random, and re-place the goals to build that one target in particular. Once it succeeds, restore the
+# the autobuild-focus plugin helps in this situation. when autobuild has failed multiple slots in the same stage, it
+# picks one of them, and re-places the goals to build just that one target. once it has succeeded, it restores the
 # original goals.
+#
+# autobuild recognizes the goals token of its own pid as being compatible
 #
 
 use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
-BEGIN { push @INC, '/home/todd/bam/libbacon/perl' }
+# devel plugins take modules from the repo dir
+use File::Basename;
+use Cwd;
+our $repodir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+BEGIN { unshift @INC, "$repodir/libbacon/perl" }
+BEGIN { unshift @INC, "$repodir/perl" }
 
 use Data::Dumper;
 use POSIX;
-use bacon;
+use bam::bacon;
 
 sub tx {
   my $s = shift;
   POSIX::write(1001, $s, length($s));
+}
+
+sub say {
+  my $s = shift;
+  $s .= "\n";
+  POSIX::write(1, $s, length($s));
 }
 
 sub err {
@@ -56,7 +68,7 @@ eventsub : [
   build-start
   build-end
   formula-fork
-  formula-wait
+  formula-reap
 ]
 
 MSG
@@ -80,16 +92,30 @@ sub build_show
   }
 }
 
-my $goals_text;
-my $goals_token;
+# properties of the autobuild goals (set by bam autorun functionality)
+my $autorun_goals_text;
+my $autorun_goals_token;
+my $autorun_goals_pid;
+
 my %slots;       # build slots for the most recent build
+my $text;
+my $msg;
+my $line;
+my $slot;
+my $build_end;
+my @stages;
+my $token;
+my $label;
+my $path;
+my $x;
+my $success;
 
 while(1)
 {
   # messages are separated by two newlines
-  my $text = '';
+  $text = '';
   while(1) {
-    my $line = <STDIN>;
+    $line = <STDIN>;
     if(!defined($line)) {
       exit;
     }
@@ -109,62 +135,64 @@ MSG
     next;
   }
 
-  my $msg = bacon_parse($text);
-
+  $msg = bam::bacon::parse($text);
   if($$msg{"goals-set"}) {
-    # autobuild-focus will have provided a label
-    if(!exists($$msg{"goals-set"}{"//goals"}{label})) {
+    # bam autobuild uses this label
+    if(!exists($$msg{"goals-set"}{"//bm/sys-goals"}{label})) {
       next;
     }
     # goals from some other source
-    if($$msg{"goals-set"}{"//goals"}{label} eq "autobuild-focus") {
+    if($$msg{"goals-set"}{"//bm/sys-goals"}{label} ne "bam-autobuild") {
       next;
     }
 
-    $goals_token = $$msg{"goals-set"}{"//goals"}{token};
+    # save the token
+    $autorun_goals_token = $$msg{"goals-set"}{"//bm/sys-goals"}{token};
+    $autorun_goals_pid = $$msg{"goals-set"}{"//bm/sys-goals"}{pid};
 
-    $goals_text = $text;
+    # save the goals text
+    $autorun_goals_text = $text;
 
     # unwrap from the goals-set event
-    $goals_text =~ s/^\s*goals-set\s+:\s+{//;
-    $goals_text =~ s/\s+}$//;
+    $autorun_goals_text =~ s/^\s*goals-set\s+:\s+{//;
+    $autorun_goals_text =~ s/\s+}$//;
 
-    # unwrap from the //goals mapping
-    $goals_text =~ s/^\s*\/\/goals\s+:\s+{//;
-    $goals_text =~ s/\s+}$//;
+    # unwrap from the //bm/sys-goals mapping
+    $autorun_goals_text =~ s/^\s*\/\/bm\/sys-goals\s+:\s+{//;
+    $autorun_goals_text =~ s/\s+}$//;
 
     # elide some unnecessary fields
-    $goals_text =~ s/^\s*duration\s+:\s+"[^"]+"\s*$//m;
+    $autorun_goals_text =~ s/^\s*duration\s+:\s+"[^"]+"\s*$//m;
 
     # normalize whitespace
-    $goals_text =~ s/\n\n/\n/gm;
+    $autorun_goals_text =~ s/\n+/\n/gm;
   } elsif($$msg{forked}) {
     $slots{$$msg{forked}{pid}} = $msg;
   } elsif($$msg{waited}) {
-    my $slot = $slots{$$msg{waited}{pid}};
+    $slot = $slots{$$msg{waited}{pid}};
     $$slot{waited} = $$msg{waited};
   } elsif($$msg{"build-start"}) {
     %slots = ();
   } elsif($$msg{"build-end"}) {
-    my $build_end = $$msg{"build-end"};
+    $build_end = $$msg{"build-end"};
 
-    # autobuild-focus will have provided a label
-    if(!exists($$build_end{label})) {
+    # check expected label
+    if(!exists($$build_end{label}) || !exists($$build_end{token})) {
       next;
     }
 
-    # goals from some other source
-    if($$build_end{token} != $goals_token) {
-      next;
-    }
-
-    # focus build triggered by this plugin has completed
-    if($$build_end{label} eq "autobuild-focus" && $$build_end{pid} == $$) {
+    # check for focus build triggered by this plugin
+    if($$build_end{label} eq "autobuild-focus" && $$build_end{token} eq $autorun_goals_pid && $$build_end{pid} == $$) {
       # build completed successfully -- restore the old goals
       if($$build_end{success}) {
-        tx("goals : { $goals_text }\n\n");
+        tx("goals : { $autorun_goals_text }\n\n");
       }
 
+      next;
+    }
+
+    # check for autorun build triggered by bam autobuild
+    if($$build_end{label} ne "bam-autobuild" || $$build_end{token} ne $autorun_goals_token) {
       next;
     }
 
@@ -178,8 +206,8 @@ MSG
       next;
     }
 
-    my @stages;
-    for my $slot (values %slots) {
+    @stages = ();
+    for $slot (values %slots) {
       push @{$stages[$$slot{forked}{stage}]}, $slot;
     }
 
@@ -194,10 +222,9 @@ MSG
     }
 
     # pick a random failed slot
-    my $x;
     for($x = 0; $x <= $#{$stages[$#stages]}; $x++) {
-      my $slot = $stages[$#stages][$x];
-      my $success = $$slot{waited}{status} == 0 && $$slot{waited}{"stderr-total"} == 0;
+      $slot = $stages[$#stages][$x];
+      $success = $$slot{waited}{status} == 0 && $$slot{waited}{"stderr-total"} == 0;
       if(!$success) {
         last;
       }
@@ -208,9 +235,9 @@ MSG
       next;
     }
 
-    my $slot = $stages[$#stages][$x];
-    my $token = sprintf("0x%x", $goals_token);
-    my $path = $$slot{forked}{targets}[0];
+    $slot = $stages[$#stages][$x];
+    $token = sprintf("0x%x", $autorun_goals_pid);
+    $path = $$slot{forked}{targets}[0];
 
     # flip the goals to focus on this one target
     tx(<<MSG);

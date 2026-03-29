@@ -92,8 +92,8 @@ __DATA__
 envs : {
   cc : {
     lookup : {
-      namespace : binutils
-      pattern : bin/cc+(.)
+      pattern : bin/cc+(.@)
+      namespace : base-devel
     }
   }
 }

@@ -1,0 +1,189 @@
+#!/usr/bin/env perl
+
+#
+# subscribe to node-stale events and, when any matching node becomes stale, request
+# to invalidate all primary files
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+# devel plugins take modules from the repo dir
+use File::Basename;
+use Cwd;
+our $repodir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+BEGIN { unshift @INC, "$repodir/libbacon/perl" }
+BEGIN { unshift @INC, "$repodir/perl" }
+
+use POSIX;
+use Getopt::Long qw|GetOptionsFromArray|;
+use bam::bam;
+use bam::bacon;
+
+sub say {
+  my $s = shift;
+  POSIX::write(1, $s, length($s));
+}
+
+sub tx {
+  my $s = shift;
+  POSIX::write(1001, $s, length($s));
+}
+
+my %args;
+my %optargs = (
+    'help'        => \$args{help}
+  , 'prefix=s'    => \@{$args{prefixes}}
+  , 'suffix=s'    => \@{$args{suffixes}}
+  , 'fstree=s'    => \@{$args{fstrees}}
+  , 'in-module!'  => \$args{"in-module"}
+);
+GetOptionsFromArray(\@ARGV, %optargs);
+
+die "unexpected arguments " . join(" ", @ARGV) if @ARGV;
+
+if($args{help}) {
+  print <<MSG;
+$0 : watch node-stale events, post invalidate-primary events
+
+options
+ --prefix <path-fragment>    match only paths having one of these prefixes
+ --suffix <path-fragment>    match only paths having one of these suffixes
+ --fstree <path>             match only paths in one of these fstrees
+ --in-module                 match only paths which are in a build or anchor dir
+MSG
+
+  exit(1)
+}
+
+tx(<<MSG);
+eventsub : [
+  node-stale
+]
+
+plugin-ready
+
+MSG
+
+# precompute fstree ids
+my @fstrees;
+for my $fstree_path (@{$args{fstrees}}) {
+  my $fstree_id = bam::identity("fstree", $fstree_path);
+  say("fstree $fstree_id -> $fstree_path\n");
+  push @fstrees, $fstree_id;
+}
+
+while(1)
+{
+  # messages are separated by two newlines
+  my $text = '';
+  while(1) {
+    my $line = <STDIN>;
+    chomp($line);
+    if(length($line) == 0) {
+      last;
+    }
+    $text .= "\n" if($text);
+    $text .= $line;
+  }
+
+  # bamd sends this event o all plugins on reconciliation
+  if($text eq 'plugin-ready-request') {
+tx(<<MSG);
+plugin-ready
+
+MSG
+    next;
+  }
+
+  my $msg;
+  my $path;
+  my $x;
+
+  $msg = bam::bacon::parse($text);
+  if(!exists($$msg{"node-stale"})) {
+    next;
+  }
+  $path = $$msg{"node-stale"}{path};
+
+  # in-module filter
+  if($args{"in-module"})
+  {
+    if(!$$msg{"node-stale"}{module}) {
+      next; # not part of any module
+    }
+  }
+
+  # fstree filter
+  for($x = 0; $x <= $#fstrees; $x++)
+  {
+    my $fstree = $fstrees[$x];
+    if(($$msg{"node-stale"}{fstree} || '') eq $fstree) {
+      last;
+    }
+  }
+
+  if($#fstrees == -1) {
+  } elsif($x <= $#fstrees) {
+  } else {
+    next; # no match
+  }
+
+  # prefix filter
+  for($x = 0; $x <= $#{$args{prefixes}}; $x++)
+  {
+    my $prefix = $args{prefixes}[$x];
+    if(substr($path, 0, length($prefix)) eq $prefix) {
+      last;
+    }
+  }
+
+  if($#{$args{prefixes}} == -1) {
+  } elsif($x <= $#{$args{prefixes}}) {
+  } else {
+    next; # no match
+  }
+
+  # suffix filter
+  for($x = 0; $x <= $#{$args{suffixes}}; $x++)
+  {
+    my $suffix = $args{suffixes}[$x];
+    if(substr($path, length($suffix) * -1) eq $suffix) {
+      last;
+    }
+  }
+
+  if($#{$args{suffixes}} == -1) {
+  } elsif($x <= $#{$args{suffixes}}) {
+  } else {
+    next; # no match
+  }
+
+  # suppress node-stale events generated while processing the invalidations
+  tx(<<MSG);
+eventsub : [
+]
+
+MSG
+
+  #
+  # invalidate primary files in all modules
+  #
+  #  N.B. - this command has the exact same behavior as the request
+  #  issued by this command : bam touch (with no arguments)
+  #
+  tx(<<MSG);
+modules-invalidate-primary
+
+MSG
+
+  # re-subscribe
+  tx(<<MSG);
+eventsub : [
+  node-stale
+]
+
+MSG
+}

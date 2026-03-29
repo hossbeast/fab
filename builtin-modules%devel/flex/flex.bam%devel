@@ -8,6 +8,8 @@ use strict;
 use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
+use POSIX;
+
 die "flex not found" unless $ENV{flex};
 
 my $name = "$ENV{bm_source0}";
@@ -24,7 +26,8 @@ my @cmd = (
   , $ENV{bm_source0}
 );
 
-print(join(" ", @cmd) . "\n");
+my $s = join(" ", @cmd) . "\n";
+POSIX::write(1001, $s, length($s));
 system { $cmd[0] } @cmd;
 
 # append to .h
@@ -60,7 +63,7 @@ __DATA__
 envs : {
   flex : {
     lookup : {
-      pattern : bin/flex+(.)
+      pattern : bin/flex+(.@)
       namespace : base-devel
     }
   }

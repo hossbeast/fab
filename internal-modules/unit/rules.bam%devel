@@ -7,8 +7,8 @@ bind bam-build/unit => [*] //artifacts
 bind bam/unit => [*] //module/include
 
 # single-test executables
-rule $^D/**/test/(test_*).o -> $^D/$1.unit : ./cc-test.bam%devel+(.)
-rule search //artifacts/*/$CONFIG_VARIANT/*.{a,o} [*] -> [*] search **/test/test_*.unit
+rule $^D/**/test/(test_*).o -> $^D/$1.unit : ./cc-test.bam
+search //artifacts/*/$CONFIG_VARIANT/*.{a,o} [*] -> [*] search $^D/**/test/test_*.unit
 
 # single-test targets
-rule $^D/**/test/(test_*).unit -> //$1 : ./run.bam%devel+(.)
+rule $^D/**/test/(test_*).unit -> //$1 : ./run.bam

@@ -9,34 +9,74 @@ use warnings;
 $SIG{__WARN__} = sub { die @_ };
 
 use File::Basename;
+use POSIX;
 
 die "ar not found" unless $ENV{ar};
 
 my @arflags;
 push @arflags, split(/ /, $ENV{arflags}) if $ENV{arflags};
 
+#
+# no combination of arguments will cause ar to actually recreate the entire archive
+# therefore it is necessary to actually delete and recreate the file, in case symbols
+# have been removed
+#
+# in addition, even if the file does not exist, ar will first create a tempfile, write
+# to it, and finally rename the completed file over the target file. this creates an
+# unnecessary, subsequent inotify event, after the target file is modified, namely the
+# delete event of that temp file
+#
+# if using fstree with invalidation : notify, this spurious delete event can cause
+# extra pointless reconciliation events
+#
+# so to work around these issues, ask ar to do its work in /tmp and, when its done
+# rewrite the target file is one clean operation
+#
+
+my $temp = "/tmp/" . $ENV{bm_bamd_id} . '-' . $ENV{target_id};
+
 my @cmd = (
     $ENV{ar}
   , @arflags
   , "rcs"
-  , $ENV{bm_target0}
+  , $temp
   # object files in this module
   , grep { substr($_, -2) eq ".o" } split(/ /, $ENV{objects})
 );
 
-# no combination of arguments will cause ar to actually recreate the entire archive
-# note that ar actually creates a tempfile then copies from there to the target file
-unlink($ENV{bm_target0});
+my $s = join(" ", @cmd) . "\n";
+POSIX::write(1001, $s, length($s));
 
-print(join(" ", @cmd), "\n");
-exec { $cmd[0] } @cmd
+system(@cmd);
+
+if(!unlink($ENV{target}) && !$!{ENOENT}) {
+  die $!;
+}
+system("mv $temp $ENV{target}");
 
 __DATA__
 
 envs : {
+  target : {
+    sequence : [
+      select : [
+        target
+      ]
+      property : abspath
+    ]
+  }
+  target_id : {
+    sequence : [
+      select : [
+        target
+      ]
+      property : id
+    ]
+  }
+
   ar : {
     lookup : {
-      pattern : bin/ar+(.)
+      pattern : bin/ar+(.@)
       namespace : binutils
     }
   }
@@ -53,7 +93,7 @@ envs : {
           min-distance : 2
         }
       ]
-      property : relpath
+      property : abspath
     ]
   }
 
@@ -70,7 +110,7 @@ envs : {
           max-distance : 1
         }
       ]
-      property : relpath
+      property : abspath
     ]
   }
 }

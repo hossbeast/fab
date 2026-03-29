@@ -4,22 +4,21 @@
 use git
 use flex
 use bison
-
-bind bam-build/asan       => //asan-bits
-bind executable           => //executable
+bind bam-build/asan => //asan-bits
 
 # includes
 rule **+(/) => [*] //module/include
 
-# default targets
-rule $^D/bam -> //targets
+# rename
+rule $^D/bam.exe -> bam+(@) : coreutils/symlink.bam%devel+(.)
 
-rule $^D/**/*.o [*] -> bam : //executable/cc.bam%devel
+# default targets
+rule $^D/bam+(@) -> //targets
 
 # dependencies
-rule //artifacts/*/$CONFIG_VARIANT/*.a -> bam
+rule $^D/**/*.o [*] -> bam.exe
+rule //artifacts/*/$CONFIG_VARIANT/*.a -> bam.exe
 {
   if($CONFIG_DEVEL)
-
-  rule //asan-bits/devel/asan.o -> bam
+  rule //asan-bits/devel/asan.o -> bam.exe
 }

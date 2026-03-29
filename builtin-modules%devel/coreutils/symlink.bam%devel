@@ -1,0 +1,50 @@
+#!/usr/bin/env perl
+#
+# SPDX-License-Identifier: GPL-3.0
+# Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com>
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use File::Basename;
+use POSIX;
+
+die "ln not found" unless $ENV{ln};
+
+die 'expected $bm_sources_len == 1' unless $#ARGV == 0;
+die 'expected $bm_targets_len == 1' unless int($ENV{bm_targets_len}) == 1;
+
+# build the command
+my @cmd = (
+    $ENV{ln}
+  , "-vfs"
+  , $ARGV[0]
+  , $ENV{bm_target0}
+);
+
+my $s = join(" ", @cmd) . "\n";
+POSIX::write(1001, $s, length($s));
+exec { $cmd[0] } @cmd
+
+__DATA__
+
+envs : {
+  ln : {
+    lookup : {
+      pattern : bin/ln+(.@)
+      namespace : coreutils
+    }
+  }
+}
+args : [
+  sequence : [
+    select : [
+      union : [
+        source
+      ]
+    ]
+    property : abspath
+  ]
+]
