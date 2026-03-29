@@ -15,6 +15,7 @@ struct fsent;
 struct bacon_value;
 struct moria_graph;
 struct graph_invalidation_context;
+struct graph_disintegrate_context;
 
 extern descriptor_type descriptor_stats_varset;
 
@@ -22,8 +23,8 @@ extern descriptor_type descriptor_stats_varset;
 typedef union stats_varset {
   struct {
     /* event counters */
-    uint16_t parse;          /* parse attempted */
     uint16_t parse_ok;       /* parsed successfully */
+    uint16_t parse_err;      /* parse failed */
   };
 
   stats_record record;
@@ -39,9 +40,6 @@ typedef struct varset {
   struct bacon_value *val;
   char id[40];
   uint16_t id_len;
-
-  /* shadow link */
-  struct fsedge *link;
 
   /* self_node */
   struct fsent *self_node;    // VERTEX_VARSET_FILE var.bam
@@ -71,10 +69,7 @@ void varset_alloc(varset ** restrict vp, struct moria_graph * restrict g)
 void varset_reparse(varset * restrict var)
   __attribute__((nonnull));
 
-void varset_release(varset * restrict var, struct graph_invalidation_context * restrict invalidation)
-  __attribute__((nonnull));
-
-void varset_system_reconcile(struct graph_invalidation_context * restrict invalidation)
+void varset_release(varset * restrict var)//, struct graph_invalidation_context * restrict invalidation)
   __attribute__((nonnull));
 
 size_t varset_path_cat(void * restrict dst, size_t sz, const varset * restrict config)
@@ -83,13 +78,7 @@ size_t varset_path_cat(void * restrict dst, size_t sz, const varset * restrict c
 void varset_describe(const struct varset * restrict varset, struct bacon_writer * restrict builder_writer)
   __attribute__((nonnull));
 
-void varset_file_describe(const struct fsent * restrict fse, struct bacon_writer * restrict builder_writer)
-  __attribute__((nonnull));
-
-void varset_identity_say(const struct varset * restrict varset, struct narrator * restrict N)
-  __attribute__((nonnull));
-
-void varset_file_identity_say(const struct fsent * restrict fse, struct narrator * restrict N)
+void varset_identity_describe(const struct varset * restrict varset, struct bacon_writer * restrict)
   __attribute__((nonnull));
 
 void varset_stats_build(varset * restrict, bool reset, struct bacon_writer * restrict)
@@ -97,3 +86,20 @@ void varset_stats_build(varset * restrict, bool reset, struct bacon_writer * res
 
 void varset_file_stats_build(struct fsent * restrict, bool reset, struct bacon_writer * restrict)
   __attribute__((nonnull));
+
+void varset_hash(const varset * restrict v, const void ** restrict hp, uint16_t * restrict hl)
+  __attribute__((nonnull));
+
+void varset_id(const varset * restrict v, const char ** restrict idp, uint16_t * restrict idl)
+  __attribute__((nonnull));
+
+void varset_compute_id(const struct varset * restrict v, struct identity_ctx * restrict id)
+  __attribute__((nonnull));
+
+bool varset_reap(struct varset * restrict varset, struct graph_disintegrate_context * restrict ctx)
+  __attribute__((nonnull));
+
+void varset_unlink(struct varset * restrict varset, struct graph_disintegrate_context * restrict ctx)
+  __attribute__((nonnull));
+
+void varsets_show(void);

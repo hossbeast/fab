@@ -22,16 +22,19 @@
 #include "varset.h"
 #include "fsent.h"
 #include "vertex.h"
+#include "mak_parser.h"
 #include "edge.h"
 #include "reconcile.h"
 #include "marshal.h"
 #include "stats.h"
-#include "handler.h"
+#include "request_handler.h"
 #include "channel.h"
 #include "system.h"
-#include "events.h"
-#include "entlist.h"
+#include "events/events.h"
+#include "edges.h"
+#include "vertices.h"
 #include "vertex/probes.h"
+#include "disintegrate.h"
 
 #include "zcat.h"
 
@@ -40,6 +43,7 @@ static llist varset_freelist = LLIST_INITIALIZER(varset_freelist);          // f
 static llist varset_invalid_list = LLIST_INITIALIZER(varset_invalid_list);  // invalidated
 
 static bacon_parser *parser;
+static mak_parser *parser_mak;
 
 //
 // static
@@ -47,38 +51,59 @@ static bacon_parser *parser;
 
 static void var_parse(varset * restrict vp)
 {
-  char * text = 0;
+  char *text = 0;
   size_t text_len;
   bacon_value * val;
   int exit;
-  event_bacon *msg;
+  bamipc_message *msg;
   events_context ectx;
+  bacon_writer writer, *builder_writer;
+  narrator_fixed fixed;
+  moria_vertex *self;
 
   vp->val = 0;
 
-  vp->varset_stats.parse++;
-  system_stats.varset_parse++;
-
   snarfs(&text, &text_len, vp->self_node_abspath);
-
-  if(text)
-  {
-    if((exit = bacon_parser_parse(parser, text, text_len, vp->self_node_abspath, BACON_TYPE_SET, &val)))
-    {
-      bacon_value_free(parser, val);
-
-      msg = system_error_event(&ectx);
-      msg->code = EINVAL;
-      msg->size += zcatw(msg->text + msg->size, sizeof(msg->text) - msg->size, parser->yyu->error_str, parser->yyu->error_len);
-      events_publish(&ectx);
-      goto end;
-    }
-
-    vp->val = val;
+  if(!text_len) {
+    vp->varset_stats.parse_ok++;
+    system_stats_events.varset_parse_ok++;
+    goto end;
   }
 
-  vp->varset_stats.parse_ok++;
-  system_stats.varset_parse_ok++;
+  self = &vp->self_node->vertex;
+  if(self->label_len > 4 && memncmp(self->label + self->label_len - 4, 4, MMS(".mak")) == 0) {
+    exit = mak_parser_parse(parser_mak, text, text_len, vp->self_node_abspath, &val);
+  } else {
+    exit = bacon_parser_parse(parser, text, text_len, vp->self_node_abspath, BACON_TYPE_SET, &val);
+  }
+
+  if(exit == 0) {
+    vp->varset_stats.parse_ok++;
+    system_stats_events.varset_parse_ok++;
+    vp->val = val;
+  } else {
+    vp->varset_stats.parse_err++;
+    system_stats_events.varset_parse_err++;
+    bacon_value_free(parser, val);
+
+    msg = system_error_event(&ectx);
+    narrator_fixed_init(&fixed, msg->text, msg->size);
+    bacon_writer_init(&writer);
+    builder_writer = bacon_writer_open(&writer, &fixed.base);
+
+    { MAPPING STRING("varset parse error")
+      { SET
+        { MAPPING STRING("error")
+          BYTES(parser->error, parser->error_len);
+        }
+      }
+    }
+    bacon_writer_close(&writer);
+
+    msg->code = EINVAL;
+    msg->len = fixed.l;
+    events_publish(&ectx);
+  }
 
 end:
   free(text);
@@ -90,43 +115,19 @@ static void var_dispose(struct varset * restrict var)
 
   llist_delete(&var->vertex.owner);
   llist_append(&varset_freelist, &var->vertex.owner);
+  ASAN_TAINT(var);
 }
 
-void varset_release(varset * restrict var, graph_invalidation_context * restrict invalidation)
+void varset_release(varset * restrict var)
 {
   moria_vertex __attribute__((unused)) *v;
-  moria_edge *edge;
-  moria_foreach_state st;
-  entlist edges, vertices;
-
-  /* proactive edge disconnect */
-  v = &var->vertex;
-  entlist_init(&edges);
-  moria_foreach_edge(&st, v, edge) {
-    switch(edge_type_get(edge)) {
-      case EDGE_VARSET_MOD:
-      case EDGE_SPECIAL:
-        entlist_push(&edges, edge);
-        break;
-      default:
-        break;
-    }
-  }
-
-  entlist_init(&vertices);
-  graph_disintegrate_bulk(&edges, &vertices, invalidation);
-  entlist_destroy(&edges);
-  entlist_destroy(&vertices);
 
   /* should be fully excised from the graph previously */
+  v = &var->vertex;
   RUNTIME_ASSERT(v->up_identity == 0);
   RUNTIME_ASSERT(rbtree_empty(&v->up));
   RUNTIME_ASSERT(rbtree_empty(&v->down));
 
-  /* un-magick the file node */
-  vertex_type_set(&var->self_node->vertex, VERTEX_FILE);
-
-  vertex_deleted_probe(&var->vertex);
   var_dispose(var);
 }
 
@@ -138,17 +139,17 @@ void varset_alloc(varset ** restrict vp, moria_graph * restrict g)
 {
   struct varset *var;
 
-  if((var = llist_shift(&varset_freelist, typeof(*var), vertex.owner)) == 0) {
-    xmalloc(&var, sizeof(*var));
-  } else {
+  if((var = llist_shift(&varset_freelist, typeof(*var), vertex.owner))) {
+    ASAN_CLEAN(var);
     memset(var, 0, sizeof(*var));
+  } else {
+    xmalloc(&var, sizeof(*var));
   }
 
   moria_vertex_init(&var->vertex, g, VERTEX_VARSET | VERTEX_OK);
 
   llist_append(&varset_list, &var->vertex.owner);
 
-  vertex_protect_set(&var->vertex, true);
   vertex_alloc_probe(&var->vertex);
   *vp = var;
 }
@@ -171,19 +172,16 @@ void varset_reparse(varset * restrict var)
 
 void varset_setup()
 {
-  bacon_parser_alloc(&parser);
+  parser_mak = mak_parser_create();
+  parser = parser_mak->bacon_parser;
 }
 
 void varset_cleanup()
 {
   varset *v;
-  llist *T;
 
-  llist_foreach_safe(&varset_list, v, vertex.owner, T) {
-    var_dispose(v);
-  }
-
-  llist_foreach_safe(&varset_freelist, v, vertex.owner, T) {
+  while((v = llist_shift(&varset_freelist, typeof(*v), vertex.owner))) {
+    ASAN_CLEAN(v);
     free(v);
   }
 
@@ -198,33 +196,9 @@ void varset_stats_collate(struct varset * restrict var, bool reset)
   }
 }
 
-void varset_system_reconcile(graph_invalidation_context * restrict invalidation)
-{
-  struct varset *var;
-  llist *T;
-  moria_foreach_state st;
-  moria_edge *edge;
-
-  /* destroy vars that are no longer in use */
-  llist_foreach_safe(&varset_list, var, vertex.owner, T) {
-    moria_foreach_edge(&st, &var->vertex, edge) {
-      switch(edge_type_get(edge)) {
-        case EDGE_SPECIAL:
-          continue;
-        default:
-          goto next;
-      }
-    }
-
-    varset_release(var, invalidation);
-  next:
-    var = 0;
-  }
-}
-
 size_t varset_path_cat(void * restrict dst, size_t sz, const varset * restrict cfg)
 {
-  return zcatf(dst, sz, "//varsets/%.*s", cfg->id_len, cfg->id);
+  return zcatf(dst, sz, "//bm/varsets/%.*s", cfg->id_len, cfg->id);
 }
 
 void varset_stats_build(varset * restrict varset, bool reset, bacon_writer * restrict builder_writer)
@@ -253,6 +227,7 @@ void varset_describe(const varset * restrict varset, struct bacon_writer * restr
                 case EDGE_VARSET_MOD:
                   vertex_path_describe(e->A, builder_writer);
                 default:
+                  break;
               }
             }
           }
@@ -263,6 +238,7 @@ void varset_describe(const varset * restrict varset, struct bacon_writer * restr
           }
         }
       }
+      vertex_relations_describe(&varset->vertex, builder_writer);
     }
   }
 }
@@ -272,32 +248,71 @@ void varset_file_stats_build(fsent * restrict fse, bool reset, bacon_writer * re
   fsent_stats_build(fse, reset, builder_writer);
 }
 
-void varset_file_describe(const fsent * restrict fse, struct bacon_writer * restrict builder_writer)
+void varset_identity_describe(const struct varset * restrict varset, struct bacon_writer * restrict builder_writer)
 {
+  attrs32_describe(varset->vertex.attrs, graph_vertex_attrs, builder_writer);
+
   { MAPPING
-    vertex_path_describe(&fse->vertex, builder_writer);
-    { SET
-      fsent_mappings(fse, builder_writer);
-      { MAPPING STRING("varset")
-        vertex_path_describe(&fse->self_var->vertex, builder_writer);
-      }
-      { MAPPING STRING("stats")
-        { SET
-          varset_file_stats_build((struct fsent *)fse, false, builder_writer);
-        }
-      }
+    STRING("id")
+    BYTES(varset->id, varset->id_len);
+  }
+  { MAPPING
+    STRING("path")
+    STRING(varset->self_node_abspath);
+  }
+}
+
+void varset_id(const struct varset * restrict varset, const char ** restrict id, uint16_t * restrict idl)
+{
+  *id = varset->id;
+  *idl = varset->id_len;
+}
+
+void varset_compute_id(const struct varset * restrict var, struct identity_ctx * restrict id)
+{
+  identity_type(id, vertex_type_get(&var->vertex));
+  identity_add(id, " ", 1);
+  fsent_id_path_compute(var->self_node, id);
+}
+
+bool varset_reap(struct varset * restrict varset, struct graph_disintegrate_context * restrict ctx)
+{
+  if(edges_check_up(&varset->vertex, EDGE_VARSET_MOD)) {
+    return false;
+  }
+
+  /* if no longer referenced by any module, then this varset is eligible to be reaped and any
+   * of its edges will be cleaned up */
+  return true;
+}
+
+void varset_unlink(struct varset * restrict varset, struct graph_disintegrate_context * restrict ctx)
+{
+  moria_foreach_state st;
+  moria_edge *edge;
+
+  moria_foreach_edge(&st, &varset->vertex, edge) {
+    switch(edge_type_get(edge)) {
+      case EDGE_FSENT_VARSET:
+        edges_push(ctx->edges, edge);
+      default:
+        break;
     }
   }
 }
 
-void varset_identity_say(const struct varset * restrict varset, struct narrator * restrict N)
+#if CONFIG_DEVEL
+void varsets_show(void)
 {
-  attrs32_say(varset->vertex.attrs, graph_vertex_attrs, N);
-  narrator_sayf(N, " id %.*s path %s", varset->id_len, varset->id, varset->self_node_abspath);
-}
+  varset *fml;
+  int x;
 
-void varset_file_identity_say(const struct fsent * restrict fse, struct narrator * restrict N)
-{
-  attrs32_say(fse->vertex.attrs, graph_vertex_attrs, N);
-  narrator_sayf(N, " id %.*s path %s", fse->self_var->id_len, fse->self_var->id, fse->self_var->self_node_abspath);
+  printf("varsets, live : %zu free : %zu\n", llist_count(&varset_list), llist_count(&varset_freelist));
+  x = 0;
+  llist_foreach(&varset_list, fml, vertex.owner) {
+    printf("%3u ", x++);
+    vertex_identity_show(&fml->vertex);
+    vertex_edges_show(&fml->vertex);
+  }
 }
+#endif
