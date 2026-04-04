@@ -498,6 +498,439 @@ void vertex_path_describe(const moria_vertex * restrict v, bacon_writer * restri
   bacon_writer_bytes(writer, path, pathl);
 }
 
+void vertex_describe(const moria_vertex * restrict v, bacon_writer * restrict builder_writer)
+{
+  switch(vertex_type_get(v)) {
+    /* fsents */
+    case VERTEX_DIR:
+      return fsent_describe(containerof(v, fsent, vertex), builder_writer);
+    case VERTEX_FILE:
+    case VERTEX_SHADOW_FILE:
+    case VERTEX_SHADOW_DIR:
+      return fsent_describe(containerof(v, fsent, vertex), builder_writer);
+    case VERTEX_SYMLINK:
+      return fsent_symlink_describe(containerof(v, fsent, vertex), builder_writer);
+    case VERTEX_SHADOW_LINK:
+      return fsent_shadow_link_describe(containerof(v, fsent, vertex), builder_writer);
+    /* other vertices */
+    case VERTEX_CLIENT:
+      return client_describe(containerof(v, client, vertex), builder_writer);
+    case VERTEX_FSNAME:
+      return fsname_describe(containerof(v, fsname, vertex), builder_writer);
+    case VERTEX_FSTREE:
+      return fstree_describe(containerof(v, fstree, vertex), builder_writer);
+    case VERTEX_RMA:
+      return rma_describe(containerof(v, typeof(rule_module_association), vertex), builder_writer);
+    case VERTEX_BPE:
+      return bpe_describe(containerof(v, typeof(buildplan_entity), vertex), builder_writer);
+    case VERTEX_RULE:
+      return rule_describe(containerof(v, typeof(rule), vertex), builder_writer);
+    case VERTEX_RULESET:
+      return ruleset_describe(containerof(v, typeof(ruleset), vertex), builder_writer);
+    case VERTEX_FORMULA:
+      return formula_describe(containerof(v, typeof(formula), vertex), builder_writer);
+    case VERTEX_MODULE:
+      return module_describe(containerof(v, typeof(module), vertex), builder_writer);
+    case VERTEX_CONFIGSET:
+      return configset_describe(containerof(v, configset, vertex), builder_writer);
+    case VERTEX_VARSET:
+      return varset_describe(containerof(v, varset, vertex), builder_writer);
+    case VERTEX_PLUGIN:
+      return plugin_describe(containerof(v, plugin, vertex), builder_writer);
+    case VERTEX_MODULE_VARS:
+    case VERTEX_MODULE_ENVS:
+    case VERTEX_PLUGIN_STDIN:
+    case VERTEX_PLUGIN_STDOUT:
+    case VERTEX_PLUGIN_STDERR:
+    case VERTEX_PLUGIN_AUXOUT:
+    case VERTEX_FORMULA_STDIN:
+    case VERTEX_FORMULA_STDOUT:
+    case VERTEX_FORMULA_STDERR:
+    case VERTEX_FORMULA_AUXOUT:
+      return detail_describe(containerof(v, detail, vertex), builder_writer);
+    case VERTEX_NAMESPACE:
+      return namespace_describe(containerof(v, namespace, vertex), builder_writer);
+    case VERTEX_BUILD_RECORD:
+      return build_record_describe(containerof(v, build_record, vertex), builder_writer);
+    case VERTEX_FORMULA_RECORD:
+      return formula_record_describe(containerof(v, formula_record, vertex), builder_writer);
+
+    /* globals / systems */
+    case VERTEX_SYS_SYSTEM:
+      return system_sys_describe(v, builder_writer);
+    case VERTEX_SYS_BUILD:
+      return build_sys_describe(v, builder_writer);
+    case VERTEX_SYS_CONFIG:
+      return config_sys_describe(v, builder_writer);
+    case VERTEX_SYS_FILESYSTEM:
+      return filesystem_sys_describe(v, builder_writer);
+    case VERTEX_SYS_GOALS:
+      return goals_sys_describe(v, builder_writer);
+    case VERTEX_SYS_NOTIFY:
+      return notify_sys_describe(v, builder_writer);
+    case VERTEX_SYS_PLAN:
+      return plan_sys_describe(v, builder_writer);
+    case VERTEX_SYS_RCU:
+      return rcu_sys_describe(v, builder_writer);
+
+    /* unimpl */
+    case VERTEX_CONTEXT_MODULE:
+      return;
+    default:
+      vertex_path_describe(v, builder_writer);
+  }
+}
+
+void vertex_describe_edges(const moria_vertex * restrict v, bacon_writer * restrict builder_writer)
+{
+  moria_foreach_state st;
+  moria_edge *e;
+
+  { SET
+    { MAPPING
+      STRING("vertex")
+      { SET
+        vertex_describe(v, builder_writer);
+        { MAPPING
+          STRING("edges")
+          { LIST
+            moria_foreach_edge_up(&st, v, e) {
+              edge_describe(e, builder_writer);
+            }
+            moria_foreach_edge_down(&st, v, e) {
+              edge_describe(e, builder_writer);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+void vertex_identity_describe_edges(const moria_vertex * restrict v, bacon_writer * restrict builder_writer)
+{
+  { SET
+    { MAPPING
+      STRING("vertex")
+      { SET
+        vertex_identity_describe(v, builder_writer);
+        { MAPPING
+          STRING("edges")
+          identity_edges_list(v, builder_writer);
+        }
+      }
+    }
+  }
+}
+
+void vertex_identity_describe(const moria_vertex * restrict v, bacon_writer * restrict builder_writer)
+{
+  moria_edge *e;
+  const fsent *fse;
+
+#if CONFIG_DEVEL || CONFIG_DEBUG
+  HEX(v)
+#endif
+
+  switch(vertex_type_get(v))
+  {
+    case VERTEX_DIR:
+    case VERTEX_FILE:
+    case VERTEX_SHADOW_DIR:
+    case VERTEX_SHADOW_FILE:
+    case VERTEX_SYS_CONFIG:
+    case VERTEX_SYS_SYSTEM:
+    case VERTEX_SYS_FILESYSTEM:
+    case VERTEX_SYS_RCU:
+    case VERTEX_SYS_GOALS:
+    case VERTEX_SYS_BUILD:
+    case VERTEX_SYS_PLAN:
+    case VERTEX_SYS_NOTIFY:
+    case VERTEX_CONTEXT_MODULE:
+    case VERTEX_MODULE_VARS:
+    case VERTEX_MODULE_ENVS:
+    case VERTEX_FORMULA_STDIN:
+    case VERTEX_FORMULA_STDOUT:
+    case VERTEX_FORMULA_STDERR:
+    case VERTEX_FORMULA_AUXOUT:
+    case VERTEX_FORMULA_ARGS:
+    case VERTEX_FORMULA_ENVS:
+    case VERTEX_FORMULA_FILE:
+    case VERTEX_FORMULA_CWD:
+    case VERTEX_PLUGIN_STDIN:
+    case VERTEX_PLUGIN_STDOUT:
+    case VERTEX_PLUGIN_STDERR:
+    case VERTEX_PLUGIN_AUXOUT:
+      { MAPPING
+        attrs32_describe(v->attrs, graph_vertex_attrs, builder_writer);
+        vertex_path_describe(v, builder_writer);
+      }
+      return;
+    case VERTEX_SHADOW_LINK:
+      { MAPPING
+        attrs32_describe(v->attrs, graph_vertex_attrs, builder_writer);
+        vertex_path_describe(v, builder_writer);
+      }
+      { MAPPING
+        STRING("ref")
+        if(v->ref) {
+          vertex_path_describe(v->ref, builder_writer);
+        } else {
+          STRING("_")
+        }
+      }
+      return;
+    case VERTEX_SYMLINK:
+      fse = containerof(v, typeof(*fse), vertex);
+      { MAPPING
+        attrs32_describe(v->attrs, graph_vertex_attrs, builder_writer);
+        vertex_path_describe(v, builder_writer);
+      }
+      { MAPPING
+        STRING("target")
+        if(fse->symlink_target_len == 0) {
+          STRING("_");
+        } else {
+          BYTES(fse->symlink_target, fse->symlink_target_len);
+        }
+      }
+      { MAPPING
+        STRING("ref")
+        if((e = edges_check_down(v, EDGE_REF_SYMLINK))) {
+          vertex_path_describe(e->B, builder_writer);
+        } else {
+          STRING("_")
+        }
+      }
+      return;
+
+    case VERTEX_RMA:
+      return rma_identity_describe(containerof(v, rule_module_association, vertex), builder_writer);
+    case VERTEX_CLIENT:
+      return client_identity_describe(containerof(v, client, vertex), builder_writer);
+    case VERTEX_FSTREE:
+      return fstree_identity_describe(containerof(v, fstree, vertex), builder_writer);
+    case VERTEX_NAMESPACE:
+      return namespace_identity_describe(containerof(v, namespace, vertex), builder_writer);
+    case VERTEX_FSNAME:
+      return fsname_identity_describe(containerof(v, fsname, vertex), builder_writer);
+    case VERTEX_RULE:
+      return rule_identity_describe(containerof(v, rule, vertex), builder_writer);
+    case VERTEX_BUILD_RECORD:
+      return build_record_identity_describe(containerof(v, build_record, vertex), builder_writer);
+    case VERTEX_FORMULA_RECORD:
+      return formula_record_identity_describe(containerof(v, formula_record, vertex), builder_writer);
+    case VERTEX_PLUGIN:
+      return plugin_identity_describe(containerof(v, plugin, vertex), builder_writer);
+    case VERTEX_BPE:
+      return bpe_identity_describe(containerof(v, buildplan_entity, vertex), builder_writer);
+    case VERTEX_MODULE:
+      return module_identity_describe(containerof(v, module, vertex), builder_writer);
+    case VERTEX_RULESET:
+      return ruleset_identity_describe(containerof(v, ruleset, vertex), builder_writer);
+    case VERTEX_FORMULA:
+      return formula_identity_describe(containerof(v, formula, vertex), builder_writer);
+    case VERTEX_VARSET:
+      return varset_identity_describe(containerof(v, varset, vertex), builder_writer);
+    case VERTEX_CONFIGSET:
+      return configset_identity_describe(containerof(v, configset, vertex), builder_writer);
+  }
+
+  RTA;
+}
+
+void vertex_relations_describe(const moria_vertex * restrict v, bacon_writer * restrict builder_writer)
+{
+  moria_edge *edge;
+  moria_foreach_state st;
+  int x;
+  bool any;
+
+  any = false;
+  moria_foreach_edge_up(&st, v, edge) {
+    switch(edge_type_get(edge)) {
+      case EDGE_SHADOW_REF:
+      case EDGE_FS:
+        continue;
+      default:
+        any = true;
+    }
+  }
+  if(any) {
+    MAPPING STRING("up")
+    { LIST
+      moria_foreach_edge_up(&st, v, edge) {
+        switch(edge_type_get(edge)) {
+          case EDGE_SHADOW_REF:
+          case EDGE_FS:
+            continue;
+          default:
+            break;
+        }
+        { MAPPING
+          attrs32_describe(edge->attrs, graph_edge_attrs, builder_writer);
+          if((edge->attrs & MORIA_EDGE_HYPER)) {
+            SET
+            for(x = 0; x < edge->Alen; x++) {
+              if(rbnode_attached(&edge->Alist[x].rbn)) {
+                vertex_path_describe(edge->Alist[x].v, builder_writer);
+              }
+            }
+          } else {
+            vertex_path_describe(edge->A, builder_writer);
+          }
+        }
+      }
+    }
+  }
+
+  any = false;
+  moria_foreach_edge_down(&st, v, edge) {
+    switch(edge_type_get(edge)) {
+      case EDGE_SHADOW_REF:
+      case EDGE_FS:
+        continue;
+      default:
+        any = true;
+    }
+  }
+  if(any) {
+    MAPPING STRING("down")
+    { LIST
+      moria_foreach_edge_down(&st, v, edge) {
+        switch(edge_type_get(edge)) {
+          case EDGE_SHADOW_REF:
+          case EDGE_FS:
+            continue;
+          default:
+            break;
+        }
+        { MAPPING
+          attrs32_describe(edge->attrs, graph_edge_attrs, builder_writer);
+          if((edge->attrs & MORIA_EDGE_HYPER)) {
+            SET
+            for(x = 0; x < edge->Blen; x++) {
+              if(rbnode_attached(&edge->Blist[x].rbn)) {
+                vertex_path_describe(edge->Blist[x].v, builder_writer);
+              }
+            }
+          } else {
+            vertex_path_describe(edge->B, builder_writer);
+          }
+        }
+      }
+    }
+  }
+}
+
+void vertex_stats_describe(moria_vertex * restrict v, bool reset, bacon_writer * restrict builder_writer)
+{
+  switch(vertex_type_get(v)) {
+    /* fsents */
+    case VERTEX_DIR:
+    case VERTEX_FILE:
+    case VERTEX_SHADOW_FILE:
+    case VERTEX_SHADOW_DIR:
+    case VERTEX_SYMLINK:
+    case VERTEX_SHADOW_LINK:
+      return fsent_stats_build(containerof(v, fsent, vertex), reset, builder_writer);
+
+    /* other vertices */
+    case VERTEX_FSNAME:
+      return fsname_stats_build(containerof(v, fsname, vertex), reset, builder_writer);
+    case VERTEX_CLIENT:
+      return client_stats_build(containerof(v, client, vertex), reset, builder_writer);
+    case VERTEX_FSTREE:
+      return fstree_stats_build(containerof(v, fstree, vertex), reset, builder_writer);
+    case VERTEX_RMA:
+      return rma_stats_build(containerof(v, typeof(rule_module_association), vertex), reset, builder_writer);
+    case VERTEX_BPE:
+      return bpe_stats_build(containerof(v, typeof(buildplan_entity), vertex), reset, builder_writer);
+    case VERTEX_RULE:
+      return rule_stats_build(containerof(v, typeof(rule), vertex), reset, builder_writer);
+    case VERTEX_RULESET:
+      return ruleset_stats_build(containerof(v, typeof(ruleset), vertex), reset, builder_writer);
+    case VERTEX_FORMULA:
+      return formula_stats_build(containerof(v, typeof(formula), vertex), reset, builder_writer);
+    case VERTEX_MODULE:
+      return module_stats_build(containerof(v, typeof(module), vertex), reset, builder_writer);
+    case VERTEX_CONFIGSET:
+      return configset_stats_build(containerof(v, configset, vertex), reset, builder_writer);
+    case VERTEX_VARSET:
+      return varset_stats_build(containerof(v, varset, vertex), reset, builder_writer);
+    case VERTEX_PLUGIN:
+      return plugin_stats_build(containerof(v, plugin, vertex), reset, builder_writer);
+    case VERTEX_NAMESPACE:
+      return namespace_stats_build(containerof(v, namespace, vertex), reset, builder_writer);
+    case VERTEX_BUILD_RECORD:
+      return build_record_stats_build(containerof(v, build_record, vertex), reset, builder_writer);
+    case VERTEX_FORMULA_RECORD:
+      return formula_record_stats_build(containerof(v, formula_record, vertex), reset, builder_writer);
+
+    /* globals / subsystems */
+    case VERTEX_SYS_SYSTEM:
+      return system_sys_stats_build(v, reset, builder_writer);
+    case VERTEX_SYS_CONFIG:
+      return config_sys_stats_build(v, reset, builder_writer);
+    case VERTEX_SYS_GOALS:
+      return goals_sys_stats_build(v, reset, builder_writer);
+    case VERTEX_SYS_NOTIFY:
+      return notify_sys_stats_build(v, reset, builder_writer);
+    case VERTEX_SYS_BUILD:
+      return build_sys_stats_build(v, reset, builder_writer);
+    case VERTEX_SYS_PLAN:
+      return plan_sys_stats_build(v, reset, builder_writer);
+    case VERTEX_SYS_FILESYSTEM:
+      return filesystem_sys_stats_build(v, reset, builder_writer);
+    case VERTEX_SYS_RCU:
+      return rcu_sys_stats_build(v, reset, builder_writer);
+
+    /* details */
+    case VERTEX_FORMULA_STDIN:
+    case VERTEX_FORMULA_STDOUT:
+    case VERTEX_FORMULA_STDERR:
+    case VERTEX_FORMULA_AUXOUT:
+    case VERTEX_FORMULA_ARGS:
+    case VERTEX_FORMULA_ENVS:
+    case VERTEX_FORMULA_FILE:
+    case VERTEX_FORMULA_CWD:
+    case VERTEX_PLUGIN_STDIN:
+    case VERTEX_PLUGIN_STDOUT:
+    case VERTEX_PLUGIN_STDERR:
+    case VERTEX_PLUGIN_AUXOUT:
+    case VERTEX_MODULE_VARS:
+    case VERTEX_MODULE_ENVS:
+    case VERTEX_CONTEXT_MODULE:
+      break;
+  }
+}
+
+void vertex_mappings(const moria_vertex * restrict v, bacon_writer * restrict builder_writer)
+{
+#if CONFIG_DEVEL
+  { MAPPING STRING("address")
+    HEX(v)
+  }
+#endif
+  { MAPPING STRING("id")
+    vertex_id_describe(v, builder_writer);
+  }
+  { MAPPING STRING("attrs")
+    attrs32_describe(v->attrs, graph_vertex_attrs, builder_writer);
+  }
+#if CONFIG_DEVEL
+  /* type and state are also encoded in attrs */
+  { MAPPING STRING("type")
+    STRING(attrs32_name_byvalue(graph_vertex_type_attrs, vertex_type_get(v)))
+  }
+  { MAPPING STRING("state")
+    STRING(attrs32_name_byvalue(graph_vertex_state_attrs, vertex_state_get(v)))
+  }
+#endif
+}
+
+
+
 size_t vertex_id_cat(void * restrict dst, size_t sz, const moria_vertex * v)
 {
   const fsent *fse;
@@ -641,149 +1074,6 @@ void vertex_attrs_set(moria_vertex * restrict v, uint32_t attrs)
   vertex_state_probe(v, before);
 }
 
-void vertex_describe(const moria_vertex * restrict v, bacon_writer * restrict builder_writer)
-{
-  const fsent *fse;
-
-  switch(vertex_type_get(v)) {
-    /* fsents */
-    case VERTEX_DIR:
-    case VERTEX_FILE:
-    case VERTEX_SHADOW_FILE:
-    case VERTEX_SHADOW_DIR:
-      return fsent_describe(containerof(v, fsent, vertex), builder_writer);
-    case VERTEX_SYMLINK:
-    case VERTEX_SHADOW_LINK:
-      fse = containerof(v, typeof(*fse), vertex);
-      { MAPPING
-        STRING("ref")
-        bacon_writer_push_string(builder_writer);
-        if(v->ref) {
-          vertex_path_say(v->ref, builder_writer->N);
-        } else {
-          narrator_says(builder_writer->N, "-none-");
-        }
-        bacon_writer_pop_string(builder_writer);
-      }
-      break;
-    /* other vertices */
-    case VERTEX_FSNAME:
-      return fsname_describe(containerof(v, fsname, vertex), builder_writer);
-    case VERTEX_FSTREE:
-      return fstree_describe(containerof(v, fstree, vertex), builder_writer);
-    case VERTEX_RMA:
-      return rma_describe(containerof(v, typeof(rule_module_association), vertex), builder_writer);
-    case VERTEX_BPE:
-      return bpe_describe(containerof(v, typeof(buildplan_entity), vertex), builder_writer);
-    case VERTEX_RULE:
-      return rule_describe(containerof(v, typeof(rule), vertex), builder_writer);
-    case VERTEX_RULESET:
-      return ruleset_describe(containerof(v, typeof(ruleset), vertex), builder_writer);
-    case VERTEX_RULESET_FILE:
-      return ruleset_file_describe(containerof(v, fsent, vertex), builder_writer);
-    case VERTEX_FORMULA:
-      return formula_describe(containerof(v, typeof(formula), vertex), builder_writer);
-    case VERTEX_FORMULA_FILE:
-      return formula_file_describe(containerof(v, fsent, vertex), builder_writer);
-    case VERTEX_MODULE:
-      return module_describe(containerof(v, typeof(module), vertex), builder_writer);
-    case VERTEX_MODULE_DIR:
-      return module_dir_describe(containerof(v, typeof(fsent), vertex), builder_writer);
-    case VERTEX_MODULE_FILE:
-      return module_file_describe(containerof(v, fsent, vertex), builder_writer);
-    case VERTEX_CONFIGSET:
-      return configset_describe(containerof(v, configset, vertex), builder_writer);
-    case VERTEX_CONFIGSET_FILE:
-      return configset_file_describe(containerof(v, fsent, vertex), builder_writer);
-    case VERTEX_VARSET:
-      return varset_describe(containerof(v, varset, vertex), builder_writer);
-    case VERTEX_VARSET_FILE:
-      return varset_file_describe(containerof(v, fsent, vertex), builder_writer);
-    case VERTEX_PLUGIN:
-      return plugin_describe(containerof(v, plugin, vertex), builder_writer);
-    case VERTEX_PLUGIN_FILE:
-      return plugin_file_describe(containerof(v, fsent, vertex), builder_writer);
-    case VERTEX_MODULE_VARS:
-      return module_vars_describe(containerof(v, module_vars, vertex), builder_writer);
-    case VERTEX_MODULE_ENVS:
-      return module_envs_describe(containerof(v, module_envs, vertex), builder_writer);
-
-    /* magicks */
-    case VERTEX_CONFIG:
-      return config_vertex_describe(builder_writer);
-    case VERTEX_GOALS:
-      return goals_describe(builder_writer);
-    case VERTEX_FSINDEX:
-      return fsindex_describe(builder_writer);
-    case VERTEX_NOTIFY:
-      return notify_describe(builder_writer);
-    case VERTEX_BUILD:
-      return build_describe(builder_writer);
-    case VERTEX_BUILDPLAN:
-      return buildplan_describe(builder_writer);
-    case VERTEX_PATH_CACHE:
-      return path_cache_describe(builder_writer);
-    case VERTEX_SYSTEM:
-      return system_describe(builder_writer);
-    case VERTEX_FILESYSTEM:
-      return filesystem_describe(builder_writer);
-
-    /* unimpl */
-    case VERTEX_CONTEXT_MODULE:
-      RTA;
-  }
-}
-
-void vertex_describe_edges(const moria_vertex * restrict v, bacon_writer * restrict builder_writer)
-{
-  moria_foreach_state st;
-  moria_edge *e;
-
-  { SET
-    { MAPPING
-      STRING("vertex")
-      { SET
-        vertex_describe(v, builder_writer);
-        { MAPPING
-          STRING("edges")
-          { LIST
-            moria_foreach_edge_up(&st, v, e) {
-              edge_describe(e, builder_writer);
-            }
-            moria_foreach_edge_down(&st, v, e) {
-              edge_describe(e, builder_writer);
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
-void vertex_shape_say(const moria_vertex * restrict v, narrator * restrict N)
-{
-  bacon_writer writer;
-
-  bacon_writer_init(&writer);
-  bacon_writer_open(&writer, N);
-  vertex_describe(v, &writer);
-  bacon_writer_destroy(&writer);
-}
-
-void vertex_shape_show(const moria_vertex * restrict v)
-{
-  bacon_writer writer, *builder_writer;
-
-  bacon_writer_init(&writer);
-  builder_writer = bacon_writer_open(&writer, g_narrator_stdout);
-
-  vertex_describe(v, builder_writer);
-
-  bacon_writer_close(&writer);
-  bacon_writer_destroy(&writer);
-  printf("\n");
-}
-
 void vertex_show(const moria_vertex * restrict v)
 {
   vertex_shape_show(v);
@@ -867,13 +1157,6 @@ size_t vertex_identity_cat(void * restrict s, size_t sz, const moria_vertex * re
   vertex_identity_say(v, &fixed.base);
 
   return fixed.l;
-}
-
-void vertex_identity_describe(const moria_vertex * restrict v, bacon_writer * restrict writer)
-{
-  bacon_writer_push_string(writer);
-  vertex_identity_say(v, writer->N);
-  bacon_writer_pop_string(writer);
 }
 
 void vertex_identity_show(const moria_vertex * restrict v)
@@ -1020,102 +1303,6 @@ struct fstree *vertex_fstree_get(const moria_vertex * restrict v)
   }
 
   return 0;
-}
-
-void vertex_mappings(const moria_vertex * restrict v, bacon_writer * restrict builder_writer)
-{
-  { MAPPING STRING("attrs")
-    attrs32_describe(v->attrs, graph_vertex_attrs, builder_writer);
-  }
-  { MAPPING STRING("id")
-    vertex_id_describe(v, builder_writer);
-  }
-  { MAPPING STRING("address")
-    HEX(v)
-  }
-  { MAPPING STRING("type")
-    STRING(attrs32_name_byvalue(graph_vertex_type_attrs, vertex_type_get(v)))
-  }
-  { MAPPING STRING("state")
-    STRING(attrs32_name_byvalue(graph_vertex_state_attrs, vertex_state_get(v)))
-  }
-}
-
-void vertex_stats_build(moria_vertex * restrict v, bool reset, bacon_writer * restrict builder_writer)
-{
-  switch(vertex_type_get(v)) {
-    /* fsents */
-    case VERTEX_DIR:
-    case VERTEX_FILE:
-    case VERTEX_SHADOW_FILE:
-    case VERTEX_SHADOW_DIR:
-    case VERTEX_SYMLINK:
-    case VERTEX_SHADOW_LINK:
-      return fsent_stats_build(containerof(v, fsent, vertex), reset, builder_writer);
-
-    /* other vertices */
-    case VERTEX_FSNAME:
-      return fsname_stats_build(containerof(v, fsname, vertex), reset, builder_writer);
-    case VERTEX_FSTREE:
-      return fstree_stats_build(containerof(v, fstree, vertex), reset, builder_writer);
-    case VERTEX_RMA:
-      return rma_stats_build(containerof(v, typeof(rule_module_association), vertex), reset, builder_writer);
-    case VERTEX_BPE:
-      return bpe_stats_build(containerof(v, typeof(buildplan_entity), vertex), reset, builder_writer);
-    case VERTEX_RULE:
-      return rule_stats_build(containerof(v, typeof(rule), vertex), reset, builder_writer);
-    case VERTEX_RULESET:
-      return ruleset_stats_build(containerof(v, typeof(ruleset), vertex), reset, builder_writer);
-    case VERTEX_RULESET_FILE:
-      return ruleset_file_stats_build(containerof(v, fsent, vertex), reset, builder_writer);
-    case VERTEX_FORMULA:
-      return formula_stats_build(containerof(v, typeof(formula), vertex), reset, builder_writer);
-    case VERTEX_FORMULA_FILE:
-      return formula_file_stats_build(containerof(v, fsent, vertex), reset, builder_writer);
-    case VERTEX_MODULE:
-      return module_stats_build(containerof(v, typeof(module), vertex), reset, builder_writer);
-    case VERTEX_MODULE_DIR:
-      return module_dir_stats_build(containerof(v, typeof(fsent), vertex), reset, builder_writer);
-    case VERTEX_MODULE_FILE:
-      return module_file_stats_build(containerof(v, fsent, vertex), reset, builder_writer);
-    case VERTEX_CONFIGSET:
-      return configset_stats_build(containerof(v, configset, vertex), reset, builder_writer);
-    case VERTEX_CONFIGSET_FILE:
-      return configset_file_stats_build(containerof(v, fsent, vertex), reset, builder_writer);
-    case VERTEX_VARSET:
-      return varset_stats_build(containerof(v, varset, vertex), reset, builder_writer);
-    case VERTEX_VARSET_FILE:
-      return varset_file_stats_build(containerof(v, fsent, vertex), reset, builder_writer);
-    case VERTEX_PLUGIN:
-      return plugin_stats_build(containerof(v, plugin, vertex), reset, builder_writer);
-    case VERTEX_PLUGIN_FILE:
-      return plugin_file_stats_build(containerof(v, fsent, vertex), reset, builder_writer);
-
-    /* globals */
-    case VERTEX_CONFIG:
-      return config_vertex_stats_build(reset, builder_writer);
-    case VERTEX_GOALS:
-      return goals_stats_build(reset, builder_writer);
-    case VERTEX_FSINDEX:
-      return fsindex_stats_build(reset, builder_writer);
-    case VERTEX_NOTIFY:
-      return notify_stats_build(reset, builder_writer);
-    case VERTEX_BUILD:
-      return build_stats_build(reset, builder_writer);
-    case VERTEX_BUILDPLAN:
-      return buildplan_stats_build(reset, builder_writer);
-    case VERTEX_PATH_CACHE:
-      return path_cache_stats_build(reset, builder_writer);
-    case VERTEX_SYSTEM:
-      return system_stats_build(reset, builder_writer);
-    case VERTEX_FILESYSTEM:
-      return filesystem_stats_build(reset, builder_writer);
-
-    case VERTEX_MODULE_VARS:
-    case VERTEX_MODULE_ENVS:
-    case VERTEX_CONTEXT_MODULE:
-      break;
-  }
 }
 
 void vertex_compute_id(const moria_vertex * restrict v, struct identity_ctx * restrict id)

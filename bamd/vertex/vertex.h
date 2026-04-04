@@ -17,10 +17,6 @@ struct channel;
 struct module;
 struct identity_ctx;
 
-union stats_record;
-
-extern uint64_t vertex_token_counter;
-
 typedef union stats_vertex {
   struct {
     /* event counters */
@@ -294,16 +290,6 @@ void vertex_compute_id(const moria_vertex * restrict v, struct identity_ctx * re
   __attribute__((nonnull));
 
 //
-// token
-//
-
-size_t vertex_token_cat(void * restrict dst, size_t dst_size, const moria_vertex * v)
-  __attribute__((nonnull));
-
-void vertex_token_describe(const moria_vertex * restrict v, struct bacon_writer * restrict writer)
-  __attribute__((nonnull));
-
-//
 // identity
 //
 
@@ -319,46 +305,62 @@ void vertex_identity_describe(const moria_vertex * restrict v, struct bacon_writ
 void vertex_identity_show(const moria_vertex * restrict v)
   __attribute__((nonnull));
 
-//
-// shape
-//
-
-void vertex_describe(const moria_vertex * restrict v, struct bacon_writer * restrict writer)
-  __attribute__((nonnull));
-
-void vertex_shape_say(const moria_vertex * restrict e, struct narrator * restrict N)
-  __attribute__((nonnull));
-
-void vertex_shape_show(const moria_vertex * restrict v)
-  __attribute__((nonnull));
-
-
 void vertex_describe_edges(const moria_vertex * restrict v, struct bacon_writer * restrict writer)
   __attribute__((nonnull));
 
 void vertex_edges_show(const moria_vertex * restrict v)
   __attribute__((nonnull));
 
+void vertex_identity_edges_list(const moria_vertex * restrict v, struct bacon_writer * restrict builder_writer)
+  __attribute__((nonnull));
+
+void vertex_identity_edges_show(const moria_vertex * restrict v)
+  __attribute__((nonnull));
+
+void vertex_describe_identity_edges(const moria_vertex * restrict v, struct bacon_writer * restrict builder_writer)
+  __attribute__((nonnull));
+
 uint64_t vertex_compute_hash(moria_vertex * restrict v, uint64_t u64)
   __attribute__((nonnull));
 
-void vertex_tell(const moria_vertex * restrict v, struct channel * restrict channel)
+void vertex_tell(const moria_vertex * restrict v, struct request_handler * restrict handler)
   __attribute__((nonnull));
+
+//
+// describe
+//
+
+void vertex_describe(const moria_vertex * restrict v, struct bacon_writer * restrict builder_writer)
+  __attribute__((nonnull));
+
+void vertex_identity_describe(const moria_vertex * restrict v, struct bacon_writer * restrict builder_writer)
+  __attribute__((nonnull));
+
+void vertex_describe_edges(const moria_vertex * restrict v, struct bacon_writer * restrict builder_writer)
+  __attribute__((nonnull));
+
+void vertex_identity_describe_edges(const moria_vertex * restrict v, struct bacon_writer * restrict builder_writer)
+  __attribute__((nonnull));
+
+void vertex_stats_describe(moria_vertex * restrict v, bool reset, struct bacon_writer * restrict builder_writer)
+  __attribute__((nonnull));
+
+/* vertex describe helper ; list of edges by path, excluding fstree and shadow-ref edges */
+void vertex_relations_describe(const moria_vertex * restrict v, struct bacon_writer * restrict builder_writer)
+  __attribute__((nonnull));
+
+/* vertex describe helper ; standard list of mappings for vertices of all types */
+void vertex_mappings(const moria_vertex * restrict v, struct bacon_writer * restrict builder_writer)
+  __attribute__((nonnull));
+
+//
+// ops
+//
 
 void vertex_show(const moria_vertex * restrict v)
   __attribute__((nonnull));
 
-void attrs32_say(uint32_t attrs, const struct attrs32 * restrict list, struct narrator * restrict N)
-  __attribute__((nonnull));
-
-void attrs32_describe(uint32_t attrs, const struct attrs32 * restrict list, struct bacon_writer * restrict builder_writer)
-  __attribute__((nonnull));
-
-void bam_stats_describe(
-    const union stats_record * restrict record
-  , const struct descriptor_type * restrict descriptor
-  , struct bacon_writer * restrict builder_writer
-)
+void vertex_release(moria_vertex * restrict v)
   __attribute__((nonnull));
 
 moria_vertex *vertex_follow(const moria_vertex * restrict v);
@@ -369,8 +371,12 @@ struct module *vertex_module_get(const moria_vertex * restrict v)
 struct fstree *vertex_fstree_get(const moria_vertex * restrict v)
   __attribute__((nonnull));
 
-void vertex_mappings(const moria_vertex * restrict v, struct bacon_writer * restrict builder_writer)
+//
+// attrs
+//
+
+void attrs32_say(uint32_t attrs, const struct attrs32 * restrict list, struct narrator * restrict N)
   __attribute__((nonnull));
 
-void vertex_stats_build(moria_vertex * restrict v, bool reset, struct bacon_writer * restrict builder_writer)
+void attrs32_describe(uint32_t attrs, const struct attrs32 * restrict list, struct bacon_writer * restrict builder_writer)
   __attribute__((nonnull));
