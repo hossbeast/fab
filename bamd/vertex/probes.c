@@ -20,8 +20,13 @@
 
 PROBE_SEM(vertex, alloc) = 0;
 PROBE_SEM(vertex, state) = 0;
-PROBE_SEM(vertex, unlinked) = 0;
-PROBE_SEM(vertex, deleted) = 0;
+PROBE_SEM(vertex, unlink) = 0;
+PROBE_SEM(vertex, free) = 0;
+
+static uint32_t alloc_counter;
+static uint32_t state_counter;
+static uint32_t unlink_counter;
+static uint32_t free_counter;
 
 void vertex_alloc_probe(const moria_vertex * restrict v)
 {
@@ -38,9 +43,9 @@ void vertex_alloc_probe(const moria_vertex * restrict v)
   sz = sizeof(buf);
   z = 0;
 
+  z += zcatf(s + z, sz - z, "%8u ", ++alloc_counter);
   z += zcatf(s + z, sz - z, "%-13s ", "alloc");
   z += vertex_identity_cat(s + z, sz - z, v);
-  z += zcats(s + z, sz - z, " ");
   s[z] = 0;
 
 printf("%.*s\n", (int)z, buf);
@@ -49,7 +54,7 @@ printf("%.*s\n", (int)z, buf);
 
 void vertex_state_probe(const struct moria_vertex * restrict v, uint32_t prev)
 {
-  char buf[256];
+  char buf[PATH_MAX];
   char *s;
   size_t sz;
   size_t z;
@@ -62,6 +67,7 @@ void vertex_state_probe(const struct moria_vertex * restrict v, uint32_t prev)
   sz = sizeof(buf);
   z = 0;
 
+  z += zcatf(s + z, sz - z, "%8u ", ++state_counter);
   z += zcatf(s + z, sz - z, "%-13s ", "state");
   z += vertex_identity_cat(s + z, sz - z, v);
   z += zcats(s + z, sz - z, " was ");
@@ -72,14 +78,14 @@ printf("%.*s\n", (int)z, buf);
   PROBE3(vertex, state, s, v, s);
 }
 
-void vertex_unlinked_probe(const moria_vertex * restrict v)
+void vertex_unlink_probe(const moria_vertex * restrict v)
 {
   char buf[PATH_MAX];
   char *s;
   size_t sz;
   size_t z;
 
-  if(!vertex_unlinked_semaphore) {
+  if(!vertex_unlink_semaphore) {
     return;
   }
 
@@ -87,22 +93,23 @@ void vertex_unlinked_probe(const moria_vertex * restrict v)
   sz = sizeof(buf);
   z = 0;
 
+  z += zcatf(s + z, sz - z, "%8u ", ++unlink_counter);
   z += zcatf(s + z, sz - z, "%-13s ", "unlink");
   z += vertex_identity_cat(s + z, sz - z, v);
   s[z] = 0;
 
 printf("%.*s\n", (int)z, buf);
-  PROBE2(vertex, unlinked, buf, v);
+  PROBE2(vertex, unlink, buf, v);
 }
 
-void vertex_deleted_probe(const moria_vertex * restrict v)
+void vertex_free_probe(const moria_vertex * restrict v)
 {
   char buf[PATH_MAX];
   char *s;
   size_t sz;
   size_t z;
 
-  if(!vertex_deleted_semaphore) {
+  if(!vertex_free_semaphore) {
     return;
   }
 
@@ -110,10 +117,11 @@ void vertex_deleted_probe(const moria_vertex * restrict v)
   sz = sizeof(buf);
   z = 0;
 
+  z += zcatf(s + z, sz - z, "%8u ", ++free_counter);
   z += zcatf(s + z, sz - z, "%-13s ", "free");
   z += vertex_identity_cat(s + z, sz - z, v);
   s[z] = 0;
 
 printf("%.*s\n", (int)z, buf);
-  PROBE2(vertex, deleted, buf, v);
+  PROBE2(vertex, delete, buf, v);
 }

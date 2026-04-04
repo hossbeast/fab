@@ -10,10 +10,10 @@ struct moria_vertex;
 void vertex_alloc_probe(const struct moria_vertex * restrict v)
   __attribute__((nonnull));
 
-void vertex_unlinked_probe(const struct moria_vertex * restrict v)
+void vertex_unlink_probe(const struct moria_vertex * restrict v)
   __attribute__((nonnull));
 
-void vertex_deleted_probe(const struct moria_vertex * restrict v)
+void vertex_free_probe(const struct moria_vertex * restrict v)
   __attribute__((nonnull));
 
 void vertex_state_probe(const struct moria_vertex * restrict v, uint32_t before)
