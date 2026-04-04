@@ -1251,58 +1251,82 @@ moria_vertex *vertex_follow(const moria_vertex * restrict v)
   } while(1);
 }
 
-struct module *vertex_module_get(const moria_vertex * restrict v)
+struct module *vertex_module_of(const moria_vertex * restrict v)
 {
   const fsent *fse;
   enum vertex_filetype filetype;
+  const moria_edge *edge;
+  module *mod;
+  bool shadow;
 
-  if((v = vertex_follow(v)) == 0) {
+  if((v = moria_vertex_follow(v)) == 0) {
     return 0;
-  }
-
-  if(vertex_kind_get(v) == VERTEX_KIND_FSENT) {
-    fse = containerof(v, typeof(*fse), vertex);
-    filetype = vertex_filetype_get(&fse->vertex);
-    if(filetype != VERTEX_FILETYPE_DIR) {
-      fse = fsent_parent(fse);
-    }
-
-    /* directory nodes have the owning module cached */
-    return fse->mod;
   }
 
   if(vertex_type_get(v) == VERTEX_MODULE) {
     return containerof(v, module, vertex);
   }
 
+  if(vertex_kind_get(v) != VERTEX_KIND_FSENT) {
+    return 0;
+  }
+
+  fse = containerof(v, typeof(*fse), vertex);
+  filetype = vertex_filetype_get(&fse->vertex);
+  if(filetype != VERTEX_FILETYPE_DIR) {
+    fse = fsent_parent(fse);
+  }
+
+  shadow = !!(fse->vertex.attrs & VERTEX_SHADOW_BIT);
+
+  while(fse) {
+    if((edge = edges_check_up(&fse->vertex, EDGE_BUILD_DIR_MOD))) {
+      mod = containerof(edge->A, typeof(*mod), vertex);
+      return mod;
+    }
+    /* N.B. a directory may have multiple anchor-dir-mod edges, this returns the first one */
+    if((edge = edges_check_up(&fse->vertex, EDGE_ANCHOR_DIR_MOD))) {
+      mod = containerof(edge->A, typeof(*mod), vertex);
+      return mod;
+    }
+    if(shadow && (edge = edges_check_up(&fse->vertex, EDGE_SPECIAL))) {
+      if(vertex_type_get(edge->A) == VERTEX_MODULE) {
+        mod = containerof(edge->A, typeof(*mod), vertex);
+        return mod;
+      }
+    }
+
+    fse = fsent_parent(fse);
+  }
+
   return 0;
 }
 
-struct fstree *vertex_fstree_get(const moria_vertex * restrict v)
+struct fstree *vertex_fstree_of(const moria_vertex * restrict v)
 {
   const fsent *fse;
   enum vertex_filetype filetype;
 
-  if((v = vertex_follow(v)) == 0) {
+  if((v = moria_vertex_follow(v)) == 0) {
     return 0;
-  }
-
-  if(vertex_kind_get(v) == VERTEX_KIND_FSENT) {
-    fse = containerof(v, typeof(*fse), vertex);
-    filetype = vertex_filetype_get(&fse->vertex);
-    if(filetype != VERTEX_FILETYPE_DIR) {
-      fse = fsent_parent(fse);
-    }
-
-    RUNTIME_ASSERT(fse->fst);
-    return fse->fst;
   }
 
   if(vertex_type_get(v) == VERTEX_FSTREE) {
     return containerof(v, fstree, vertex);
   }
 
-  return 0;
+  if(vertex_kind_get(v) != VERTEX_KIND_FSENT) {
+    return 0;
+  }
+
+  fse = containerof(v, typeof(*fse), vertex);
+  filetype = vertex_filetype_get(&fse->vertex);
+  if(filetype != VERTEX_FILETYPE_DIR) {
+    fse = fsent_parent(fse);
+  }
+
+  RUNTIME_ASSERT(fse->fst);
+  return fse->fst;
 }
 
 void vertex_compute_id(const moria_vertex * restrict v, struct identity_ctx * restrict id)

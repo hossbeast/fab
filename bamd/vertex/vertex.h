@@ -261,6 +261,18 @@ static inline void vertex_special_set(moria_vertex * restrict v, enum vertex_spe
 }
 
 //
+// getters
+//
+
+/* get the module this fsent vertex is associated with if any */
+struct module *vertex_module_of(const moria_vertex * restrict v)
+  __attribute__((nonnull));
+
+/* get the fstree this fsent vertex resides within */
+struct fstree *vertex_fstree_of(const moria_vertex * restrict v)
+  __attribute__((nonnull));
+
+//
 // path
 //
 
@@ -365,10 +377,6 @@ void vertex_release(moria_vertex * restrict v)
 
 moria_vertex *vertex_follow(const moria_vertex * restrict v);
 
-struct module *vertex_module_get(const moria_vertex * restrict v)
-  __attribute__((nonnull));
-
-struct fstree *vertex_fstree_get(const moria_vertex * restrict v)
   __attribute__((nonnull));
 
 //
