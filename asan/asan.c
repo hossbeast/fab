@@ -43,7 +43,7 @@ static void bt_error(void *data, const char *msg, int errnum)
 
 void backtracef_setup(void)
 {
-  btstate = backtrace_create_state(__FILE__, 1, 0, 0);
+  btstate = backtrace_create_state("/proc/self/exe", 1, 0, 0);
 }
 
 void backtracef(void)
