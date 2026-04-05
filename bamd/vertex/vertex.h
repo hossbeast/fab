@@ -15,6 +15,7 @@ struct bacon_writer;
 enum moria_traversal_mode;
 struct channel;
 struct module;
+struct identity_ctx;
 
 union stats_record;
 
@@ -284,6 +285,12 @@ size_t vertex_id_cat(void * restrict dst, size_t dst_size, const moria_vertex * 
   __attribute__((nonnull));
 
 void vertex_id_describe(const moria_vertex * restrict v, struct bacon_writer * restrict writer)
+  __attribute__((nonnull));
+
+void vertex_id(const moria_vertex * restrict v, const char ** restrict idp, uint16_t * restrict idl)
+  __attribute__((nonnull));
+
+void vertex_compute_id(const moria_vertex * restrict v, struct identity_ctx * restrict id)
   __attribute__((nonnull));
 
 //

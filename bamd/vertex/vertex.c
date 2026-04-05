@@ -1117,3 +1117,153 @@ void vertex_stats_build(moria_vertex * restrict v, bool reset, bacon_writer * re
       break;
   }
 }
+
+void vertex_compute_id(const moria_vertex * restrict v, struct identity_ctx * restrict id)
+{
+  switch(vertex_type_get(v)) {
+    case VERTEX_DIR:
+    case VERTEX_FILE:
+    case VERTEX_SYMLINK:
+    case VERTEX_SHADOW_DIR:
+    case VERTEX_SHADOW_FILE:
+    case VERTEX_SHADOW_LINK:
+      return fsent_compute_id(containerof(v, fsent, vertex), id);
+    /* details */
+    case VERTEX_MODULE_VARS:
+    case VERTEX_MODULE_ENVS:
+    case VERTEX_PLUGIN_STDIN:
+    case VERTEX_PLUGIN_STDOUT:
+    case VERTEX_PLUGIN_STDERR:
+    case VERTEX_PLUGIN_AUXOUT:
+    case VERTEX_FORMULA_STDIN:
+    case VERTEX_FORMULA_STDOUT:
+    case VERTEX_FORMULA_STDERR:
+    case VERTEX_FORMULA_AUXOUT:
+    case VERTEX_FORMULA_ARGS:
+    case VERTEX_FORMULA_ENVS:
+    case VERTEX_FORMULA_FILE:
+    case VERTEX_FORMULA_CWD:
+      return detail_compute_id(containerof(v, detail, vertex), id);
+    /* specials */
+    case VERTEX_MODULE:
+      return module_compute_id(containerof(v, module, vertex), id);
+    case VERTEX_RULE:
+      return rule_compute_id(containerof(v, rule, vertex), id);
+    case VERTEX_FORMULA:
+      return formula_compute_id(containerof(v, formula, vertex), id);
+    case VERTEX_VARSET:
+      return varset_compute_id(containerof(v, varset, vertex), id);
+    case VERTEX_CONFIGSET:
+      return configset_compute_id(containerof(v, configset, vertex), id);
+    case VERTEX_RULESET:
+      return ruleset_compute_id(containerof(v, ruleset, vertex), id);
+    /* details */
+    case VERTEX_BUILD_RECORD:
+      return build_record_compute_id(containerof(v, build_record, vertex), id);
+    case VERTEX_FORMULA_RECORD:
+      return formula_record_compute_id(containerof(v, formula_record, vertex), id);
+    /* composites */
+    case VERTEX_RMA:
+      return rma_compute_id(containerof(v, rule_module_association, vertex), id);
+    case VERTEX_BPE:
+      return bpe_compute_id(containerof(v, buildplan_entity, vertex), id);
+
+    /* globals / subsystems */
+    case VERTEX_SYS_SYSTEM:
+    case VERTEX_SYS_BUILD:
+    case VERTEX_SYS_CONFIG:
+    case VERTEX_SYS_FILESYSTEM:
+    case VERTEX_SYS_GOALS:
+    case VERTEX_SYS_NOTIFY:
+    case VERTEX_SYS_PLAN:
+    case VERTEX_SYS_RCU:
+      return subsys_compute_id(containerof(v, subsys, vertex), id);
+
+    case VERTEX_NAMESPACE:
+      return namespace_compute_id(containerof(v, namespace, vertex), id);
+    case VERTEX_FSNAME:
+      return fsname_compute_id(containerof(v, fsname, vertex), id);
+    case VERTEX_FSTREE:
+      return fstree_compute_id(containerof(v, fstree, vertex), id);
+    case VERTEX_PLUGIN:
+      return plugin_compute_id(containerof(v, plugin, vertex), id);
+
+    case VERTEX_CONTEXT_MODULE:
+    case VERTEX_CLIENT:
+      RTA;
+  }
+}
+
+void vertex_id(const moria_vertex * restrict v, const char ** restrict id, uint16_t * restrict idl)
+{
+  switch(vertex_type_get(v)) {
+    case VERTEX_DIR:
+    case VERTEX_FILE:
+    case VERTEX_SYMLINK:
+    case VERTEX_SHADOW_DIR:
+    case VERTEX_SHADOW_FILE:
+    case VERTEX_SHADOW_LINK:
+      return fsent_id(containerof(v, fsent, vertex), id, idl);
+    /* details */
+    case VERTEX_MODULE_VARS:
+    case VERTEX_MODULE_ENVS:
+    case VERTEX_PLUGIN_STDIN:
+    case VERTEX_PLUGIN_STDOUT:
+    case VERTEX_PLUGIN_STDERR:
+    case VERTEX_PLUGIN_AUXOUT:
+    case VERTEX_FORMULA_STDIN:
+    case VERTEX_FORMULA_STDOUT:
+    case VERTEX_FORMULA_STDERR:
+    case VERTEX_FORMULA_AUXOUT:
+    case VERTEX_FORMULA_ARGS:
+    case VERTEX_FORMULA_ENVS:
+    case VERTEX_FORMULA_FILE:
+    case VERTEX_FORMULA_CWD:
+      return detail_id(containerof(v, detail, vertex), id, idl);
+    /* specials */
+    case VERTEX_MODULE:
+      return module_id(containerof(v, module, vertex), id, idl);
+    case VERTEX_FORMULA:
+      return formula_id(containerof(v, formula, vertex), id, idl);
+    case VERTEX_VARSET:
+      return varset_id(containerof(v, varset, vertex), id, idl);
+    case VERTEX_CONFIGSET:
+      return configset_id(containerof(v, configset, vertex), id, idl);
+    case VERTEX_PLUGIN:
+      return plugin_id(containerof(v, plugin, vertex), id, idl);
+    case VERTEX_RULESET:
+      return ruleset_id(containerof(v, ruleset, vertex), id, idl);
+    /* other */
+    case VERTEX_RULE:
+      return rule_id(containerof(v, rule, vertex), id, idl);
+    case VERTEX_RMA:
+      return rma_id(containerof(v, rule_module_association, vertex), id, idl);
+    case VERTEX_BPE:
+      return bpe_id(containerof(v, buildplan_entity, vertex), id, idl);
+    case VERTEX_CLIENT:
+      return client_id(containerof(v, client, vertex), id, idl);
+    case VERTEX_FSTREE:
+      return fstree_id(containerof(v, fstree, vertex), id, idl);
+    case VERTEX_NAMESPACE:
+      return namespace_id(containerof(v, namespace, vertex), id, idl);
+    case VERTEX_FSNAME:
+      return fsname_id(containerof(v, fsname, vertex), id, idl);
+    case VERTEX_BUILD_RECORD:
+      return build_record_id(containerof(v, build_record, vertex), id, idl);
+    case VERTEX_FORMULA_RECORD:
+      return formula_record_id(containerof(v, formula_record, vertex), id, idl);
+    /* globals / subsystems */
+    case VERTEX_SYS_SYSTEM:
+    case VERTEX_SYS_NOTIFY:
+    case VERTEX_SYS_BUILD:
+    case VERTEX_SYS_PLAN:
+    case VERTEX_SYS_FILESYSTEM:
+    case VERTEX_SYS_RCU:
+    case VERTEX_SYS_CONFIG:
+    case VERTEX_SYS_GOALS:
+      return subsys_id(containerof(v, subsys, vertex), id, idl);
+
+    case VERTEX_CONTEXT_MODULE:
+      RTA;
+  }
+}
