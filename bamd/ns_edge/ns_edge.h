@@ -39,3 +39,5 @@ ns_edge *ns_connect(
 
 void ns_edge_disconnecting(ns_edge * restrict nse, struct graph_invalidation_context * restrict invalidation)
   __attribute__((nonnull));
+
+void ns_edges_show(void);

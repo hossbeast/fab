@@ -18,25 +18,34 @@
 #include "xlinux/xunistd.h"
 
 #include "args.h"
+#include "block.h"
 #include "bpe.h"
 #include "build.h"
+#include "build_record.h"
 #include "buildplan.h"
 #include "channel.h"
 #include "channel_server_thread.h"
 #include "client.h"
+#include "command.h"
 #include "config.h"
 #include "config_system.h"
 #include "configset.h"
+#include "dependency.h"
+#include "detail.h"
 #include "dir_fsname_edge.h"
+#include "dir_rma_edge.h"
 #include "events/events.h"
 #include "exec_value.h"
-#include "formula.h"
 #include "filesystem.h"
+#include "formula.h"
 #include "formula_record.h"
+#include "fsedge.h"
 #include "fsent.h"
 #include "fsname.h"
 #include "fstree.h"
 #include "goals.h"
+#include "meta_edge.h"
+#include "module_edge.h"
 #include "monitor_thread.h"
 #include "namespace.h"
 #include "notify.h"
@@ -44,18 +53,27 @@
 #include "ns_edge.h"
 #include "params.h"
 #include "plugin.h"
+#include "plugin_process.h"
 #include "plugin_system.h"
 #include "plugin_thread.h"
+#include "rcu.h"
+#include "ref_edge.h"
 #include "request_handler.h"
+#include "rma.h"
 #include "rule_system.h"
 #include "ruleset.h"
+#include "selection.h"
 #include "shadow.h"
+#include "special_edge.h"
+#include "stats.h"
 #include "sweeper_thread.h"
 #include "system.h"
 #include "sysvar.h"
 #include "timeout_thread.h"
 #include "timers.h"
 #include "varset.h"
+#include "vertices.h"
+
 #include "zcat.h"
 
 #if CONFIG_DEVEL
@@ -219,6 +237,88 @@ int main(int argc, char ** argv)
 
   smp_mb();
 
+/* disable rcu checks for cleanup */
+#if CONFIG_DEBUG || CONFIG_DEVEL
+extern __thread bool rcu_is_reader;
+rcu_is_reader = true;
+#endif
+
+#if CONFIG_DEVEL
+
+  // modules
+  fsent_root_cleanup();
+  buildplan_cleanup();
+  configset_cleanup();
+  config_system_cleanup();
+  config_cleanup();
+  module_cleanup();
+  shadow_cleanup();
+  notify_thread_cleanup();
+  sweeper_thread_cleanup();
+  build_cleanup();
+  formula_cleanup();
+  varset_cleanup();
+  goals_cleanup();
+  request_handler_cleanup();
+  selection_cleanup();
+  dependency_cleanup();
+  block_cleanup();
+  module_module_cleanup();
+  ruleset_cleanup();
+  sysvar_cleanup();
+  special_edge_cleanup();
+  dir_rma_cleanup();
+  rule_module_association_cleanup();
+  plugin_cleanup();
+  plugin_system_cleanup();
+  plugin_process_cleanup();
+  plugin_thread_cleanup();
+  detail_cleanup();
+  fsname_cleanup();
+  events_cleanup();
+  namespace_cleanup();
+  fstree_cleanup();
+  notify_cleanup();
+  vertices_cleanup();
+  exec_value_cleanup();
+  lookup_cleanup();
+  request_cleanup();
+  command_cleanup();
+  channel_cleanup();
+  client_cleanup();
+  build_record_cleanup();
+  formula_record_cleanup();
+  buildplan_entity_cleanup();
+  rule_cleanup();
+  fsent_cleanup();
+  ns_edge_cleanup();
+  dir_fsname_edge_cleanup();
+  ref_edge_cleanup();
+  fsedge_cleanup();
+  meta_edge_cleanup();
+  graph_cleanup();
+
+  system_stats_show();
+
+  fsents_show();
+  fstrees_show();
+  formulas_show();
+  modules_show();
+  rmas_show();
+  rules_show();
+  bpes_show();
+  formula_records_show();
+  rulesets_show();
+  plugins_show();
+  fsnames_show();
+  detail_show();
+  varsets_show();
+  configsets_show();
+  ns_edges_show();
+  dir_fsname_edges_show();
+  ref_edges_show();
+  module_edges_show();
+
   // libraries
   bam_unload();
   lorien_unload();
@@ -226,10 +326,12 @@ int main(int argc, char ** argv)
   narrator_unload();
   bacon_unload();
 
-/* disable rcu checks for cleanup */
-#if CONFIG_DEBUG || CONFIG_DEVEL
-extern __thread bool rcu_is_reader;
-rcu_is_reader = true;
+  /* best-effort attempt to save final resource usage stats */
+  fd = uxopen_modes(O_CREAT | O_WRONLY, 0666, "objects");
+  if(fd != -1) {
+    system_stats_show_fd(fd);
+    close(fd);
+  }
 #endif
 
   r = 0;

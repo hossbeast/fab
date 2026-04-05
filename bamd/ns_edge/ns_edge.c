@@ -94,3 +94,18 @@ ns_edge *ns_connect(
 void ns_edge_disconnecting(ns_edge * restrict nse, graph_invalidation_context * restrict invalidation)
 {
 }
+
+#if CONFIG_DEVEL
+void ns_edges_show()
+{
+  ns_edge *e;
+  int x;
+
+  printf("ns_edges, live : %zu free : %zu\n", llist_count(&ns_edge_list), llist_count(&freelist));
+  x = 0;
+  llist_foreach(&ns_edge_list, e, edge.owner) {
+    printf("%3u ", x++);
+    edge_identity_show(&e->edge);
+  }
+}
+#endif
