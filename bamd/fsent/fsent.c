@@ -53,7 +53,7 @@
 #include "walker.h"
 #include "namespace.h"
 #include "plugin.h"
-#include "buildplan_entity.h"
+#include "bpe.h"
 #include "config_system.h"
 #include "ns_edge.h"
 #include "notify.h"

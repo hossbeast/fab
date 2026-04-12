@@ -27,7 +27,7 @@ rule git-state.h -> args/args.o
 # descriptors
 rule $^A/build/build.h -> [*] build/build_stats.desc.[ch] : //descriptor/descriptor.bam
 rule $^A/buildplan/buildplan.h -> [*] buildplan/buildplan_stats.desc.[ch] : //descriptor/descriptor.bam
-rule $^A/buildplan_entity/buildplan_entity.h -> [*] buildplan_entity/stats_bpe.desc.[ch] : //descriptor/descriptor.bam
+rule $^A/bpe/bpe.h -> [*] bpe/stats_bpe.desc.[ch] : //descriptor/descriptor.bam
 rule $^A/configset/configset.h -> [*] configset/stats_configset.desc.[ch] : //descriptor/descriptor.bam
 rule $^A/filesystem/filesystem.h -> [*] filesystem/filesystem_stats.desc.[ch] : //descriptor/descriptor.bam
 rule $^A/config_system/config_system.h -> [*] config_system/config_system_stats.desc.[ch] : //descriptor/descriptor.bam

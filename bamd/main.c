@@ -58,7 +58,7 @@
 #include "dir_rma_edge.h"
 #include "meta_edge.h"
 #include "rma.h"
-#include "buildplan_entity.h"
+#include "bpe.h"
 #include "fsedge.h"
 #include "rcu.h"
 #include "fsname.h"

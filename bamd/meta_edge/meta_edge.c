@@ -15,7 +15,7 @@
 #include "reconcile.h"
 #include "edge.h"
 #include "rma.h"
-#include "buildplan_entity.h"
+#include "bpe.h"
 #include "formula.h"
 #include "rule.h"
 #include "ruleset.h"
