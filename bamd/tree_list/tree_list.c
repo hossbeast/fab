@@ -3,16 +3,18 @@
 
 #include "moria.h"
 #include "bam/ipc.h"
-#include "bam/list.desc.h"
+#include "bam/list.h"
 #include "common/attrs.h"
 
 #include "tree_list.h"
 #include "graph.h"
 #include "vertex.h"
-#include "handler.h"
+#include "request_handler.h"
 #include "request.h"
+#include "command.h"
 #include "fsent.h"
 #include "channel.h"
+#include "edge.h"
 
 #include "marshal.h"
 #include "zcat.h"
@@ -35,7 +37,7 @@ static enum vertex_state tree_vertex_state_get(const moria_vertex * restrict v)
   return vertex_state_get(v);
 }
 
-void tree_list_handler(handler_context * restrict ctx, command * restrict cmd)
+void tree_list_handler(request_handler * restrict ctx, command * restrict cmd)
 {
   selected *sn;
   moria_vertex *v;
@@ -48,16 +50,17 @@ void tree_list_handler(handler_context * restrict ctx, command * restrict cmd)
   uint16_t len;
   uint16_t off;
   const char *s;
+  struct moria_vertex *ref;
+  struct moria_edge *edge;
 
   llist_foreach(&ctx->selection->list, sn, lln) {
     v = sn->v;
-    msg = channel_produce(ctx->chan);
-    msg->type = BAMIPC_MSG_RESULT;
+    msg = request_handler_tx(ctx, BAMIPC_MSG_RESULT, descriptor_bam_list_item.id, 0);
 
     dst = msg->text;
-    sz = sizeof(msg->text);
-
+    sz = msg->size;
     z = 0;
+
     z += marshal_u32(dst + z, sz - z, descriptor_bam_list_item.id);
 
     /* type */
@@ -89,23 +92,24 @@ void tree_list_handler(handler_context * restrict ctx, command * restrict cmd)
     /* ref */
     off = z;
     z += marshal_u16(dst + z, sz - z, 0);
-    switch(vertex_type_get(v)) {
-      case VERTEX_SYMLINK:
-      case VERTEX_SHADOW_LINK:
-        if(v->ref) {
-          len = vertex_path_cat(dst + z, sz - z, v->ref);
-          z += len;
-          marshal_u16(dst + off, sz - off, len);
-        }
-        break;
-      default:
-        break;
+    ref = 0;
+    if(vertex_type_get(v) == VERTEX_SHADOW_LINK) {
+      ref = v->ref;
+    } else if(vertex_type_get(v) == VERTEX_SYMLINK) {
+      if((edge = edges_check_down(v, EDGE_REF_SYMLINK))) {
+        ref = edge->B;
+      }
+    }
+    if(ref) {
+      len = vertex_path_cat(dst + z, sz - z, ref);
+      z += len;
+      marshal_u16(dst + off, sz - off, len);
     }
 
     /* distance */
     z += marshal_u16(dst + z, sz - z, sn->rank);
 
-    msg->size = z;
-    channel_post(ctx->chan, msg);
+    msg->len = z;
+    request_handler_post(ctx, msg);
   }
 }
