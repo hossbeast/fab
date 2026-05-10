@@ -6,6 +6,7 @@
 #include "probes.h"
 
 #include "xlinux/xsignal.h"
+#include "xlinux/xunistd.h"
 
 #include "usdt-sem.h"
 #include "macros.h"
@@ -29,7 +30,7 @@ void sigrx_probe(const siginfo_t * info)
   sz = sizeof(buf);
   z = 0;
 
-  z += zcatf(s + z, sz - z, "tid %5u rx %s { signo %d", gettid(), signame(info->si_signo), info->si_signo);
+  z += zcatf(s + z, sz - z, "pid %5u tid %5u rx %s { signo %d", getpid(), gettid(), signame(info->si_signo), info->si_signo);
 
   if(info->si_signo == SIGCHLD)
   {
@@ -73,7 +74,7 @@ void sigtx_probe(int signo, pid_t pid, pid_t tid)
   sz = sizeof(buf);
   z = 0;
 
-  z += zcatf(s + z, sz - z, "tid %5u tx %s { signo %d pid %ld tid %ld }", gettid(), signame(signo), signo, (long)pid, (long)tid);
+  z += zcatf(s + z, sz - z, "pid %5u tid %5u tx %s { signo %d pid %ld tid %ld }", getpid(), gettid(), signame(signo), signo, (long)pid, (long)tid);
 
 printf("%s\n", buf);
   PROBE4(sigutil, sigrx, buf, signo, pid, tid);
