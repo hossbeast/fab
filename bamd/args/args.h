@@ -11,7 +11,7 @@ extern struct g_args_t {
   char *user_config_path;
   uint16_t default_filesystem_invalidation;
   bool default_filesystem_mkdir;
-  bool default_filesystem_readlink;
+  int default_filesystem_readlink;
   bool default_filesystem_index;
   uint64_t sweeper_period_nsec;
 

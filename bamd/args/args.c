@@ -109,6 +109,11 @@ static void args_parse(int argc, char ** restrict argv)
         fprintf(stderr, "invalid sweeper-period-nsec %s\n", optarg);
         exit(1);
       }
+    } else if(x == 0 && strcmp(longopts[longindex].name, "default-filesystem-readlink") == 0) {
+      if((g_args.default_filesystem_readlink = attrs16_value_byname(readlink_attrs, optarg)) == 0) {
+        fprintf(stderr, "invalid filesystem-readlink %s\n", optarg);
+        exit(1);
+      }
     }
 #endif
     if(x == 'h') {
