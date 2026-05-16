@@ -30,7 +30,7 @@
 %lex-param { void* scanner }
 
 /* zero based lines and columns */
-%initial-action { yyu_loc_initialize(parser, &@$); }
+%initial-action { yyu_loc_initialize(parser, &@$); (void)yynerrs; }
 
 %union {
   yyu_lval yyu;

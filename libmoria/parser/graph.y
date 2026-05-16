@@ -34,7 +34,7 @@
 %lex-param { void* scanner }
 
 /* zero based lines and columns */
-%initial-action { memset(&@$, 0, sizeof(@$)); }
+%initial-action { memset(&@$, 0, sizeof(@$)); (void)yynerrs; }
 
 %union {
   yyu_lval yyu;
