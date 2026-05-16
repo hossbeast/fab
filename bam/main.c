@@ -119,7 +119,8 @@ struct proc {
   llist lln;
   int pfd;
   int64_t pid;
-  uint64_t hash;
+  char bamd_id[64];
+  uint16_t bamd_id_len;
 };
 
 static int proc_list_wait(int epfd, llist * restrict list, llist * restrict freelist)
@@ -140,9 +141,9 @@ static int proc_list_wait(int epfd, llist * restrict list, llist * restrict free
   }
   if(evs_len == 0) {
     /* no one exited within the timeout */
-    dprintf(2, "process(es) unresponsive\n");
+    dprintf(2, "[%5"PRId64"] process(es) unresponsive\n", (int64_t)getpid());
     llist_foreach(list, proc, lln) {
-      dprintf(2, " pid %ld hash %016"PRIx64"\n", proc->pid, proc->hash);
+      dprintf(2, "[%5"PRId64"] pid %ld id %.*s\n", (int64_t)getpid(), (int64_t)proc->pid, (int)proc->bamd_id_len, proc->bamd_id);
     }
     r = 1;
   }
@@ -168,7 +169,8 @@ static void proc_list_add(int epfd, llist * restrict list, struct proc * restric
 static int lockfiles_kill_competing(bam_client * restrict client, int epfd, llist * restrict procs_list, llist * restrict procs_freelist)
 {
   DIR *dd;
-  uint64_t hash;
+  char id[64];
+  uint16_t id_len;
   int64_t pid;
   int pfd;
   char basedir[PATH_MAX];
@@ -178,7 +180,7 @@ static int lockfiles_kill_competing(bam_client * restrict client, int epfd, llis
   struct proc *proc;
 
   /* locate any bamds for conflicting basedirs */
-  dd = bamipc_lockfile_scan_start(client->ipcdir_base);
+  dd = bamipc_lockfile_scan_start(client->ipcdir_root);
   rv = 0;
   pid = -1;
   while(!llist_empty(procs_list) || pid != 0)
@@ -196,7 +198,7 @@ static int lockfiles_kill_competing(bam_client * restrict client, int epfd, llis
       if(llist_empty(procs_freelist)) {
         break;
       }
-      if((pid = bamipc_lockfile_scan_scan(dd, &hash, basedir, sizeof(basedir), &basedir_len)) == 0) {
+      if((pid = bamipc_lockfile_scan_scan(dd, id, sizeof(id), &id_len, basedir, sizeof(basedir), &basedir_len)) == 0) {
         break;
       }
       if(memcmp(basedir, client->basedir, MIN(basedir_len, client->basedir_len)) != 0) {
@@ -204,20 +206,20 @@ static int lockfiles_kill_competing(bam_client * restrict client, int epfd, llis
       } else if(basedir_len == client->basedir_len) {
         continue; /* same as basedir */
       } else if(pid == -1) {
-        uxunlinkf("%s/%016"PRIx64"/bamd/lock", client->ipcdir_base, hash);
+        uxunlinkf("%s/%.*s/bamd/lock", client->ipcdir_root, id_len, id);
         continue; /* bad lockfile */
       }
 
       if((pfd = uxpidfd_open(pid, 0)) == -1) {
         /* stale lockfile */
-        uxunlinkf("%s/%016"PRIx64"/bamd/lock", client->ipcdir_base, hash);
+        uxunlinkf("%s/%.*s/bamd/lock", client->ipcdir_root, id_len, id);
         continue;
       }
 
       proc = llist_shift(procs_freelist, typeof(*proc), lln);
       proc->pfd = pfd;
       proc->pid = pid;
-      proc->hash = hash;
+      proc->bamd_id_len = zcatw(proc->bamd_id, sizeof(proc->bamd_id), id, id_len);
       proc_list_add(epfd, procs_list, proc);
       uxkill(pid, SIGTERM); /* ask nicely */
     }
@@ -241,7 +243,7 @@ static int connect(bam_client * restrict client)
 
   /* connect to bamd */
   if(bam_client_solicit(client) != 0) {
-    dprintf(2, "bamd %"PRId64" not found\n", client->bamd_pid);
+    dprintf(2, "[%5"PRId64"] bamd %"PRId64" not found\n", (int64_t)getpid(), (int64_t)client->bamd_pid);
     return 1;
   }
 
@@ -262,7 +264,7 @@ static int connect(bam_client * restrict client)
       continue;
     }
 
-    dprintf(2, "bamd %"PRId64" did not respond\n", client->bamd_pid);
+    dprintf(2, "[%5"PRId64"] bamd %"PRId64" did not respond\n", (int64_t)getpid(), (int64_t)client->bamd_pid);
     return 1;
   }
 
@@ -319,9 +321,8 @@ static void xmain()
     g_bam_client_sweeper_period_nsec = strndup(g_args.sweeper_period_nsec.s, g_args.sweeper_period_nsec.len);
   }
 #endif
-
   client = &client_s;
-  bam_client_init(client, ".", 1, g_params.ipcdir, g_params.ipcdir_len);
+  bam_client_init(client, g_params.cwd, g_params.cwd_len, g_params.ipcdir, g_params.ipcdir_len);
 
   /* open the lockfile */
   bam_client_lockfile_query(client);
@@ -335,7 +336,7 @@ static void xmain()
       proc = llist_shift(&procs_freelist, typeof(*proc), lln);
       proc->pfd = pfd;
       proc->pid = client->bamd_pid;
-      proc->hash = client->hash;
+      proc->bamd_id_len = zcatw(proc->bamd_id, sizeof(proc->bamd_id), client->bamd_id, client->bamd_id_len);
       proc_list_add(epfd, &procs_list, proc);
       uxkill(proc->pid, SIGTERM); /* ask nicely */
       if(proc_list_wait(epfd, &procs_list, &procs_freelist) != 0) {
@@ -355,14 +356,14 @@ static void xmain()
 
   /* stop here if --no-launch */
   if(client->bamd_pid == -1 && g_args.no_launch) {
-    dprintf(2, "bamd not found\n");
+    dprintf(2, "[%5"PRId64"] bamd not found\n", (int64_t)getpid());
     goto err;
   }
 
   /* launch a new bamd if needed */
   if(client->bamd_pid == -1) {
     if(client->lockfd == -1) {
-      dprintf(2, "unable to obtain lockfile %s/bamd/lock\n", client->ipcdir);
+      dprintf(2, "[%5"PRId64"] unable to obtain lockfile %s/bamd/lock\n", (int64_t)getpid(), client->ipcdir);
       goto err;
     }
 
