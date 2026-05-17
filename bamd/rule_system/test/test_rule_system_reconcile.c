@@ -156,7 +156,7 @@ static void rule_system_reconcile_test_entry(xunit_test * _test)
 
   /* act - reconcile rules - run enqueued rules to quiescence */
   rule_system_reconcile(&rule_ctx);
-  assert_eq_b(false, system_error);
+  assert_eq_b(false, system_has_error);
 
   // assert
   graph_say(&N->base);

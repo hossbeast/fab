@@ -189,7 +189,7 @@ void exec_render_formula_value(exec_render_context * restrict ctx, const formula
   {
     llist_foreach(&val->list, sv, lln) {
       exec_render_formula_value(ctx, sv);
-      if(system_error) {
+      if(system_has_error) {
         return;
       }
     }
@@ -198,7 +198,7 @@ void exec_render_formula_value(exec_render_context * restrict ctx, const formula
   {
     rbtree_foreach(&val->set, sv, rbn) {
       exec_render_formula_value(ctx, sv);
-      if(system_error) {
+      if(system_has_error) {
         return;
       }
     }
@@ -304,7 +304,7 @@ void exec_render_formula_value(exec_render_context * restrict ctx, const formula
     llist_foreach(&val->op.list, sv, lln) {
       ctx->builder_args.position = -1;
       exec_render_formula_value(ctx, sv);
-      if(system_error) {
+      if(system_has_error) {
         return;
       }
     }

@@ -142,7 +142,7 @@ void import_resolve_targets(import * restrict import, module * restrict mod, rul
   /* lookup the import target node */
   entlist_destroy(&ctx->target_hits);
   pattern_lookup_indexed(import->lookup, mod->vars, &ctx->target_index_hits, &ctx->target_hits);
-  if(system_error) {
+  if(system_has_error) {
     return;
   }
 

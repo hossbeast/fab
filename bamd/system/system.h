@@ -96,7 +96,7 @@ extern descriptor_type descriptor_stats_system;
 extern attrs16 system_state_attrs;
 
 extern enum system_state system_state;
-extern bool system_error;
+extern bool system_has_error;
 
 void system_state_change(enum system_state state);
 

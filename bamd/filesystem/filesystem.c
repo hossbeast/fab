@@ -92,7 +92,7 @@ void filesystem_reconcile()
         RTA;
     }
 
-    if(system_error) {
+    if(system_has_error) {
       llist_unshift(&filesystem_reconcile_list, &fse->fs_reconcile_lln);
       break;
     }

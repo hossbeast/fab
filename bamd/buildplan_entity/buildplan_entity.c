@@ -624,7 +624,7 @@ void bpe_system_reconcile(graph_invalidation_context * restrict invalidation)
 
   while((fse = llist_shift(&bpe_reconcile_list, typeof(*fse), bpe_reconcile_lln))) {
     bpe = bpe_target_check(fse);
-    if(system_error) {
+    if(system_has_error) {
       llist_push(&bpe_reconcile_list, &fse->bpe_reconcile_lln);
       return;
     }

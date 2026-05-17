@@ -331,7 +331,7 @@ static bool import_process(
   moria_vertex *v;
 
   import_resolve_targets(import, mod, ctx);
-  if(system_error) {
+  if(system_has_error) {
     return false;
   }
 
@@ -603,7 +603,7 @@ void module_rebuild(module * restrict mod, rule_run_context * restrict ctx)
   /* re-establish the module anchor node */
   if(mod->anchor) {
     anchor = anchor_process(mod, mod->anchor);
-    if(system_error) {
+    if(system_has_error) {
       return;
     }
     module_anchor_set(mod, anchor, &ctx->invalidation);
@@ -848,7 +848,7 @@ void module_reparse(module * restrict mod)
 {
   /* re-parse the module.bam file */
   module_parse(mod);
-  if(system_error) {
+  if(system_has_error) {
     return;
   }
 

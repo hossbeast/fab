@@ -60,7 +60,7 @@ void rule_system_reconcile(rule_run_context * restrict ctx)
 
   /* run rules to quiescence */
   head = &work_queue[work_queue_index];
-  while(!llist_empty(head) && !system_error)
+  while(!llist_empty(head) && !system_has_error)
   {
     rule_system_epoch++;
     graph_invalidation_end(&invalidation);
@@ -74,7 +74,7 @@ void rule_system_reconcile(rule_run_context * restrict ctx)
     while((work = llist_shift(head, typeof(*work), changed[!work_queue_index].lln))) {
       rma = containerof(work, typeof(*rma), work);
       vertex_mark_fresh(&rma->vertex);
-      if(!system_error) {
+      if(!system_has_error) {
         ctx->rma = rma;
         rule_run(rma->rule, ctx);
       }
@@ -100,7 +100,7 @@ void rule_system_reconcile(rule_run_context * restrict ctx)
       entlist_destroy(&edges);
       entlist_destroy(&vertices);
 
-      if(system_error) {
+      if(system_has_error) {
         vertex_mark_stale(&rma->vertex);  // re-enqueue
         continue;
       }

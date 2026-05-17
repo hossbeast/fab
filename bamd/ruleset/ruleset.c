@@ -150,7 +150,7 @@ void ruleset_reparse(ruleset * restrict rules)
 {
   /* re-parse the rules.bam file */
   rules_parse(rules);
-  if(system_error) {
+  if(system_has_error) {
     return;
   }
 

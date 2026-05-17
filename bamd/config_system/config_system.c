@@ -225,38 +225,38 @@ void config_system_reconcile(bool * restrict work, graph_invalidation_context * 
   llist_foreach_node(&configset_list, T) {
     cfg = containerof(T, typeof(*cfg), vertex.owner);
     configset_parse(cfg, parser, config_next);
-    if(system_error) {
+    if(system_has_error) {
       goto err;
     }
   }
 
   // validate the new config
   fstree_reconfigure(config_next, true);
-  if(system_error) {
+  if(system_has_error) {
     goto err;
   }
   fsent_reconfigure(config_next, true);
-  if(system_error) {
+  if(system_has_error) {
     goto err;
   }
   walker_system_reconfigure(config_next, true);
-  if(system_error) {
+  if(system_has_error) {
     goto err;
   }
   build_reconfigure(config_next, true);
-  if(system_error) {
+  if(system_has_error) {
     goto err;
   }
   path_cache_reconfigure(config_next, true);
-  if(system_error) {
+  if(system_has_error) {
     goto err;
   }
   timeout_thread_reconfigure(config_next, true);
-  if(system_error) {
+  if(system_has_error) {
     goto err;
   }
   plugin_system_reconfigure(config_next, true, invalidation);
-  if(system_error) {
+  if(system_has_error) {
     goto err;
   }
 

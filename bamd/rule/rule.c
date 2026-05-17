@@ -472,11 +472,11 @@ static void __attribute__((nonnull)) search_one_to_one(rule * restrict rule, rul
   assure(&ctx->Blist, sizeof(*ctx->Blist), 1, &ctx->Blist_alloc);
 
   run_search_tracking(rule, ctx);
-  if(ctx->search_hits.size == 0 && !system_error) {
+  if(ctx->search_hits.size == 0 && !system_has_error) {
     rule_run_probe(ctx, 0, true);
   }
 
-  for(x = 0; x < ctx->search_hits.table_size && !system_error; x++)
+  for(x = 0; x < ctx->search_hits.table_size && !system_has_error; x++)
   {
     if(!(match = hashtable_table_entry(&ctx->search_hits, x))) {
       continue;
@@ -520,7 +520,7 @@ static void __attribute__((nonnull)) generate_one_to_one(rule * restrict rule, r
   int x;
 
   run_search_tracking(rule, ctx);
-  for(x = 0; x < ctx->search_hits.table_size && !system_error; x++)
+  for(x = 0; x < ctx->search_hits.table_size && !system_has_error; x++)
   {
     if(!(match = hashtable_table_entry(&ctx->search_hits, x))) {
       continue;
@@ -565,7 +565,7 @@ static void __attribute__((nonnull)) search_one_to_many(rule * restrict rule, ru
   assure(&ctx->Blist, sizeof(*ctx->Blist), 1, &ctx->Blist_alloc);
 
   run_search_tracking(rule, ctx);
-  for(x = 0; x < ctx->search_hits.table_size && !system_error; x++)
+  for(x = 0; x < ctx->search_hits.table_size && !system_has_error; x++)
   {
     if(!(match = hashtable_table_entry(&ctx->search_hits, x))) {
       continue;
@@ -613,7 +613,7 @@ static void __attribute__((nonnull)) generate_one_to_many(rule * restrict rule, 
   assure(&ctx->Alist, sizeof(*ctx->Alist), 1, &ctx->Alist_alloc);
 
   run_search_tracking(rule, ctx);
-  for(x = 0; x < ctx->search_hits.table_size && !system_error; x++)
+  for(x = 0; x < ctx->search_hits.table_size && !system_has_error; x++)
   {
     if(!(match = hashtable_table_entry(&ctx->search_hits, x))) {
       continue;
@@ -663,7 +663,7 @@ static void __attribute__((nonnull)) search_many_to_one(rule * restrict rule, ru
   assure(&ctx->Blist, sizeof(*ctx->Blist), ctx->search_hits.size, &ctx->Blist_alloc);
 
   x = 0;
-  for(y = 1; y <= ctx->search_hits.size && !system_error; y++)
+  for(y = 1; y <= ctx->search_hits.size && !system_has_error; y++)
   {
     if(y < ctx->search_hits.size && pattern_search_compare(&ctx->Mlist[x], &ctx->Mlist[y]) == 0) {
       continue;
@@ -715,7 +715,7 @@ static void __attribute__((nonnull)) generate_many_to_one(rule * restrict rule, 
 
   run_search_tracking(rule, ctx);
 
-  for(x = 0; x < ctx->search_hits.table_size && !system_error; x++)
+  for(x = 0; x < ctx->search_hits.table_size && !system_has_error; x++)
   {
     if(!(match = hashtable_table_entry(&ctx->search_hits, x))) {
       continue;
@@ -766,7 +766,7 @@ static void __attribute__((nonnull)) search_many_to_many(rule * restrict rule, r
   assure(&ctx->Blist, sizeof(*ctx->Blist), ctx->search_hits.size, &ctx->Blist_alloc);
 
   x = 0;
-  for(y = 1; y <= ctx->search_hits.size && !system_error; y++)
+  for(y = 1; y <= ctx->search_hits.size && !system_has_error; y++)
   {
     if(y < ctx->search_hits.size && pattern_search_compare(&ctx->Mlist[x], &ctx->Mlist[y]) == 0) {
       continue;
@@ -824,7 +824,7 @@ static void __attribute__((nonnull)) generate_many_to_many(rule * restrict rule,
   assure(&ctx->Alist, sizeof(*ctx->Alist), ctx->search_hits.size, &ctx->Alist_alloc);
 
   x = 0;
-  for(y = 1; y <= ctx->search_hits.size && !system_error; y++)
+  for(y = 1; y <= ctx->search_hits.size && !system_has_error; y++)
   {
     if(y < ctx->search_hits.size && pattern_search_compare(&ctx->Mlist[x], &ctx->Mlist[y]) == 0) {
       continue;
@@ -1194,7 +1194,7 @@ static void bind_run(struct rule * restrict bind, rule_run_context * restrict ct
     /* resolve targets pattern */
     pattern_lookup_indexed(bind->target, ctx->rma->mod->vars, &ctx->target_index_hits, &ctx->target_hits);
     ctx->rma->rma_stats.target_hits = llist_count(&ctx->target_hits.lln);
-    if(system_error) {
+    if(system_has_error) {
       goto end;
     }
 
@@ -1296,7 +1296,7 @@ void rule_run(rule * restrict rule, rule_run_context * restrict ctx)
   }
 
 end:
-  if(!system_error) {
+  if(!system_has_error) {
     system_stats.rule_run_ok++;
     ctx->rma->rma_stats.rule_run_ok++;
     ctx->rma->rule->rule_stats.rule_run_ok++;

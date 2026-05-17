@@ -205,7 +205,7 @@ void formula_system_reconcile(graph_invalidation_context * restrict invalidation
   /* re-parse all remaining, invalidated formulas */
   while((fml = llist_shift(&formula_invalid_list, typeof(*fml), invalid_lln))) {
     formula_parse(fml);
-    if(system_error) {
+    if(system_has_error) {
       llist_push(&formula_invalid_list, &fml->invalid_lln);
       break;
     }

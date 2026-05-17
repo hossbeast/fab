@@ -631,7 +631,7 @@ void build_slot_fork_and_exec(build_slot * restrict bs, buildplan_entity * restr
   // render file from formula, if any
   if(fml->file) {
     exec_render_file(&bs->exec_builder_context, fml->file);
-    if(system_error) {
+    if(system_has_error) {
       return;
     }
   }
@@ -639,7 +639,7 @@ void build_slot_fork_and_exec(build_slot * restrict bs, buildplan_entity * restr
   // append args from formula, if any
   if(fml->args) {
     exec_render_args(&bs->exec_builder_context, fml->args);
-    if(system_error) {
+    if(system_has_error) {
       return;
     }
   }
@@ -647,7 +647,7 @@ void build_slot_fork_and_exec(build_slot * restrict bs, buildplan_entity * restr
   // append envs from formula, if any
   if(fml->envs) {
     exec_render_envs(&bs->exec_builder_context, fml->envs);
-    if(system_error) {
+    if(system_has_error) {
       return;
     }
   }

@@ -110,7 +110,7 @@ void plugin_system_reconcile(graph_invalidation_context * restrict invalidation)
 
   /* raises an error if any plugin doesnt resolve */
   plugins_resolve(invalidation);
-  if(system_error) {
+  if(system_has_error) {
     return;
   }
 

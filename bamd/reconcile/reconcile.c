@@ -45,14 +45,14 @@ void reconcile()
   graph_invalidation_begin(&invalidation);
   rcu_enter(&rcu);
 
-  system_error = false;
+  system_has_error = false;
   do {
     /* walk filesystem trees (this can find config files in the ancestry of the project root)
      * it can also invalidate config files */
     system_state_change(SYSTEM_STATE_WALKER_RECONCILE);
     walker_system_reconcile(&invalidation);
     rcu_quiesce(&rcu);
-    if(system_error) {
+    if(system_has_error) {
       goto end;
     }
 
@@ -61,7 +61,7 @@ void reconcile()
     system_state_change(SYSTEM_STATE_CONFIG_SYSTEM_RECONCILE);
     config_system_reconcile(&work, &invalidation);
     rcu_quiesce(&rcu);
-    if(system_error) {
+    if(system_has_error) {
       goto end;
     }
   } while(work);
@@ -73,7 +73,7 @@ void reconcile()
   system_state_change(SYSTEM_STATE_FILESYSTEM_RECONCILE);
   fsent_fstree_reconcile(&invalidation);
   rcu_quiesce(&rcu);
-  if(system_error) {
+  if(system_has_error) {
     goto end;
   }
 
@@ -84,7 +84,7 @@ void reconcile()
   system_state_change(SYSTEM_STATE_FILESYSTEM_RECONCILE);
   filesystem_reconcile();
   rcu_quiesce(&rcu);
-  if(system_error) {
+  if(system_has_error) {
     goto end;
   }
 
@@ -92,7 +92,7 @@ void reconcile()
   system_state_change(SYSTEM_STATE_MODULE_SYSTEM_RECONCILE);
   module_system_reconcile(&rule_ctx);
   rcu_quiesce(&rcu);
-  if(system_error) {
+  if(system_has_error) {
     goto end;
   }
 
@@ -106,7 +106,7 @@ void reconcile()
   system_state_change(SYSTEM_STATE_VAR_SYSTEM_RECONCILE);
   varset_system_reconcile(&invalidation);
   rcu_quiesce(&rcu);
-  if(system_error) {
+  if(system_has_error) {
     goto end;
   }
 
@@ -114,7 +114,7 @@ void reconcile()
   system_state_change(SYSTEM_STATE_RULE_SYSTEM_RECONCILE);
   rule_system_reconcile(&rule_ctx);
   rcu_quiesce(&rcu);
-  if(system_error) {
+  if(system_has_error) {
     goto end;
   }
 
@@ -122,7 +122,7 @@ void reconcile()
   system_state_change(SYSTEM_STATE_BPE_SYSTEM_RECONCILE);
   bpe_system_reconcile(&invalidation);
   rcu_quiesce(&rcu);
-  if(system_error) {
+  if(system_has_error) {
     goto end;
   }
 
@@ -130,7 +130,7 @@ void reconcile()
   system_state_change(SYSTEM_STATE_FORMULA_SYSTEM_RECONCILE);
   formula_system_reconcile(&invalidation);
   rcu_quiesce(&rcu);
-  if(system_error) {
+  if(system_has_error) {
     goto end;
   }
 
@@ -139,7 +139,7 @@ void reconcile()
   system_state_change(SYSTEM_STATE_FILESYSTEM_RECONCILE);
   filesystem_reconcile();
   rcu_quiesce(&rcu);
-  if(system_error) {
+  if(system_has_error) {
     goto end;
   }
 
@@ -149,7 +149,7 @@ void reconcile()
   system_state_change(SYSTEM_STATE_PLUGIN_SYSTEM_RECONCILE);
   plugin_system_reconcile(&invalidation);
   rcu_quiesce(&rcu);
-  if(system_error) {
+  if(system_has_error) {
     goto end;
   }
 

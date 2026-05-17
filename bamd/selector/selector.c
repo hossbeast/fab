@@ -180,7 +180,7 @@ static void selector_ctx_exec(selector_context * restrict ctx)
   if(ctx->chan) {
     errp = &ctx->chan->error;
   } else {
-    errp = &system_error;
+    errp = &system_has_error;
   }
 
   sel = ctx->sel;

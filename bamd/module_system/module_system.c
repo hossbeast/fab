@@ -135,7 +135,7 @@ void module_system_reconcile(rule_run_context * restrict rule_run_ctx)
       } else {
         ruleset_disconnect(rules, invalidation);
       }
-      if(system_error) {
+      if(system_has_error) {
         goto end;
       }
       con->disconnect = false;
@@ -146,7 +146,7 @@ void module_system_reconcile(rule_run_context * restrict rule_run_ctx)
       } else {
         ruleset_reparse(rules);
       }
-      if(system_error) {
+      if(system_has_error) {
         goto end;
       }
       con->reparse = false;
@@ -162,7 +162,7 @@ void module_system_reconcile(rule_run_context * restrict rule_run_ctx)
       } else {
         /* rules files are not rebuilt */
       }
-      if(system_error) {
+      if(system_has_error) {
         goto end;
       }
       con->rebuild = false;
@@ -174,7 +174,7 @@ void module_system_reconcile(rule_run_context * restrict rule_run_ctx)
         /* rules files are not imported */
         reimport = false;
       }
-      if(system_error) {
+      if(system_has_error) {
         goto end;
       }
       con->reimport = reimport;

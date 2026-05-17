@@ -163,7 +163,7 @@ void varset_reparse(varset * restrict var)
   var->val = 0;
 
   var_parse(var);
-  if(!system_error) {
+  if(!system_has_error) {
     vertex_mark_fresh(&var->vertex);
     vertex_mark_fresh(&var->self_node->vertex);
   }

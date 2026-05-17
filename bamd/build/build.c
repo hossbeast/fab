@@ -353,7 +353,7 @@ void build(rcu_thread * restrict rcu_self, bool autorun, pid_t pid, uint64_t tok
       /* launch the build slot */
       bs->stage = build_stage;
       build_slot_fork_and_exec(bs, bpe, stage_index);
-      if(system_error) {
+      if(system_has_error) {
         slot_prep_fail++;
         break;
       }

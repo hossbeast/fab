@@ -49,7 +49,7 @@ static void run_thread(handler_context * restrict ctx)
   if(run_reconcile || run_command == COMMAND_RECONCILE)
   {
     reconcile();
-    if(system_error) {
+    if(system_has_error) {
       goto end;
     }
   }
@@ -69,7 +69,7 @@ end:
   trylock_release(&run_lock);
 
   if(owner) {
-    if(system_error) {
+    if(system_has_error) {
       owner->chan->error = true;
     }
 

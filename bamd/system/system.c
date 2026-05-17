@@ -57,7 +57,7 @@ char g_system_id[40];
 uint16_t g_system_id_len;
 
 enum system_state system_state = SYSTEM_STATE_BOOTSTRAP;
-bool system_error;
+bool system_has_error;
 
 static void __attribute__((constructor)) init()
 {
@@ -146,7 +146,7 @@ event_bacon *system_error_event(events_context *ctx)
 {
   event_bacon *msg;
 
-  system_error = true;
+  system_has_error = true;
   if((msg = events_bacon_would(ctx, BAMIPC_EVENT_SYSTEM_STATE_CHANGE))) {
     return msg;
   }
@@ -166,7 +166,7 @@ void system_setup(void)
 
 void system_stats_build(bool reset, bacon_writer * restrict builder_writer)
 {
-  system_stats.system_error = system_error;
+  system_stats.system_error = system_has_error;
   system_stats.autorun = run_thread_autorun;
 
   system_stats.modules = llist_count(&module_list);
