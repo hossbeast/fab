@@ -88,8 +88,15 @@ uint16_t fsent_account_epoch;
 
 llist fsent_list = LLIST_INITIALIZER(fsent_list);                       // active fsents
 static llist fsent_freelist = LLIST_INITIALIZER(fsent_freelist);        // free fsents
-static llist fsent_prunelist = LLIST_INITIALIZER(fsent_prunelist);      // fsent prune candidates
+
+/* directory nodes which had previously been mounted for fstree */
+static llist fsent_unmountlist = LLIST_INITIALIZER(fsent_unmountlist);
+
+/* invalidated fsents - primary nodes to be marked fresh at end of reconcile */
 static llist fsent_freshenlist = LLIST_INITIALIZER(fsent_freshenlist);  // fsent freshen candidates
+
+/* invalidated fsents - primary nodes in managed build dirs to be deleted at end of reconcile */
+static llist fsent_unlinklist = LLIST_INITIALIZER(fsent_unlinklist);    // fresnt unlink candidates
 
 fsent *g_root;
 fsent *g_base;
@@ -703,6 +710,7 @@ void fsent_unlink(fsent * restrict n, struct graph_disintegrate_context * restri
   }
 
   /* if the directory is queued up for unlinking, cancel that */
+  llist_delete(&n->unlink_lln);
   llist_delete(&n->fs_mkdir_lln);
   llist_delete(&n->fs_readlink_lln);
 
@@ -858,18 +866,22 @@ bool fsent_is_primary(const fsent * restrict fse)
 
 void fsent_freshen_candidate(fsent * restrict fse)
 {
-  if(!fsent_is_primary(fse)) {
-    return;
-  }
-
   llist_delete(&fse->freshen_lln);
   llist_push(&fsent_freshenlist, &fse->freshen_lln);
 }
 
-void fsent_prune_candidate(fsent * restrict fse)
+void fsent_unmount_candidate(fsent * restrict fse)
 {
-  llist_delete(&fse->prune_lln);
-  llist_push(&fsent_prunelist, &fse->prune_lln);
+  llist_delete(&fse->unmount_lln);
+  llist_push(&fsent_unmountlist, &fse->unmount_lln);
+}
+
+void fsent_unlink_candidate(fsent * restrict fse)
+{
+  RUNTIME_ASSERT(fsent_possibly_primary(fse));
+
+  llist_delete(&fse->unlink_lln);
+  llist_push(&fsent_unlinklist, &fse->unlink_lln);
 }
 
 /* preorder */
@@ -956,13 +968,188 @@ void fsent_fstree_refresh(graph_invalidation_context * restrict invalidation)
   }
 }
 
-void fsent_freshen_reconcile()
+struct unlink_error_context {
+  const fsent *fse;
+  const module *mod;
+  const fstree *fst;
+  int r;
+};
+
+static void unlink_denied_build(bacon_writer * restrict builder_writer, const struct unlink_error_context * restrict ctx)
+{
+  { MAPPING
+    STRING("unlink denied")
+    { SET
+      vertex_identity_describe(&ctx->fse->vertex, builder_writer);
+    }
+  }
+}
+
+static void unlink_failed_build(bacon_writer * restrict builder_writer, const struct unlink_error_context * restrict ctx)
+{
+  { MAPPING
+    STRING("unlink error")
+    { SET
+      vertex_identity_describe(&ctx->fse->vertex, builder_writer);
+      { MAPPING
+        STRING("error")
+        STRING(strerror(ctx->r))
+      }
+    }
+  }
+}
+
+static void unlink_error(const fsent *fse, const module *mod, const fstree *fst, int r, void (*build)(bacon_writer *, const struct unlink_error_context *))
+{
+  narrator_fixed fixed;
+  bacon_writer writer;
+  events_context ectx;
+  bamipc_message *msg;
+  struct unlink_error_context ctx;
+
+  ctx = (typeof(ctx)) {
+    .fse = fse,
+    .mod = mod,
+    .fst = fst,
+    .r = r,
+  };
+
+  msg = system_error_event(&ectx);
+  narrator_fixed_init(&fixed, msg->text, msg->size);
+  bacon_writer_init(&writer);
+
+  bacon_writer_open(&writer, &fixed.base);
+  build(&writer, &ctx);
+  bacon_writer_close(&writer);
+
+  msg->code = EINVAL;
+  msg->len = fixed.l;
+  events_publish(&ectx);
+}
+
+void fsent_managed_reconcile(graph_invalidation_context * restrict invalidation)
+{
+  fsent *fse;
+  fsent *dir;
+  module *mod;
+  fstree *fst;
+  char path[PATH_MAX];
+  size_t path_len;
+  int r;
+
+  while((fse = llist_shift(&fsent_unlinklist, typeof(*fse), unlink_lln)))
+  {
+    if(vertex_type_get(&fse->vertex) == VERTEX_DIR) {
+      if(!rbtree_empty(&fse->vertex.up)) {
+        continue;
+      }
+      if(!rbtree_empty(&fse->vertex.down)) {
+        continue;
+      }
+    } else if(!fsent_is_primary(fse)) {
+      continue;
+    }
+
+    if((mod = vertex_module_of(&fse->vertex)) == 0) {
+      continue;
+    }
+    if(!mod->managed) {
+      /* only modules with the managed flag set */
+      continue;
+    }
+    if(!mod->disjoint) {
+      /* only modules where the build/anchor dirs are unrelated */
+      continue;
+    }
+    if(!fsent_is_descendant_of(mod->build_dir, fse)) {
+      /* only files in the build dir can be considered */
+      continue;
+    }
+
+    dir = fsent_parent(fse);
+    fst = vertex_fstree_of(&fse->vertex);
+    RUNTIME_ASSERT(dir);
+    RUNTIME_ASSERT(fst);
+
+    /* unlink operation has to be permitted by the fstree */
+    if(!fst->unlink) {
+      dir->dirstats.unlink_no++;
+      mod->module_stats.unlink_no++;
+      fst->fstree_stats.unlink_no++;
+      filesystem_stats.unlink_no++;
+
+      unlink_error(fse, mod, fst, 0, unlink_denied_build);
+      llist_push(&fsent_unlinklist, &fse->unlink_lln);
+      break;
+    }
+
+    path_len = 0;
+    path_len += zcatw(path, sizeof(path), mod->build_dir_abspath, mod->build_dir_abspath_len);
+    path_len += zcatc(path + path_len, sizeof(path) - path_len, '/');
+    path_len += fsent_relative_path_cat(path + path_len, sizeof(path) - path_len, fse, mod->build_dir);
+    path[path_len] = 0;
+    if(vertex_type_get(&fse->vertex) == VERTEX_DIR) {
+      if((r = rmdir(path)) == 0) {
+        dir->dirstats.rmdir_ok++;
+        mod->module_stats.rmdir_ok++;
+        fst->fstree_stats.rmdir_ok++;
+        filesystem_stats.rmdir_ok++;
+      } else if(errno == ENOENT) {
+        dir->dirstats.rmdir_enoent++;
+        mod->module_stats.rmdir_enoent++;
+        fst->fstree_stats.rmdir_enoent++;
+        filesystem_stats.rmdir_enoent++;
+
+        /* unlinked by some other process ; proceed */
+        r = 0;
+      } else {
+        dir->dirstats.rmdir_err++;
+        mod->module_stats.rmdir_err++;
+        fst->fstree_stats.rmdir_err++;
+        filesystem_stats.rmdir_err++;
+      }
+    } else {
+      if((r = unlink(path)) == 0) {
+        dir->dirstats.unlink_ok++;
+        mod->module_stats.unlink_ok++;
+        fst->fstree_stats.unlink_ok++;
+        filesystem_stats.unlink_ok++;
+      } else if(errno == ENOENT) {
+        dir->dirstats.unlink_enoent++;
+        mod->module_stats.unlink_enoent++;
+        fst->fstree_stats.unlink_enoent++;
+        filesystem_stats.unlink_enoent++;
+
+        /* unlinked by some other process ; proceed */
+        r = 0;
+      } else {
+        dir->dirstats.unlink_err++;
+        mod->module_stats.unlink_err++;
+        fst->fstree_stats.unlink_err++;
+        filesystem_stats.unlink_err++;
+      }
+    }
+    if(r != 0) {
+      unlink_error(fse, mod, fst, errno, unlink_failed_build);
+      llist_push(&fsent_unlinklist, &fse->unlink_lln);
+      break;
+    }
+
+    graph_demolish(&fse->vertex);
+
+    /* propagate upwards, unlink now-empty directories */
+    llist_delete(&dir->unlink_lln);
+    llist_push(&fsent_unlinklist, &dir->unlink_lln);
+  }
+}
+
+void fsent_primary_reconcile(graph_invalidation_context * restrict invalidation)
 {
   fsent *fse;
   llist *head, *ent;
 
+  /* freshen all remaining primary files */
   head = &fsent_freshenlist;
-
   for(ent = head->next; ent != head; ent = ent->next) {
     fse = containerof(ent, typeof(*fse), freshen_lln);
 
@@ -980,15 +1167,18 @@ void fsent_fstree_reconcile(graph_invalidation_context * restrict invalidation)
 {
   fsent *fse;
   fsent *parent;
-  moria_edge *edge;
-  entlist list;
+  struct vertices unlinking;
+  struct vertices releasing;
+  struct edges edges;
 
   /* propagate fstree assignments */
   fsent_fstree_refresh(invalidation);
 
   /* enumerate unmounted subtrees */
-  entlist_init(&list);
-  while((fse = llist_shift(&fsent_prunelist, typeof(*fse), prune_lln))) {
+  edges_init(&edges);
+  vertices_init(&unlinking);
+  vertices_init(&releasing);
+  while((fse = llist_shift(&fsent_unmountlist, typeof(*fse), unmount_lln))) {
     if(vertex_type_get(&fse->vertex) != VERTEX_DIR) {
       continue;
     }

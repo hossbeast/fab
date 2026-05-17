@@ -84,8 +84,8 @@ typedef struct module {
   uint16_t epoch;
 
   struct bacon_value *vars;        // effective vars (result of merges, and sysvars)
-  bool disjoint;                   // true if the build dir does not descend from the anchor dir
-  bool managed;                    // whether the build dir should be managed
+  bool disjoint;                   // true if the build dir is not a descendant of the anchor dir
+  bool managed;                    // true if the module file has the managed flag set
   bool anchor_inherited;           // true when loaded from module_bootstrap_anchored_visitor
 
   /* module state exported to shadow-fs */

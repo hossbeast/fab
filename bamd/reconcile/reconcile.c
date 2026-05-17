@@ -76,12 +76,23 @@ void reconcile()
     goto end;
   }
 
+  /* resolve symlinks */
+  symlink_system_reconcile();
+  rcu_quiesce(&rcu);
+  if(system_has_error) {
+    goto end;
+  }
+
+  /* create the default namespace */
+  /* cleanup unreferenced namespaces */
+  /* refresh fse -> namespace mappings */
+  system_state_change(SYSTEM_STATE_NAMESPACE_RECONCILE);
+  namespace_reconcile(&invalidation);
   rcu_quiesce(&rcu);
 
-  /* create directories
-   * resolve symlinks */
+  /* create directories */
   system_state_change(SYSTEM_STATE_FILESYSTEM_RECONCILE);
-  filesystem_reconcile();
+  fsent_dir_reconcile();
   rcu_quiesce(&rcu);
   if(system_has_error) {
     goto end;
@@ -90,20 +101,6 @@ void reconcile()
   /* rebuild modules */
   system_state_change(SYSTEM_STATE_MODULE_SYSTEM_RECONCILE);
   module_system_reconcile(&rule_ctx);
-  rcu_quiesce(&rcu);
-  if(system_has_error) {
-    goto end;
-  }
-
-  /* refresh fse -> mod assignments */
-  /* no errors */
-  system_state_change(SYSTEM_STATE_FILESYSTEM_RECONCILE);
-  fsent_modules_reconcile();
-  rcu_quiesce(&rcu);
-
-  /* cleanup un-referenced var files */
-  system_state_change(SYSTEM_STATE_VAR_SYSTEM_RECONCILE);
-  varset_system_reconcile(&invalidation);
   rcu_quiesce(&rcu);
   if(system_has_error) {
     goto end;
@@ -125,18 +122,9 @@ void reconcile()
     goto end;
   }
 
-  /* parse formula files */
-  system_state_change(SYSTEM_STATE_FORMULA_SYSTEM_RECONCILE);
-  formula_system_reconcile(&invalidation);
-  rcu_quiesce(&rcu);
-  if(system_has_error) {
-    goto end;
-  }
-
-  /* create directories
-   * resolve symlinks */
+  /* create directories */
   system_state_change(SYSTEM_STATE_FILESYSTEM_RECONCILE);
-  filesystem_reconcile();
+  fsent_dir_reconcile();
   rcu_quiesce(&rcu);
   if(system_has_error) {
     goto end;
@@ -152,15 +140,17 @@ void reconcile()
     goto end;
   }
 
+  /* unlink primary files in managed build directories */
+  system_state_change(SYSTEM_STATE_FSENT_RECONCILE);
+  fsent_managed_reconcile(&invalidation);
   rcu_quiesce(&rcu);
   if(system_has_error) {
     goto end;
   }
 
-  /* discard invalidations - no errors possible here */
+  /* discard invalidations - no errors are possible here */
   system_state_change(SYSTEM_STATE_FSENT_RECONCILE);
-  fsent_freshen_reconcile();
-  system_state_change(SYSTEM_STATE_OK);
+  fsent_primary_reconcile(&invalidation);
   rcu_quiesce(&rcu);
 
 end:

@@ -1,0 +1,206 @@
+#!/usr/bin/env perl
+
+#
+# delete primary files in the build dir, honoring these settings
+#  fstree unlink=true  (fstree)
+#  managed             (module)
+#
+# in this test, the primary files are not created by the build, they are simply created
+# external to bam
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use bam::bam;
+use integ;
+
+init(subdir => 'B');
+setup(<<"TREE");
+|-- A
+|   `-- a0
+|   `-- a1
+|-- B
+|   `-- module.bam%devel <<
+managed
+anchor ../A
+
+rule a({0,1}) -> C/b\$1 : ./cp.bam+(@.)
+>>
+|   `-- cp.bam << 0777
+file : {
+  lookup : {
+    namespace : coreutils
+    pattern : bin/cp+(@.)
+  }
+}
+args : [
+  \$bm_source0
+  \$bm_target0
+]
+>>
+|-- system-config <<
+namespaces : {
+  coreutils
+}
+filesystem : {
+  fstrees : {
+    $bam_basedir/A : {
+      mount : true
+    }
+    $bam_basedir/B : {
+      mount : true
+      mkdir : true
+      unlink : true
+    }
+    $repodir/usr/share/bam/coreutils : {
+      mount : true
+      namespaces : {
+        coreutils
+      }
+    }
+  }
+}
+>>
+TREE
+
+my $module_id = bam::identity("module", "$bam_basedir/B");
+my $fstree_id = bam::identity("fstree", "$bam_basedir/B");
+
+#
+#
+#
+print("\n >> 1 - INITIAL <<\n\n");
+assert {
+  stats("//bm/sys-filesystem", "--follow", {
+      unlink_ok => 0
+    , unlink_err => 0
+    , unlink_no => 0
+    , unlink_enoent => 0
+    , rmdir_ok => 0
+    , rmdir_err => 0
+    , rmdir_no => 0
+    , rmdir_enoent => 0
+})};
+assert {
+  stats("//bm/fstrees/$fstree_id", "--follow", {
+      unlink_ok => 0
+    , unlink_err => 0
+    , unlink_no => 0
+    , unlink_enoent => 0
+    , rmdir_ok => 0
+    , rmdir_err => 0
+    , rmdir_no => 0
+    , rmdir_enoent => 0
+})};
+assert {
+  stats("//bm/modules/$module_id", "-S", "--follow", {
+      unlink_ok => 0
+    , unlink_err => 0
+    , unlink_no => 0
+    , unlink_enoent => 0
+    , rmdir_ok => 0
+    , rmdir_err => 0
+    , rmdir_no => 0
+    , rmdir_enoent => 0
+})};
+assert {
+  stats("$bam_basedir/B", {
+      unlink_ok => 0
+    , unlink_err => 0
+    , unlink_no => 0
+    , unlink_enoent => 0
+    , rmdir_ok => 0
+    , rmdir_err => 0
+    , rmdir_no => 0
+    , rmdir_enoent => 0
+})};
+assert {
+  stats("$bam_basedir/B/C", {
+      unlink_ok => 0
+    , unlink_err => 0
+    , unlink_no => 0
+    , unlink_enoent => 0
+    , rmdir_ok => 0
+    , rmdir_err => 0
+    , rmdir_no => 0
+    , rmdir_enoent => 0
+})};
+
+build();
+assert { eexists("$bam_basedir/A/a0") };
+assert { eexists("$bam_basedir/A/a1") };
+assert { eexists("$bam_basedir/B/C/b0") };
+assert { eexists("$bam_basedir/B/C/b1") };
+
+#
+#
+#
+print("\n >> 2 - create random file in build dir (externally) <<\n\n");
+open FH, ">", "$bam_basedir/B/foo" or die $!;
+close FH;
+
+reconcile();
+assert { enoent ("$bam_basedir/B/foo") };      # was cleaned up during reconcile
+
+assert {
+  stats("//bm/sys-filesystem", "--follow", {
+      unlink_ok => 1
+    , unlink_err => 0
+    , unlink_no => 0
+    , unlink_enoent => 0
+    , rmdir_ok => 0
+    , rmdir_err => 0
+    , rmdir_no => 0
+    , rmdir_enoent => 0
+})};
+assert {
+  stats("//bm/fstrees/$fstree_id", "--follow", {
+      unlink_ok => 1
+    , unlink_err => 0
+    , unlink_no => 0
+    , unlink_enoent => 0
+    , rmdir_ok => 0
+    , rmdir_err => 0
+    , rmdir_no => 0
+    , rmdir_enoent => 0
+})};
+assert {
+  stats("//bm/modules/$module_id", "-S", "--follow", {
+      unlink_ok => 1
+    , unlink_err => 0
+    , unlink_no => 0
+    , unlink_enoent => 0
+    , rmdir_ok => 0
+    , rmdir_err => 0
+    , rmdir_no => 0
+    , rmdir_enoent => 0
+})};
+assert {
+  stats("$bam_basedir/B", {
+      unlink_ok => 1
+    , unlink_err => 0
+    , unlink_no => 0
+    , unlink_enoent => 0
+    , rmdir_ok => 0
+    , rmdir_err => 0
+    , rmdir_no => 0
+    , rmdir_enoent => 0
+})};
+
+teardown();

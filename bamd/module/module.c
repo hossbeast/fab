@@ -534,6 +534,7 @@ static void module_anchor_dir_set(module *mod, fsent *mod_anchor_dir, const look
   while(1) {
     if(fse == mod->anchor_dir) {
       mod->disjoint = false;
+      break;
     }
     if(fse == g_root) {
       break;

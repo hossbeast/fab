@@ -43,7 +43,7 @@ rule $^A/plugin/plugin.h -> [*] plugin/stats_plugin.desc.[ch] : //descriptor/des
 rule $^A/rule/rule.h -> [*] rule/stats_rule.desc.[ch] : //descriptor/descriptor.bam
 rule $^A/rma/rma.h -> [*] rma/stats_rma.desc.[ch] : //descriptor/descriptor.bam
 rule $^A/ruleset/ruleset.h -> [*] ruleset/stats_ruleset.desc.[ch] : //descriptor/descriptor.bam
-rule $^A/stats/stats_fsent_dir.h -> [*] fsent/stats_fsent_dir.desc.[ch] : //descriptor/descriptor.bam
+rule $^A/fsent_dir/fsent_dir.h -> [*] fsent_dir/stats_fsent_dir.desc.[ch] : //descriptor/descriptor.bam
 rule $^A/fsent/fsent_symlink.h -> [*] fsent/stats_fsent_symlink.desc.[ch] : //descriptor/descriptor.bam
 rule $^A/system/system.h -> [*] system/system_stats.desc.[ch] : //descriptor/descriptor.bam
 rule $^A/varset/varset.h -> [*] varset/stats_varset.desc.[ch] : //descriptor/descriptor.bam

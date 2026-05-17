@@ -416,6 +416,10 @@ void walker_visit(int method, ftwinfo *info, void *arg, int *stop)
       fsent_create(&n, filetype, attrs, info->path + info->name_off, info->pathl - info->name_off);
       fsedge_connect(n, parent, ctx->invalidation);
       vertex_alloc_probe(&n->vertex);
+
+      if(attrs == VERTEX_UNCREATED) {
+        fsent_unlink_candidate(n);
+      }
     }
   }
   info->udata = n;

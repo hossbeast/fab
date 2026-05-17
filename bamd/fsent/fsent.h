@@ -321,7 +321,21 @@ bool fsent_dir_reap(struct fsent * restrict dir, struct graph_disintegrate_conte
 fsent *fsent_translate(fsent * fse, const fsent *origin, const fsent *target, struct graph_invalidation_context * restrict invalidation)
   __attribute__((nonnull));
 
-void fsent_freshen_reconcile(void);
+void fsent_primary_reconcile(struct graph_invalidation_context * restrict invalidation)
+  __attribute__((nonnull));
+
+/*
+ * mark an fsent to be considered for unlinking during next managed reconcile
+ */
+void fsent_unlink_candidate(fsent * restrict fse)
+  __attribute__((nonnull));
+
+/*
+ * traverse managed build directories and clean up / delete all primary files
+ */
+void fsent_managed_reconcile(struct graph_invalidation_context * restrict invalidation)
+  __attribute__((nonnull));
+
 void fsent_modules_reconcile(void);
 
 void fsent_fstree_reconcile(struct graph_invalidation_context * restrict invalidation)
@@ -330,7 +344,7 @@ void fsent_fstree_reconcile(struct graph_invalidation_context * restrict invalid
 void fsent_freshen_candidate(fsent * restrict fse)
   __attribute__((nonnull));
 
-void fsent_prune_candidate(fsent * restrict fse)
+void fsent_unmount_candidate(fsent * restrict fse)
   __attribute__((nonnull));
 
 void fsent_account(void);

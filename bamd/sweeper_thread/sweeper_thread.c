@@ -163,6 +163,8 @@ static void process_event(sweeper_event * restrict ev, graph_invalidation_contex
       if((stb.st_mode & S_IFMT) == S_IFLNK) {
         symlink_readlink_push(n); /* resolve the symlink */
       }
+
+      fsent_unlink_candidate(n);
     }
   }
   else
