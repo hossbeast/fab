@@ -160,7 +160,7 @@ command-branch
   | tell-cmd
   | tree-list-cmd
   | invalidate-cmd
-  | invalidate-primary-cmd
+  | modules-invalidate-primary-cmd
   | stats-cmd
   | global-stats-cmd
   | context-cmd
@@ -276,8 +276,8 @@ invalidate-cmd
   : INVALIDATE { PARSER->command->type = COMMAND_INVALIDATE; }
   ;
 
-invalidate-primary-cmd
-  : INVALIDATE_PRIMARY { PARSER->command->type = COMMAND_INVALIDATE_PRIMARY; }
+modules-invalidate-primary-cmd
+  : MODULES_INVALIDATE_PRIMARY { PARSER->command->type = COMMAND_MODULES_INVALIDATE_PRIMARY; }
   ;
 
 tree-list-cmd

@@ -264,3 +264,72 @@ end:
    * for deletion on the next iteration */
   llist_splice_head(&module_rebuild_list, &reload_list);
 }
+
+static void invalidate_primary_visitor(
+    moria_vertex *v
+  , void *arg
+  , moria_traversal_mode mode
+  , int distance
+  , moria_traverse_result * restrict result
+)
+{
+  fsent *fse;
+  graph_invalidation_context * restrict invalidation;
+
+  if(vertex_invalid_get(v)) {
+    return;
+  }
+
+  fse = containerof(v, typeof(*fse), vertex);
+  if(!fsent_is_primary(fse)) {
+    return;
+  }
+
+  invalidation = arg;
+  vertex_invalidate(&fse->vertex, invalidation);
+}
+
+void modules_invalidate_primary(graph_invalidation_context * restrict invalidation)
+{
+  module *mod;
+
+#if 0
+should have the same behavior as bam touch with no arguments, which issues this request
+but without the overhead of constructing the selection
+
+  select : [
+    search : {
+      pattern : //bm/modules/*/anchor+(/)
+    }
+    traverse : {
+      graph : fs
+      cross-module : true
+      cross-fstree : true
+      min-distance : 0
+      max-distance : 65535
+      visit : primary
+      nofollow : true
+      hidden : true
+    }
+  ]
+  invalidate
+]
+#endif
+
+  llist_foreach(&module_list, mod, vertex.owner) {
+    moria_traverse_vertices(
+        &g_graph
+      , &mod->anchor_dir->vertex
+      , invalidate_primary_visitor
+      , 0
+      , (moria_traversal_criteria[]) {{
+            edge_travel_mask: EDGE_TYPE_OPT
+          , edge_travel : EDGE_FS
+          , vertex_visit_mask : VERTEX_KIND_OPT
+          , vertex_visit : VERTEX_KIND_FSENT
+        }}
+      , MORIA_TRAVERSE_DOWN | MORIA_TRAVERSE_PRE | MORIA_TRAVERSE_NOFOLLOW
+      , invalidation
+    );
+  }
+}

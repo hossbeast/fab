@@ -955,27 +955,6 @@ void fsent_fstree_refresh(graph_invalidation_context * restrict invalidation)
   }
 }
 
-uint32_t fsent_invalidate_primary(graph_invalidation_context * restrict invalidation)
-{
-  fsent *fse;
-  uint32_t count;
-
-  count = 0;
-  llist_foreach(&fsent_list, fse, vertex.owner) {
-    if(vertex_invalid_get(&fse->vertex)) {
-      continue;
-    }
-    if(!fsent_is_primary(fse)) {
-      continue;
-    }
-
-    count++;
-    vertex_invalidate(&fse->vertex, invalidation);
-  }
-
-  return count;
-}
-
 void fsent_freshen_reconcile()
 {
   fsent *fse;

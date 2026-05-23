@@ -217,44 +217,15 @@ static void handler_invalidate(request_handler * restrict ctx, command * restric
   ctx->invalidated_any |= invalidation.any;
 }
 
-static void handler_invalidate_primary(request_handler * restrict ctx, command * restrict cmd)
+static void handler_modules_invalidate_primary(request_handler * restrict ctx, command * restrict cmd)
 {
-  events_context ectx;
-  bamipc_message *msg;
-  bacon_writer writer, *builder_writer;
-  narrator_fixed fixed;
-  uint32_t count;
   graph_invalidation_context invalidation = { };
 
   graph_invalidation_begin(&invalidation);
-  count = fsent_invalidate_primary(&invalidation);
+  modules_invalidate_primary(&invalidation);
   graph_invalidation_end(&invalidation);
 
-  if(count) {
-    ctx->invalidated_any = true;
-  }
-
-  if((msg = events_bacon_would(&ectx, BAMIPC_EVENT_GLOBAL_INVALIDATION)))
-  {
-    narrator_fixed_init(&fixed, msg->text, msg->size);
-    bacon_writer_init(&writer);
-    builder_writer = bacon_writer_open(&writer, &fixed.base);
-
-    { MAPPING
-      STRING("invalidate-primary")
-      { SET
-        { MAPPING
-          STRING("count")
-          UINT(count)
-        }
-      }
-    }
-
-    bacon_writer_close(&writer);
-    msg->id = 0;
-    msg->len = fixed.l;
-    events_publish(&ectx);
-  }
+  ctx->invalidated_any = invalidation.any;
 }
 
 static void handler_destroy(request_handler * restrict ctx)
@@ -297,8 +268,8 @@ void request_handler_process_command(request_handler * restrict ctx, command * r
     case COMMAND_INVALIDATE:
       handler_invalidate(ctx, cmd);
       break;
-    case COMMAND_INVALIDATE_PRIMARY:
-      handler_invalidate_primary(ctx, cmd);
+    case COMMAND_MODULES_INVALIDATE_PRIMARY:
+      handler_modules_invalidate_primary(ctx, cmd);
       break;
     case COMMAND_GLOBAL_STATS_READ:
     case COMMAND_GLOBAL_STATS_RESET:

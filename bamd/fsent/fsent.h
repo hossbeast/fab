@@ -171,8 +171,6 @@ void fsent_root_setup(void);
 void fsent_base_setup(void);
 void fsent_cleanup(void);
 
-uint32_t fsent_invalidate_primary(struct graph_invalidation_context * restrict invalidation);
-
 /* apply config changes */
 void fsent_reconfigure(struct config * restrict cfg, bool dryrun)
   __attribute__((nonnull));
