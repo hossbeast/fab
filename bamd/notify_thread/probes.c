@@ -3,13 +3,11 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <inttypes.h>
 #include <sys/inotify.h>
 
 #include "types.h"
 
 #include "probes.h"
-#include "sweeper_thread.h"
 #include "fsent.h"
 #include "inotify_mask.h"
 

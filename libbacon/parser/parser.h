@@ -5,7 +5,6 @@
 
 #include "types.h"
 #include "yyutil/parser.h"
-#include "valyria/llist.h"
 
 #include "value.h"
 

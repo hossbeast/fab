@@ -40,7 +40,6 @@
 #include "shadow.h"
 #include "stats.h"
 #include "varset.h"
-#include "channel.h"
 #include "vertex/probes.h"
 #include "ruleset.h"
 #include "selection.h"

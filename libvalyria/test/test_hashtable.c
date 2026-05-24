@@ -1,15 +1,9 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include <stdlib.h>
-#include <stdio.h>
-
-#include "xlinux/xstdlib.h"
-
 #include "hashtable.h"
 #include "unit.h"
 
-#include "macros.h"
 #include "common/hash.h"
 
 static uint32_t hash32_i32(uint32_t h, const void * entry)

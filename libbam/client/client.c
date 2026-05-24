@@ -18,7 +18,6 @@
 #include "xlinux/xunistd.h"
 #include "xlinux/xfutex.h"
 #include "xlinux/xfcntl.h"
-#include "xlinux/xunistd.h"
 #include "xlinux/xstdlib.h"
 #include "xlinux/xstat.h"
 #include "xlinux/xstring.h"

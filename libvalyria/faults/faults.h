@@ -10,7 +10,6 @@ SUMMARY
 
 */
 
-#include "types.h"
 
 #define VALYRIA_FAULT_TABLE          \
   VALYRIA_FAULT(KEY_INDEX_BOUNDARY)  \

@@ -6,10 +6,8 @@
 #include "narrator/fixed.h"
 
 #include "request_handler.h"
-#include "request.h"
 #include "command.h"
 #include "describe.h"
-#include "channel.h"
 
 void describe_handler(request_handler * restrict ctx, command * restrict cmd)
 {

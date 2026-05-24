@@ -4,8 +4,6 @@
 #include <inttypes.h>
 
 #include "narrator.h"
-#include "valyria/pstring.h"
-#include "valyria/hashtable.h"
 #include "xlinux/xstdlib.h"
 
 #include "value.h"
@@ -14,7 +12,6 @@
 
 #include "zcat.h"
 
-#include "common/attrs.h"
 
 //
 // static

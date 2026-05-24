@@ -4,25 +4,21 @@
 # Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com>
 
 #
-# normalize header and footer of all kinds of source files
+# rename symbols across the source tree
 #
 # usage
-#  ./style/normalize      # consider all files from cwd down
-#  ./style/normalize path path ...
+#  ./style/rename 's/g_goals/sys_goals/g'
 #
 
 use strict;
 use warnings;
-
-use Data::Dumper;
 
 my $LIM = 1000;   # rewrite at most this many files
 my $CNT = 0;
 
 sub usage {
   print STDOUT <<TEXT;
-usage : $0              consider all files in $ENV{CWD}, recursive
-usage : path path ...   consider only the specified files
+usage : $0 's/a/b/g' 's/b/c/g' .. perform renames across all files under CWD
 
 TEXT
 }
@@ -93,7 +89,5 @@ sub traverse {
   }
   closedir $dh;
 }
-
-print Dumper \@ARGV;
 
 traverse(".")

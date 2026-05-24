@@ -1,14 +1,10 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include <inttypes.h>
-
-#include "common/sha1.h"
 #include "common/attrs.h"
 #include "common/bech32.h"
 
 #include "identity.h"
-#include "zcat.h"
 #include "graph.h"
 
 void identity_init(identity_ctx * restrict id)

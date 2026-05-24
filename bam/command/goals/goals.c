@@ -3,14 +3,12 @@
 
 #include "types.h"
 #include "bacon/builder.h"
-#include "narrator.h"
 #include "narrator/fixed.h"
 
 #include "bam/ipc.h"
 #include "bam/client.h"
 
 #include "goals.h"
-#include "info.h"
 #include "params.h"
 
 static uint64_t requestid;

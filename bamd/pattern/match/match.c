@@ -1,24 +1,18 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include "xlinux/xstdlib.h"
-#include "moria/traverse.h"
 #include "moria/foreach.h"
 #include "bacon/value.h"
 
 #include "match.internal.h"
-#include "pattern.internal.h"
 #include "fsent.h"
 #include "vertex.h"
 #include "module.h"
 
-#include "narrator.h"
 
-#include "section.h"
 
 #include "search.internal.h"
 
-#include "bacon/builder.h"
 
 //
 // static

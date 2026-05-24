@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include "types.h"
 #include "narrator.h"
 
 typedef struct bacon_narrator {

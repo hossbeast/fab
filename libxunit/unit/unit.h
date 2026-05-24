@@ -4,7 +4,6 @@
 #pragma once
 
 #include "xunit.h"
-#include "macros.h"
 
 extern xunit_unit xunit_units;
 

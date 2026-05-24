@@ -1,21 +1,13 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include <string.h>
-
-#include "value.h"
 #include "bacon/assert.h"
 #include "bacon/load.h"
 #include "xunit.h"
-#include "xunit/assert.h"
-#include "narrator.h"
 #include "narrator/growing.h"
-#include "valyria/pstring.h"
 
 #include "glue.h"
 #include "merge.h"
-#include "make.h"
-#include "writer.h"
 
 typedef struct merge_test {
   XUNITTEST;

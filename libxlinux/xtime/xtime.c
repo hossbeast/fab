@@ -4,7 +4,6 @@
 #include <errno.h>
 
 #include "types.h"
-#include "macros.h"
 
 #include "xtime.h"
 

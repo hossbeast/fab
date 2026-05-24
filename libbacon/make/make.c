@@ -4,14 +4,11 @@
 #include "valyria/pstring.h"
 #include "common/hash.h"
 
-#include "value.h"
 #include "make.h"
-#include "eval.h"
 #include "glue.h"
 #include "set.h"
 #include "location.h"
 
-#include "macros.h"
 
 bacon_value * bacon_float_mk(
     bacon_parser * const restrict parser

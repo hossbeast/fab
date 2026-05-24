@@ -3,14 +3,12 @@
 
 #include "narrator.h"
 #include "xlinux/xstdlib.h"
-#include "common/attrs.h"
 #include "bacon/builder.h"
 
 #include "range.h"
 #include "byte.h"
 #include "fsent.h"
 #include "search.internal.h"
-#include "match.internal.h"
 #include "pattern.internal.h"
 
 //

@@ -4,10 +4,7 @@
 #include <inttypes.h>
 
 #include "types.h"
-#include "narrator.h"
 #include "narrator/fixed.h"
-#include "common/attrs.h"
-#include "bam/ipc.h"
 #include "bam/events.h"
 
 #include "channel.h"

@@ -3,7 +3,6 @@
 
 #include <stdio.h>
 
-#include "bam/client.h"
 
 #include "kill.h"
 #include "command.h"

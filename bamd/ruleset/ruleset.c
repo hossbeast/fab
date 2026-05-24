@@ -2,38 +2,27 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 #include <errno.h>
-#include <inttypes.h>
 
-#include "bacon/parser.h"
 #include "xlinux/xstdlib.h"
 #include "xlinux/xstring.h"
+#include "bacon/builder.h"
 #include "bam/ipc.h"
 #include "common/snarf.h"
-#include "narrator.h"
 #include "moria/foreach.h"
-#include "bacon/builder.h"
 #include "narrator/fixed.h"
+#include "valyria/llist.h"
 
 #include "ruleset.h"
 #include "module/probes.h"
 #include "ruleset_parser.h"
 #include "fsent.h"
-#include "params.h"
 #include "system.h"
 #include "events/events.h"
-#include "channel.h"
-#include "stats.h"
-#include "vertex.h"
-#include "edge.h"
-#include "module_edge.h"
-#include "special_edge.h"
-#include "rma.h"
-#include "edges.h"
-#include "vertices.h"
-#include "pattern_parser.internal.h"
 #include "vertex/probes.h"
+#include "edge.h"
+#include "special_edge.h"
+#include "pattern.h"
 #include "shadow.h"
-#include "identity.h"
 #include "disintegrate.h"
 
 #include "zcat.h"

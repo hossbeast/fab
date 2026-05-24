@@ -9,17 +9,9 @@
 #define OPERATIONS_YYTOKENTYPE
 
 #include "graph.tab.h"
-#include "graph.tokens.h"
-#include "graph.lex.h"
-#include "graph.states.h"
-#include "operations.tab.h"
-#include "operations.tokens.h"
-#include "operations.lex.h"
-#include "operations.states.h"
 
 #include "edge.h"
 #include "connect.h"
-#include "dispatch.h"
 
 static void moria_parser_edge_disconnect(
     moria_parser * restrict p

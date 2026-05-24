@@ -5,7 +5,6 @@
 #include "valyria/rbtree.h"
 #include "common/hash.h"
 
-#include "module.h"
 #include "module/probes.h"
 #include "fsent.h"
 #include "rule.h"

@@ -1,27 +1,17 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include <errno.h>
-#include <inttypes.h>
-
 #include "types.h"
 
 #include "xlinux/xstdlib.h"
 #include "bacon/value.h"
-#include "bacon/writer.h"
 #include "bacon/builder.h"
-#include "bacon/location.h"
-#include "narrator/fixed.h"
 
 #include "lookup.h"
 #include "fsent.h"
 #include "pattern.h"
-#include "events/events.h"
-#include "system.h"
 #include "resolve.h"
 #include "namespace.h"
-#include "meta_edge.h"
-#include "fsname.h"
 
 static llist lookup_entry_freelist = LLIST_INITIALIZER(lookup_entry_freelist);
 

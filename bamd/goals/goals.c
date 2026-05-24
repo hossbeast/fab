@@ -1,32 +1,20 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include "bam/events.h"
-#include "bam/ipc.h"
-#include "narrator.h"
 #include "narrator/fixed.h"
-#include "bacon/writer.h"
-#include "xlinux/xtime.h"
 #include "bacon/builder.h"
-#include "valyria/llist.h"
 #include "narrator/units.h"
-#include "moria/vertex.h"
 
 #include "goals.h"
-#include "build.h"
 #include "buildplan.h"
 #include "fsent.h"
-#include "channel.h"
 #include "module.h"
-#include "selector.h"
-#include "channel.h"
 #include "request_handler.h"
 #include "shadow.h"
 #include "vertex.h"
 
 #include "common/attrs.h"
 #include "events/events.h"
-#include "zcat.h"
 #include "times.h"
 #include "params.h"
 #include "graph.h"

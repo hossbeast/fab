@@ -4,7 +4,6 @@
 #include <errno.h>
 
 #include "xepoll.h"
-#include "macros.h"
 
 //
 // api

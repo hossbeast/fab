@@ -4,7 +4,6 @@
 #include <inttypes.h>
 #include <errno.h>
 
-#include "value.h"
 #include "make.h"
 #include "coerce.h"
 #include "parser.h"

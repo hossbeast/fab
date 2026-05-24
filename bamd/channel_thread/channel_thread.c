@@ -2,40 +2,34 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 #include <errno.h>
+#include <inttypes.h>
 
 #include "bam/sigutil.h"
 #include "bam/ipc.h"
 #include "bacon/writer.h"
 #include "bacon/builder.h"
-#include "narrator.h"
 #include "narrator/fixed.h"
 #include "xlinux/xstdlib.h"
-#include "xlinux/xunistd.h"
 #include "xlinux/xpthread.h"
-#include "xlinux/xfutex.h"
-#include "xlinux/xtime.h"
-#include "common/attrs.h"
 
 #include "channel_thread.h"
-#include "channel_server_thread.h"
 #include "run_thread.h"
+#include "command.h"
 #include "channel.h"
 #include "goals.h"
 #include "request_handler.h"
 #include "params.h"
 #include "request.h"
-#include "selector_parser.h"
 #include "request_parser.h"
-#include "pattern_parser.internal.h"
-#include "times.h"
 #include "system.h"
 #include "client.h"
 #include "timeout_thread.h"
 #include "events/events.h"
 #include "disintegrate.h"
+#include "rcu_list.h"
 
 #include "zcat.h"
-#include "threads.h"
+#include "times.h"
 
 static struct futexlock channel_thread_list_lock;
 rcu_list channel_thread_list;

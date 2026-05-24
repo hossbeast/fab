@@ -25,7 +25,6 @@ A rule is connected to each module for which it is run with an EDGE_MOD_RULE edg
 #include "vertices.h"
 #include "vertex.h"
 #include "namespace.h"
-#include "vertices.h"
 #include "lookup.h"
 #include "resolve.h"
 

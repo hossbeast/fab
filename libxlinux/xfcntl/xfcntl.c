@@ -3,8 +3,6 @@
 
 #include <errno.h>
 
-#include "types.h"
-#include "macros.h"
 
 #include "xfcntl.h"
 #include "fmt.h"

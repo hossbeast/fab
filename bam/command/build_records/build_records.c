@@ -6,13 +6,9 @@
 #include "bam/ipc.h"
 #include "bam/client.h"
 #include "bacon/builder.h"
-#include "narrator.h"
-#include "narrator/fixed.h"
 
 #include "build_records.h"
-#include "info.h"
 #include "params.h"
-#include "zcat.h"
 
 //
 // build

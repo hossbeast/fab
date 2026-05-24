@@ -1,19 +1,12 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <getopt.h>
-
-#include "xlinux/xstring.h"
-#include "xlinux/xstdlib.h"
 
 #include "args.h"
 
-#include "macros.h"
-#include "common/assure.h"
 #include "git-state.h"
 
 typeof(xunit_args) xunit_args;

@@ -3,9 +3,7 @@
 
 #include "types.h"
 
-#include "narrator.h"
 #include "narrator/fixed.h"
-#include "bacon/value.h"
 #include "bacon/parser.h"
 
 #include "generate.internal.h"
@@ -15,8 +13,6 @@
 #include "vertex.h"
 #include "vertex/probes.h"
 #include "search.internal.h"
-#include "edges.h"
-#include "vertices.h"
 #include "module.h"
 #include "shadow.h"
 

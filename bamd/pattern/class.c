@@ -3,7 +3,6 @@
 
 #include "narrator.h"
 #include "xlinux/xstdlib.h"
-#include "common/attrs.h"
 #include "bacon/builder.h"
 
 #include "class.h"
@@ -11,7 +10,6 @@
 #include "fsent.h"
 #include "generate.internal.h"
 #include "search.internal.h"
-#include "match.internal.h"
 #include "segment.h"
 #include "segments.h"
 

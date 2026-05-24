@@ -6,7 +6,6 @@
 #include "bam/config_tell.h"
 #include "bam/config_tell.desc.h"
 #include "bacon/builder.h"
-#include "narrator.h"
 #include "narrator/fixed.h"
 
 #include "types.h"

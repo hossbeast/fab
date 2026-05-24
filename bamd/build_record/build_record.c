@@ -7,7 +7,6 @@
 #include "narrator/fd.h"
 #include "xlinux/xstdlib.h"
 #include "xlinux/xfcntl.h"
-#include "xlinux/xstdlib.h"
 #include "bacon/writer.h"
 #include "bacon/builder.h"
 #include "moria/vertex.h"

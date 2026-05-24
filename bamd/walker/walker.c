@@ -37,7 +37,6 @@
 #include "channel.h"
 #include "events/events.h"
 #include "edges.h"
-#include "vertices.h"
 #include "config_system.h"
 #include "notify.h"
 #include "symlink.h"

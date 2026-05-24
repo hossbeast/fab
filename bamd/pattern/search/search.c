@@ -2,11 +2,7 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 #include "common/hash.h"
-#include "valyria/hashtable.h"
-#include "xlinux/xstdlib.h"
-#include "moria/traverse.h"
 #include "moria/foreach.h"
-#include "narrator.h"
 
 #include "search.internal.h"
 #include "pattern/section.h"
@@ -14,11 +10,7 @@
 #include "vertex.h"
 #include "module.h"
 #include "shadow.h"
-#include "rule.h"
-#include "section.h"
-#include "zcat.h"
 
-#include "pattern/segments.h"
 
 //
 // static

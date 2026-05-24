@@ -3,10 +3,7 @@
 
 #pragma once
 
-#include <sys/types.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <stdarg.h>
+#include "types.h"
 
 /// xmalloc
 //

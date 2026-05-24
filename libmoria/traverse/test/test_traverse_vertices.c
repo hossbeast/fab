@@ -1,30 +1,19 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
-
-#include "xlinux/xstdlib.h"
 #include "moria/load.h"
 #include "moria.h"
 #include "moria/traverse.h"
-#include "moria/edge.h"
 
 #include "xunit.h"
 #include "xunit/assert.h"
 #include "valyria/list.h"
-#include "valyria/map.h"
 #include "valyria/array.h"
 
-#include "narrator.h"
-#include "narrator/growing.h"
 #include "graph.internal.h"
-#include "vertex.h"
 #include "parser.internal.h"
 #include "dispatch.h"
 
-#include "macros.h"
 
 typedef struct graph_test {
   XUNITTEST;

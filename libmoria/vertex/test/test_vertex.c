@@ -3,11 +3,6 @@
 
 #include "xunit.h"
 #include "xunit/assert.h"
-#include "narrator.h"
-#include "narrator/growing.h"
-#include "valyria/map.h"
-#include "valyria/list.h"
-#include "xlinux/xstdlib.h"
 #include "moria/load.h"
 
 #include "moria.h"

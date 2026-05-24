@@ -1,24 +1,17 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include "moria/graph.h"
 #include "moria/foreach.h"
-#include "moria/connect.h"
 #include "xlinux/xstdlib.h"
 #include "bacon/builder.h"
-#include "narrator.h"
 
 #include "fsname.h"
 #include "ns_edge.h"
-#include "fsent.h"
-#include "fsedge.h"
 #include "vertex.h"
 #include "edge.h"
 #include "stats.h"
-#include "filesystem.h"
 #include "vertex/probes.h"
 #include "edges.h"
-#include "vertices.h"
 #include "namespace.h"
 #include "identity.h"
 #include "shadow.h"

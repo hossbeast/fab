@@ -4,7 +4,6 @@
 #pragma once
 
 #include <unistd.h>
-#include <linux/futex.h>
 #include <sys/syscall.h>
 
 #include "types.h"

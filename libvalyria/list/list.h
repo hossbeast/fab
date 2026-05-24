@@ -15,7 +15,6 @@ REMARKS
 
 #include "types.h"
 
-#include "list.h"
 
 typedef struct list {
   size_t size;  // items in use

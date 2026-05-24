@@ -1,18 +1,11 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include <inttypes.h>
-
 #include "narrator.h"
-#include "valyria/pstring.h"
-#include "valyria/hashtable.h"
-#include "common/hash.h"
 
 #include "value.h"
 #include "writer.h"
-#include "zcat.h"
 
-#include "macros.h"
 
 static inline void say(const bacon_value * const restrict val, narrator * const restrict N, bool flat)
 {

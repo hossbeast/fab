@@ -2,21 +2,13 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 #include "moria/connect.h"
-#include "moria/graph.h"
 #include "moria/edge.h"
-#include "moria/foreach.h"
 #include "xlinux/xstdlib.h"
-#include "bacon/builder.h"
-#include "narrator.h"
 
 #include "ns_edge.h"
-#include "fsent.h"
 #include "vertex.h"
 #include "stats.h"
-#include "filesystem.h"
 #include "edge.h"
-#include "fsname.h"
-#include "namespace.h"
 
 llist ns_edge_list = LLIST_INITIALIZER(ns_edge_list);   // active
 static llist freelist = LLIST_INITIALIZER(freelist);    // free

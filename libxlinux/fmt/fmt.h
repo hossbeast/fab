@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include <stdarg.h>
 #include "types.h"
 
 void fmt_apply(char * const restrict dst, size_t dst_size, const char * const restrict fmt, va_list va)

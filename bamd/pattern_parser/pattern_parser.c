@@ -1,8 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include "common/attrs.h"
-#include "narrator.h"
 #include "xlinux/xstdlib.h"
 #include "xlinux/xstring.h"
 

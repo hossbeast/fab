@@ -2,9 +2,7 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 #include "xlinux/xstdlib.h"
-#include "moria/vertex.h"
 #include "bam/ipc.h"
-#include "narrator/growing.h"
 #include "moria/foreach.h"
 #include "bacon/value.h"
 #include "bacon/builder.h"
@@ -14,7 +12,6 @@
 #include "vertex.h"
 #include "vertex/probes.h"
 #include "plugin.h"
-#include "channel.h"
 #include "edge.h"
 #include "varset.h"
 #include "exec.h"

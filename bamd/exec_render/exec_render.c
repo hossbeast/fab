@@ -1,34 +1,18 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include <errno.h>
-
 #include "bacon/value.h"
 #include "bacon/set.h"
-#include "bacon/location.h"
-#include "bacon/writer.h"
-#include "bacon/builder.h"
-#include "valyria/hashtable.h"
-#include "valyria/pstring.h"
-#include "common/attrs.h"
-#include "narrator/fixed.h"
 
-#include "exec_render.h"
 #include "exec.h"
 #include "exec_value.h"
 #include "build_slot.h"
 #include "module.h"
-#include "sysvar.h"
-#include "channel.h"
 #include "system.h"
-#include "events/events.h"
-#include "dependency.h"
-#include "bpe.h"
 #include "vertex.h"
 #include "resolve.h"
 #include "lookup.h"
 
-#include "zcat.h"
 
 void exec_render_context_init(struct exec_render_context * restrict ctx)
 {

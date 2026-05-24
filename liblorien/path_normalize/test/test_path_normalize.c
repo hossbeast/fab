@@ -1,14 +1,10 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include <stdlib.h>
-
-
 #include "xunit.h"
 #include "xunit/assert.h"
 
 #include "path_normalize.h"
-#include "macros.h"
 
 typedef struct path_test {
   XUNITTEST;

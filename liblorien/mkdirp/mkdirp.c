@@ -1,14 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include <stdio.h>
-#include <stdarg.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <sys/types.h>
 #include <string.h>
 
-#include "xlinux/xunistd.h"
 #include "xlinux/xstat.h"
 
 #include "mkdirp.h"

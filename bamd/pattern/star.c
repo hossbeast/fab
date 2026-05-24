@@ -3,12 +3,10 @@
 
 #include "narrator.h"
 #include "xlinux/xstdlib.h"
-#include "common/attrs.h"
 
 #include "star.h"
 #include "fsent.h"
 #include "search.internal.h"
-#include "match.internal.h"
 #include "pattern.internal.h"
 
 //

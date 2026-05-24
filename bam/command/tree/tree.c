@@ -1,22 +1,16 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include "common/attrs.h"
 #include "common/color.h"
 #include "bam/client.h"
 #include "bam/ipc.h"
 #include "bam/list.h"
-#include "bam/events.h"
 #include "bacon/builder.h"
-#include "narrator.h"
 #include "narrator/fixed.h"
 
 #include "tree.h"
 #include "command.h"
 #include "params.h"
-#include "info.h"
-#include "params.h"
-#include "zcat.h"
 
 struct tree_args tree_args = {
     graph : "fs"

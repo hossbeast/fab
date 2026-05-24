@@ -19,7 +19,6 @@ filesystem
 #include "graph.h"
 #include "module_system.h"
 #include "vertex.h"
-#include "descriptor.h"
 #include "stats.h"
 #include "identity.h"
 

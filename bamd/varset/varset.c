@@ -2,21 +2,12 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 #include <errno.h>
-#include <inttypes.h>
 
 #include "common/snarf.h"
-#include "descriptor.h"
-#include "narrator.h"
 #include "narrator/fixed.h"
-#include "bacon/value.h"
-#include "bacon/make.h"
-#include "bacon/merge.h"
 #include "bacon/parser.h"
 #include "bacon/builder.h"
-#include "valyria/pstring.h"
-#include "valyria/hashtable.h"
 #include "xlinux/xstdlib.h"
-#include "moria/edge.h"
 #include "moria/foreach.h"
 
 #include "varset.h"
@@ -24,11 +15,7 @@
 #include "vertex.h"
 #include "mak_parser.h"
 #include "edge.h"
-#include "reconcile.h"
-#include "marshal.h"
 #include "stats.h"
-#include "request_handler.h"
-#include "channel.h"
 #include "system.h"
 #include "events/events.h"
 #include "edges.h"

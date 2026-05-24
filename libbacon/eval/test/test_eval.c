@@ -1,25 +1,17 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include <string.h>
 #include <errno.h>
 
-#include "value.h"
 #include "bacon/assert.h"
 #include "bacon/load.h"
 #include "xunit.h"
-#include "xunit/assert.h"
-#include "narrator.h"
 #include "narrator/load.h"
 #include "narrator/growing.h"
-#include "valyria/pstring.h"
-#include "common/attrs.h"
 
 #include "glue.h"
 #include "eval.h"
-#include "eval.h"
 #include "make.h"
-#include "writer.h"
 
 typedef struct eval_test {
   XUNITTEST;

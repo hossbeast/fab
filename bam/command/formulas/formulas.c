@@ -3,16 +3,8 @@
 
 #include "types.h"
 
-#include "bam/ipc.h"
-#include "bam/client.h"
-#include "bacon/builder.h"
-#include "narrator.h"
-#include "narrator/fixed.h"
 
 #include "formulas.h"
-#include "info.h"
-#include "params.h"
-#include "zcat.h"
 
 //
 // formula

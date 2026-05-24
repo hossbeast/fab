@@ -1,16 +1,11 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include <stdlib.h>
-#include <unistd.h>
-#include <stdio.h>
-
 #include "types.h"
 #include "xlinux/xstdlib.h"
 
 #include "mm.internal.h"
 
-#include "macros.h"
 #include "memblk.def.h"
 
 // per-thread storage

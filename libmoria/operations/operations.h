@@ -5,7 +5,6 @@
 
 #include "types.h"
 #include "parser.h"
-#include "valyria/llist.h"
 
 struct attrs32;
 struct moria_edge;

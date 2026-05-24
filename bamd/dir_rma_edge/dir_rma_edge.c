@@ -6,14 +6,11 @@
 #include "xlinux/xstdlib.h"
 #include "moria/edge.h"
 #include "moria/connect.h"
-#include "narrator.h"
 
 #include "dir_rma_edge.h"
-#include "rule.h"
 #include "graph.h"
 #include "fsent.h"
 #include "rma.h"
-#include "edge.h"
 
 llist drm_list = LLIST_INITIALIZER(drm_list);
 static llist drm_freelist = LLIST_INITIALIZER(drm_freelist);

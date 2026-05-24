@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include "types.h"
-
 #include "valyria/llist.h"
 
 #include "traverse.h"

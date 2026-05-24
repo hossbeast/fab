@@ -21,7 +21,6 @@
 #include "config.h"
 #include "goals.h"
 #include "buildplan.h"
-#include "module.h"
 #include "params.h"
 #include "namespace.h"
 #include "notify.h"

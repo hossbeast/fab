@@ -1,13 +1,10 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include "types.h"
-#include "macros.h"
-
 #include "xdirent.h"
 #include "xfcntl.h"
-#include "xunistd.h"
 
+#include "types.h"
 
 DIR * xopendir(const char * name)
 {

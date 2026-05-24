@@ -3,10 +3,7 @@
 
 #pragma once
 
-#include <sys/time.h>
 #include <sys/resource.h>
-
-struct rlimit;
 
 /// xsetrlimit
 //

@@ -6,7 +6,6 @@
 #include "common/attrs.h"
 
 #include "subsys.h"
-#include "graph.h"
 #include "vertex.h"
 #include "identity.h"
 

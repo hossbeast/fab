@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include <sys/prctl.h>
-
 /// xprctl
 //
 // SUMMARY

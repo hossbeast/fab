@@ -5,18 +5,12 @@
 
 #include "bam/ipc.h"
 #include "bam/client.h"
-#include "bacon/writer.h"
 #include "bacon/builder.h"
-#include "narrator.h"
-#include "narrator/fixed.h"
 #include "bam/vars_tell.h"
 #include "bam/vars_tell.desc.h"
 
-#include "modules.h"
 #include "vars.h"
-#include "info.h"
 #include "params.h"
-#include "zcat.h"
 
 static bam_vars_tell_result result;
 static bamipc_message *texts[64];

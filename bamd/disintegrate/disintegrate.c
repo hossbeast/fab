@@ -5,8 +5,9 @@
 #include "moria/edge.h"
 #include "moria/connect.h"
 
-#include "graph.h"
 #include "disintegrate.h"
+#include "disintegrate/probes.h"
+#include "graph.h"
 #include "dependency.h"
 #include "fsedge.h"
 #include "vertex.h"
@@ -20,7 +21,6 @@
 #include "meta_edge.h"
 #include "edges.h"
 #include "vertices.h"
-#include "disintegrate/probes.h"
 
 static void edge_release(moria_edge * restrict e, graph_invalidation_context * restrict invalidation)
 {

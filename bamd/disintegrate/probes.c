@@ -72,7 +72,7 @@ void disintegrate_reap_probe(const moria_vertex * restrict v)
     return;
   }
 
-  tracef("%3d REAP %p", counter, v);
+  printf("%3d REAP %p\n", counter, v);
   vertex_identity_show(v);
 }
 
@@ -82,7 +82,7 @@ void disintegrate_keep_unlinked_probe(const moria_vertex * restrict v)
     return;
   }
 
-  tracef("%3d keep %p already UNLINKED", counter, v);
+  printf("%3d keep %p already UNLINKED\n", counter, v);
   vertex_identity_show(v);
 }
 
@@ -92,7 +92,7 @@ void disintegrate_keep_exists_probe(const moria_vertex * restrict v)
     return;
   }
 
-  tracef("%3d keep %p still EXISTS", counter, v);
+  printf("%3d keep %p still EXISTS\n", counter, v);
   vertex_identity_show(v);
 }
 
@@ -102,7 +102,7 @@ void disintegrate_keep_has_up_probe(const moria_vertex * restrict v)
     return;
   }
 
-  tracef("%3d keep %p has UP", counter, v);
+  printf("%3d keep %p has UP\n", counter, v);
   vertex_identity_show(v);
 }
 
@@ -112,6 +112,6 @@ void disintegrate_keep_has_down_probe(const moria_vertex * restrict v)
     return;
   }
 
-  tracef("%3d keep %p has DOWN", counter, v);
+  printf("%3d keep %p has DOWN\n", counter, v);
   vertex_identity_show(v);
 }

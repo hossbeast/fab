@@ -9,7 +9,6 @@
 #include "types.h"
 
 #include "probes.h"
-#include "sweeper_thread.h"
 #include "fsent.h"
 
 #include "usdt-sem.h"

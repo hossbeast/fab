@@ -3,9 +3,6 @@
 
 #pragma once
 
-#include <dirent.h>
-#include <stdint.h>
-
 #include "types.h"
 
 #define FTWAT_F       1  // regular file

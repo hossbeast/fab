@@ -12,6 +12,7 @@
 #include <sys/types.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stddef.h>
 #include <linux/limits.h>
 
 #define restrict __restrict

@@ -1,36 +1,18 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include <errno.h>
-#include <inttypes.h>
-
 #include "types.h"
 
 #include "xlinux/xstdlib.h"
-#include "bacon/value.h"
 #include "bacon/registry.h"
 #include "bacon/location.h"
-#include "bacon/writer.h"
 #include "bacon/builder.h"
-#include "yyutil/parser.h"
-#include "valyria/hashtable.h"
-#include "valyria/pstring.h"
-#include "narrator/fixed.h"
-#include "events/events.h"
-#include "system.h"
 
-#include "config.h"
 #include "exec_value.h"
-#include "formula.tokens.h"
-#include "exec.h"
-#include "exec_builder.h"
-#include "exec_render.h"
 #include "selector.h"
-#include "sysvar.h"
 #include "build_slot.h"
 #include "module.h"
 #include "selection.h"
-#include "formula.h"
 #include "pattern.h"
 #include "zcat.h"
 #include "resolve.h"

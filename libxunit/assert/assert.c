@@ -1,17 +1,12 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include <stdarg.h>
-
 #include "common/color.h"
 #include "xlinux/xunistd.h"
 
-#include "xunit.h"
 #include "assert.h"
 #include "type.internal.h"
 #include "info.internal.h"
-
-#include "zcat.h"
 
 uint32_t xunit_assertions_passed;
 uint32_t xunit_assertions_failed;

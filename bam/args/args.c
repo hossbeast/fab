@@ -1,20 +1,14 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include "xlinux/xstdlib.h"
-#include "xlinux/xunistd.h"
 #include "common/assure.h"
 #include "common/snarf.h"
-#include "common/hash.h"
 #include "yyutil/parser.h"
 #include "lorien/path_normalize.h"
 
-#include "args.h"
-#include "info.h"
 #include "params.h"
 
 #include "macros.h"
-#include "zcat.h"
 
 /* flex and bison do not agree on these names */
 #define YYSTYPE yyu_lval

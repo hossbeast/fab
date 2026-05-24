@@ -8,9 +8,6 @@
   #include "match_pattern.tab.h"
   #include "match_pattern.tokens.h"
 
-//#include <unistd.h>
-//#include "types.h"
-
   #define YYSTYPE struct pattern_yystype
   #define YYLTYPE yyu_location
 %}

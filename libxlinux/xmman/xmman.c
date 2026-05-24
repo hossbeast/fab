@@ -1,13 +1,10 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include <errno.h>
-
 #include "types.h"
 
 #include "xmman.h"
 
-#include <string.h>
 
 void * xmmap(void * addr, size_t length, int prot, int flags, int fd, off_t offset)
 {

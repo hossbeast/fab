@@ -1,29 +1,13 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include <errno.h>
-#include <sys/stat.h>
-#include <inttypes.h>
-
-#include "valyria/llist.h"
-#include "valyria/map.h"
-#include "bacon/writer.h"
 #include "bacon/builder.h"
-#include "narrator.h"
-#include "narrator/fixed.h"
-#include "fstree.h"
-#include "fsent.h"
 #include "stats.h"
-#include "events/events.h"
 #include "vertex.h"
 #include "filesystem.h"
-#include "system.h"
 #include "shadow.h"
 #include "subsys.h"
-#include "ref_edge.h"
-#include "symlink.h"
 
-#include "zcat.h"
 
 union stats_filesystem filesystem_stats;
 subsys sys_filesystem;

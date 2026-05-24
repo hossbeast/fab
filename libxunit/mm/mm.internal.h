@@ -12,8 +12,6 @@ mm manages a per-thread allocation memblk that stores the per-thread calltree an
 #include <sys/types.h>
 #include <stdarg.h>
 
-#include "mm.h"
-
 // per-thread memblocks
 extern __thread struct memblk mm_mb;
 

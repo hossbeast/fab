@@ -2,10 +2,8 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 #include "xlinux/xstdlib.h"
-#include "types.h"
 #include "common/attrs.h"
 
-#include "value.h"
 #include "parser.h"
 #include "expr.h"
 #include "location.h"

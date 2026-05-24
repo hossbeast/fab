@@ -1,0 +1,216 @@
+#!/usr/bin/env perl
+#
+# SPDX-License-Identifier: GPL-3.0
+# Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com>
+
+#
+# minimize #includes with expensive, brute force algorithm that rewrites the file in-place
+#
+# usage
+#  cd ~/bam-build ; ~/bam/style/minify ~/bam/bam/main.c <command to build bam/main.o>
+#
+
+use strict;
+use warnings;
+
+use Data::Dumper;
+use Fcntl qw|SEEK_SET|;
+use Cwd;
+
+my $path = shift or die;
+my $file;
+my $stem;
+my @cmd = @ARGV or die;
+my %locs;
+
+($file = $path) =~ s/.*\///;
+($stem = $file) =~ s/\..*$//;
+
+print("file $path (file $file stem $stem)\n");
+print("cmd  " . join(" ", @cmd) . "\n");
+
+my @temps = @cmd;
+push @temps, "-save-temps=cwd";
+
+print("\n");
+print("CMD " . join(" ", @temps) . "\n");
+print("\n");
+
+system(join(" ", @temps));
+exit unless $? == 0;
+
+open my $fd, "<$stem.i" or die("open($stem.i) : $!");
+while(my $line = <$fd>)
+{
+  chomp $line;
+  if($line !~ /^# ([0-9]+) "([^"]+)"( 1)?( 2)?( 3)?( 4)?/) {
+    next;
+  }
+  my $linenum = int($1);
+  my $filepath = $2;
+  my $f1 = $3 || 0;
+  my $f2 = $4 || 0;
+  my $f3 = $5 || 0;
+  my $f4 = $6 || 0;
+
+  $filepath = Cwd::realpath($filepath);
+  if(($filepath ne $path) || !$f2) {
+    next;
+  }
+
+  $locs{$linenum - 2} = { off => -1 };
+}
+close $fd;
+
+# snarf the file
+open $fd, "<$path" or die("open($path) : $!");
+my @lines;
+while(my $line = <$fd>)
+{
+  chomp $line;
+  push @lines, $line;
+}
+close $fd;
+
+# compute line offets
+my $off = 0;
+my %counts;
+$counts{usr} = 0;
+$counts{lib} = 0;
+$counts{sys} = 0;
+for(my $x = 0; $x <= $#lines; $x++)
+{
+  if(!$locs{$x})
+  {
+    $off += length($lines[$x]) + 1;
+    next;
+  }
+  $locs{$x}{off} = $off;
+
+  # normalize leading whitespace
+  $lines[$x] =~ s/^ +//;
+  $lines[$x] = "  " . $lines[$x];
+
+  $off += length($lines[$x]) + 1;
+
+  if(index($lines[$x], "<") > -1) {
+    $locs{$x}{type} = "sys";
+  } elsif(index($lines[$x], "/") > -1) {
+    $locs{$x}{type} = "lib";
+  } else {
+    $locs{$x}{type} = "usr";
+  }
+  $counts{$locs{$x}{type}}++;
+}
+
+print("#includes found ...\n");
+for(my $x = 0; $x <= $#lines; $x++)
+{
+  next unless $locs{$x};
+  print(($x + 1) . " +$locs{$x}{off} $lines[$x]\n");
+}
+
+if(($counts{usr} + $counts{lib} + $counts{sys}) >= 32)
+{
+  print("too many permutations : usr $counts{usr} + lib $counts{lib} + sys $counts{sys}\n");
+  exit(1);
+}
+
+$counts{sys} = ((1 << $counts{sys}) - 1);
+$counts{lib} = ((1 << $counts{lib}) - 1);
+$counts{usr} = ((1 << $counts{usr}) - 1);
+print("combinations : usr $counts{usr} + lib $counts{lib} + sys $counts{sys}\n");
+
+if(($counts{usr} + $counts{lib} + $counts{sys}) > 1_000_000)
+{
+  print("too many permutations : usr $counts{usr} + lib $counts{lib} + sys $counts{sys}\n");
+  exit(1);
+}
+
+# rewrite the file with spaces inserted on all include lines
+open $fd, ">$path" or die("open($path) : $!");
+for(my $x = 0; $x <= $#lines; $x++)
+{
+  print $fd "$lines[$x]\n";
+}
+close $fd;
+
+# now, the algorithm ...
+my %bitsets;
+my %keysets;
+for my $set (qw|usr lib sys|)
+{
+  my $result = 0;
+  my $count = $counts{$set};
+
+  @{$keysets{$set}} = grep {
+    $locs{$_}{type} eq $set
+  } keys %locs;
+  open $fd, "+<$path" or die("open($path) : $!");
+
+  # minify ...
+  for(my $x = 0; $x <= $count; $x++)
+  {
+    for(my $y = 0; $y <= $#{$keysets{$set}}; $y++)
+    {
+      my $line = $keysets{$set}->[$y];
+      my $loc = $locs{$line};
+
+      sysseek($fd, $$loc{off}, SEEK_SET) or die $!;
+      if(($x & (1 << $y)) == 0) {
+        syswrite($fd, "//");
+      } else {
+        syswrite($fd, "  ");
+      }
+    }
+
+    # run the command, see if it compiles
+    system(join(" ", @cmd) . " 1>/dev/null 2>&1");
+    $result = $?;
+    printf("[%5d/%5d] result %d\n", $x, $count, $result);
+
+    if($result == 0)
+    {
+      $bitsets{$set} = $x;
+      last;
+    }
+  }
+  close $fd;
+
+  if($result != 0)
+  {
+    print("$set has no solution\n");
+    exit(1);
+  }
+
+  print("$set bitset $bitsets{$set}\n");
+}
+
+# now, rewrite the file with those lines removed
+open $fd, ">$path" or die("open($path) : $!");
+OUTER : for(my $x = 0; $x <= $#lines; $x++)
+{
+  if(!$locs{$x}) {
+    print $fd "$lines[$x]\n";
+    next;
+  }
+
+  for my $set (qw|usr lib sys|)
+  {
+    for(my $y = 0; $y <= $#{$keysets{$set}}; $y++)
+    {
+      my $line = $keysets{$set}->[$y];
+      my $loc = $locs{$line};
+
+      next unless $x == $line;
+
+      if(($bitsets{$set} & (1 << $y)) == 0) {
+        next OUTER;
+      }
+
+      $lines[$x] =~ s/^ +//;
+      print $fd "$lines[$x]\n";
+    }
+  }
+}
+close $fd;

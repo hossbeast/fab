@@ -5,7 +5,6 @@
 
 #include "locks.h"
 #include "threads.h"
-#include "locks.h"
 
 #include <stdio.h>
 #include <unistd.h>

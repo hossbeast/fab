@@ -1,24 +1,15 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include "xlinux/xstdlib.h"
-
 #include "bacon/load.h"
 #include "bacon/assert.h"
 
 #include "xunit.h"
-#include "xunit/assert.h"
-#include "narrator.h"
 #include "narrator/growing.h"
 
 
-#include "value.h"
-#include "value.h"
-#include "make.h"
 #include "glue.h"
 
-#include "macros.h"
-#include "common/attrs.h"
 
 typedef struct parser_test {
   XUNITTEST;

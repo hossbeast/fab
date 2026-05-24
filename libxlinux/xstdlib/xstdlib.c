@@ -2,13 +2,8 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 #include <unistd.h>
-#include <errno.h>
-#include <string.h>
-#include <sys/syscall.h>
 #include <fcntl.h>
 
-#include "types.h"
-#include "macros.h"
 
 #include "xstdlib.h"
 

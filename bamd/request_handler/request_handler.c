@@ -10,7 +10,6 @@
 #include "narrator.h"
 #include "narrator/growing.h"
 #include "narrator/fixed.h"
-#include "narrator/growing.h"
 #include "xlinux/xstdlib.h"
 #include "bacon/value.h"
 #include "bacon/builder.h"
@@ -29,7 +28,6 @@
 #include "request.h"
 #include "request_parser.h"
 #include "stats.h"
-#include "stats.h"
 #include "dependency.h"
 #include "bpe.h"
 #include "channel.h"
@@ -46,7 +44,6 @@
 #include "shadow.h"
 #include "buildplan.h"
 #include "tree_list.h"
-#include "events/events.h"
 #include "fstree.h"
 #include "module_system.h"
 

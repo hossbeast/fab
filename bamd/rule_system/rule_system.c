@@ -30,7 +30,6 @@
 #include "meta_edge.h"
 #include "edges.h"
 #include "vertices.h"
-#include "rma.h"
 #include "disintegrate.h"
 
 #include "times.h"

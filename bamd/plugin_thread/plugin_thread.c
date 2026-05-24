@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <sys/uio.h>
+#include <linux/prctl.h>
 
 #include "bam/sigutil.h"
 #include "bam/ipc.h"
@@ -35,7 +36,6 @@
 #include "buildplan.h"
 #include "build.h"
 #include "request.h"
-#include "build.h"
 #include "fsent.h"
 #include "vertex.h"
 #include "stats.h"

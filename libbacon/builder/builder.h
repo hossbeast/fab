@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include <inttypes.h>
-
 #include "bacon/writer.h"
 
 void bacon_builder_pop_set(bacon_writer ** restrict writerp)

@@ -2,7 +2,6 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 #include <inttypes.h>
-#include <stdlib.h>
 
 #include "common/attrs.h"
 #include "narrator.h"

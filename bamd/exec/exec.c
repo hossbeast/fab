@@ -2,19 +2,11 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 #include <stdio.h>
-#include <inttypes.h>
 
-#include "xlinux/xstdlib.h"
-#include "bacon/value.h"
-#include "bacon/writer.h"
 #include "bacon/builder.h"
 
-#include "exec_builder.h"
 #include "exec.h"
-#include "exec_value.h"
-
-#include "common/assure.h"
-#include "common/attrs.h"
+#include "macros.h"
 
 void exec_free(exec * e)
 {

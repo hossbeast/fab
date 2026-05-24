@@ -3,7 +3,6 @@
 
 #include "narrator/load.h"
 
-#include "types.h"
 
 #include "load.h"
 

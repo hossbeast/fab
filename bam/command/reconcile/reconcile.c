@@ -5,7 +5,6 @@
 #include "bam/client.h"
 #include "bam/events.h"
 
-#include "reconcile.h"
 #include "info.h"
 #include "params.h"
 #include "zcat.h"

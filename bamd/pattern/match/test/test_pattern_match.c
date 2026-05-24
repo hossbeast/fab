@@ -4,17 +4,9 @@
 #include "xunit.h"
 #include "xunit/assert.h"
 
-#include "xlinux/xstdlib.h"
-#include "moria/graph.h"
-#include "moria/vertex.h"
 #include "moria/parser.h"
-#include "valyria/list.h"
-#include "valyria/hashtable.h"
-#include "narrator.h"
-#include "narrator/growing.h"
 #include "bacon/parser.h"
 #include "bacon/load.h"
-#include "bacon/builder.h"
 
 #include "match.internal.h"
 #include "pattern_parser.h"
@@ -25,7 +17,6 @@
 #include "fstree.h"
 #include "node_operations_test.h"
 
-#include "zcat.h"
 
 typedef struct pattern_match_test {
   XUNITTEST;

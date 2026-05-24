@@ -3,8 +3,6 @@
 
 #include "types.h"
 #include "bacon/builder.h"
-#include "narrator.h"
-#include "narrator/fixed.h"
 
 #include "bam/ipc.h"
 #include "bam/client.h"
@@ -12,9 +10,7 @@
 #include "bam/envs_tell.desc.h"
 
 #include "envs.h"
-#include "info.h"
 #include "params.h"
-#include "zcat.h"
 #include "args.h"
 
 static bam_envs_tell_result result;

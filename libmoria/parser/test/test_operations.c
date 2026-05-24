@@ -1,18 +1,13 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include "types.h"
-
 #include "xunit.h"
 #include "xunit/assert.h"
-#include "narrator.h"
 #include "narrator/growing.h"
-#include "valyria/list.h"
 
 #include "moria.h"
 #include "parser.internal.h"
 #include "graph.internal.h"
-#include "vertex.h"
 #include "dispatch.h"
 
 typedef struct operations_test {

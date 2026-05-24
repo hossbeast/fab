@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include "types.h"
 #include "parser.h"
 
 struct moria_vertex;

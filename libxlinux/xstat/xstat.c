@@ -1,11 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include <string.h>
 #include <errno.h>
-
-#include "types.h"
-#include "macros.h"
+#include <string.h>
 
 #include "xstat.h"
 #include "fmt.h"

@@ -3,7 +3,6 @@
 
 #include "xlinux/xstdlib.h"
 #include "narrator.h"
-#include "common/attrs.h"
 #include "bacon/builder.h"
 #include "bacon/value.h"
 
@@ -14,7 +13,6 @@
 
 #include "generate.internal.h"
 #include "search.internal.h"
-#include "match.internal.h"
 
 //
 // static

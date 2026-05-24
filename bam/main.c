@@ -31,7 +31,6 @@
 #include "kill.h"
 #include "params.h"
 #include "info.h"
-#include "params.h"
 
 #include "barriers.h"
 #include "times.h"

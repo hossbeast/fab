@@ -1,33 +1,19 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
-
 #include "moria/load.h"
 #include "moria.h"
-#include "moria/traverse.h"
-#include "moria/edge.h"
 #include "moria/foreach.h"
-#include "xlinux/xstdlib.h"
 
 #include "xunit.h"
 #include "xunit/assert.h"
-#include "valyria/array.h"
 #include "valyria/list.h"
-#include "valyria/pstring.h"
 
-#include "narrator.h"
-#include "narrator/growing.h"
 #include "graph.internal.h"
-#include "edge.internal.h"
-#include "vertex.h"
 #include "parser.internal.h"
 #include "dispatch.h"
 #include "linear_search.h"
 
-#include "macros.h"
 #include "zcat.h"
 
 #define ATTR_WEAK   0x1

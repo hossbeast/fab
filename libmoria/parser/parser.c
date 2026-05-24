@@ -8,7 +8,6 @@
 /* the token enums shadow each other exclude all but one set */
 #define OPERATIONS_YYTOKENTYPE
 
-#include "xlinux/xstdlib.h"
 
 #include "graph.tab.h"
 #include "graph.tokens.h"
@@ -19,10 +18,6 @@
 #include "operations.lex.h"
 #include "operations.states.h"
 
-#include "parser.h"
-#include "edge.h"
-#include "connect.h"
-#include "dispatch.h"
 
 static YYU_VTABLE(graph_vtable, graph, graph);
 static YYU_VTABLE(operations_vtable, operations, operations);

@@ -4,7 +4,6 @@
 #include "types.h"
 
 #include "xlinux/xstdlib.h"
-#include "moria/foreach.h"
 #include "bacon/expr.h"
 #include "bacon/parser.h"
 #include "valyria/llist.h"
@@ -12,7 +11,6 @@
 #include "block.h"
 #include "rule.h"
 #include "import.h"
-#include "edge.h"
 
 static llist freelist = LLIST_INITIALIZER(freelist);
 

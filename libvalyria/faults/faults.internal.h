@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include "types.h"
 #include "faults.h"
 
 #define FAULTS_MAX_ENTRIES 8

@@ -1,19 +1,14 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include "common/attrs.h"
 #include "command.h"
 #include "bam/ipc.h"
 #include "bam/client.h"
 #include "bam/events.h"
 #include "bacon/builder.h"
-#include "narrator.h"
 #include "narrator/fixed.h"
 #include "common/parseint.h"
 
-#include "params.h"
-#include "info.h"
-#include "params.h"
 #include "zcat.h"
 
 typeof(g_cmd) g_cmd = (typeof(*g_cmd)[]) {{ }};

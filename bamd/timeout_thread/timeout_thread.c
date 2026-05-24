@@ -3,14 +3,10 @@
 
 #include <unistd.h>
 #include <errno.h>
-#include <signal.h>
-#include <inttypes.h>
 
 #include "xlinux/xpthread.h"
-#include "xlinux/xunistd.h"
 #include "xlinux/xsignal.h"
 #include "xlinux/xtime.h"
-#include "bam/ipc.h"
 #include "bacon/value.h"
 #include "bacon/location.h"
 
@@ -18,7 +14,6 @@
 #include "params.h"
 #include "config.h"
 #include "system.h"
-#include "channel.h"
 #include "events/events.h"
 
 #include "atomics.h"

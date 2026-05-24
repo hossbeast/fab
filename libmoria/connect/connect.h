@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include "types.h"
 #include "valyria/rbtree.h"
 
 struct moria_vertex;

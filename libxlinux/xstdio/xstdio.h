@@ -5,7 +5,6 @@
 
 #include <stdarg.h>
 
-#include "types.h"
 
 /// xvdprintf
 //

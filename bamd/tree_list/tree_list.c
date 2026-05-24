@@ -1,19 +1,14 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include "moria.h"
 #include "bam/ipc.h"
 #include "bam/list.h"
 #include "common/attrs.h"
 
 #include "tree_list.h"
-#include "graph.h"
-#include "vertex.h"
 #include "request_handler.h"
-#include "request.h"
 #include "command.h"
 #include "fsent.h"
-#include "channel.h"
 #include "edge.h"
 
 #include "marshal.h"

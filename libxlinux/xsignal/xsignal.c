@@ -2,9 +2,6 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 #include <errno.h>
-#include <signal.h>
-#include <string.h>
-#include <unistd.h>
 #include <sys/syscall.h>
 
 #include "types.h"

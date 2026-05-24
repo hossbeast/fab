@@ -2,21 +2,16 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 #include <stdio.h>
-#include <inttypes.h>
 
 #include "bam/client.h"
 #include "bam/events.h"
 #include "bam/ipc.h"
-#include "narrator.h"
 #include "narrator/fixed.h"
 #include "bacon/builder.h"
 #include "common/parseint.h"
 
-#include "autobuild.h"
 #include "build.h"
 
-#include "info.h"
-#include "params.h"
 #include "params.h"
 
 static uint64_t requestid;

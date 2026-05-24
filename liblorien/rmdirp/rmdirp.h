@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include <stdarg.h>
-
 /// rmdirp
 //
 // SUMMARY

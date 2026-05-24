@@ -2,7 +2,6 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 #include <time.h>
-#include <errno.h>
 
 #include "xlinux/xsignal.h"
 #include "bam/probes.h"

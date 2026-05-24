@@ -3,7 +3,6 @@
 
 #include "registry.internal.h"
 
-#include "macros.h"
 
 static rbtree registry;
 

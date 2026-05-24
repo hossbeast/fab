@@ -3,20 +3,12 @@
 
 #include <string.h>
 
-#include "moria/vertex.h"
-#include "narrator.h"
 #include "narrator/fixed.h"
-#include "bacon/writer.h"
-#include "valyria/llist.h"
 #include "xlinux/xstdlib.h"
-#include "xlinux/xstring.h"
 #include "bacon/builder.h"
 
 #include "pattern.internal.h"
 #include "section.h"
-#include "segment.h"
-#include "module.h"
-#include "fsent.h"
 
 #include "common/attrs.h"
 #include "zcat.h"

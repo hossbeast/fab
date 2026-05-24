@@ -1,14 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
-
-#include "types.h"
-
-#include "faults.internal.h"
-
 #if FAULT_INJECTION
 bool faults[VALYRIA_FAULT_RANGE_AFTER];
 char *fault_names[VALYRIA_FAULT_RANGE_AFTER] = {

@@ -1,12 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include "valyria/pstring.h"
-#include "valyria/hashtable.h"
-
-#include "common/hash.h"
-#include "common/attrs.h"
-
 #include "value.h"
 #include "set.h"
 #include "registry.internal.h"

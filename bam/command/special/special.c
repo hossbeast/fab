@@ -1,16 +1,12 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include "common/attrs.h"
-#include "command.h"
 #include "bam/ipc.h"
 #include "bam/client.h"
 #include "bacon/builder.h"
-#include "narrator.h"
 #include "narrator/fixed.h"
 
 #include "special.h"
-#include "info.h"
 #include "params.h"
 
 /* describe */

@@ -16,11 +16,6 @@ REMARKS
 
 */
 
-#include <string.h>
-
-#include "types.h"
-
-#include "xunit.h"
 #include "xunit/info.h"
 
 #include "macros.h"

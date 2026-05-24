@@ -3,10 +3,8 @@
 
 #pragma once
 
-#include <sys/types.h>
 #include <sys/wait.h>
 
-#include "types.h"
 
 /// xwait
 //

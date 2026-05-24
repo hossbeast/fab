@@ -2,13 +2,8 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 #include <errno.h>
+#include "types.h"
 
-#include "valyria/pstring.h"
-#include "valyria/hashtable.h"
-
-#include "common/attrs.h"
-
-#include "value.h"
 #include "clone.h"
 #include "eval.h"
 #include "make.h"
@@ -16,10 +11,6 @@
 #include "coerce.h"
 #include "set.h"
 #include "merge.h"
-
-#include "macros.h"
-
-#include "narrator.h"
 
 #undef CASE2
 #undef CASE3

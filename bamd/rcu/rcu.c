@@ -19,7 +19,6 @@
 
 #include "locks.h"
 #include "times.h"
-#include "rcu.h"
 #include "zcat.h"
 #include "subsys.h"
 

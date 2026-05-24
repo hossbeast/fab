@@ -3,17 +3,10 @@
 
 #include <errno.h>
 #include <sys/syscall.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include <inttypes.h>
-#include <sys/mman.h>
-#include <sys/wait.h>
-
-#include "types.h"
 
 #include "narrator/load.h"
 
-#include "xlinux/xstdlib.h"
 #include "xlinux/xtime.h"
 #include "xlinux/xwait.h"
 #include "xlinux/xresource.h"
@@ -30,7 +23,6 @@
 #include "unit.h"
 #include "cores.h"
 #include "common/assure.h"
-#include "macros.h"
 
 __attribute__((weak)) __thread int32_t tid;
 __attribute__((weak)) __thread int *errnop;

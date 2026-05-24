@@ -3,19 +3,15 @@
 
 #include <unistd.h>
 #include <errno.h>
-#include <inttypes.h>
 #include <fcntl.h>
 
 #include "types.h"
 
 #include "xlinux/xstdlib.h"
-#include "xlinux/xstring.h"
-#include "xlinux/xunistd.h"
 #include "common/sha1.h"
 #include "common/bech32.h"
 #include "lorien/path_normalize.h"
 
-#include "info.h"
 #include "params.h"
 #include "zcat.h"
 

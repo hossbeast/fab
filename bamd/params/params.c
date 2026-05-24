@@ -3,28 +3,13 @@
 
 #include <time.h>
 #include <stdio.h>
-#include <inttypes.h>
-
-#include "common/attrs.h"
-#include "xlinux/xstdlib.h"
-#include "xlinux/xstring.h"
-#include "xlinux/xfcntl.h"
-#include "xlinux/xunistd.h"
-#include "bacon/builder.h"
-#include "narrator/fixed.h"
-#include "narrator/units.h"
-#include "moria/vertex.h"
+#include <unistd.h>
 
 #include "args.h"
 #include "params.h"
 #include "fsent.h"
-#include "timeout_thread.h"
-#include "system.h"
-#include "run_thread.h"
-#include "system.h"
 
 #include "macros.h"
-#include "times.h"
 #include "zcat.h"
 
 struct g_params g_params;

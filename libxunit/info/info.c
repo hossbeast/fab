@@ -2,12 +2,9 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 #include <string.h>
-#include <stdio.h>
 
 #include "info.internal.h"
 #include "mm.internal.h"
-
-#include "macros.h"
 
 // per-thread info staging
 __thread info * xunit_infos_staging;

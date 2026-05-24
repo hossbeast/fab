@@ -1,26 +1,18 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include <inttypes.h>
-
-#include "bacon/value.h"
 #include "bacon/make.h"
 #include "bacon/parser.h"
 
 #include "sysvar.h"
-#include "build_slot.h"
-#include "bpe.h"
 #include "exec_builder.h"
 #include "exec_render.h"
 #include "module.h"
-#include "rma.h"
 #include "vertex.h"
 #include "edges.h"
 #include "vertices.h"
 #include "params.h"
 #include "args.h"
-#include "formula_record.h"
-#include "build_record.h"
 #include "git-state.h"
 
 static bacon_parser *sysvar_parser;

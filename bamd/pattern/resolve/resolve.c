@@ -1,10 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include "bacon/value.h"
-#include "moria.h"
-#include "moria/graph.h"
-#include "moria/vertex.h"
 #include "resolve.h"
 #include "fsent.h"
 #include "vertex.h"

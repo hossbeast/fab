@@ -2,7 +2,6 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 #include <stdio.h>
-#include <inttypes.h>
 #include <string.h>
 #include <getopt.h>
 
@@ -14,7 +13,6 @@
 #include "args.h"
 #include "common/parseint.h"
 #include "common/sha1.h"
-#include "filesystem.h"
 #include "common/attrs.h"
 #include "git-state.h"
 #include "times.h"

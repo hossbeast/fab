@@ -1,20 +1,16 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include "common/attrs.h"
 #include "bam/client.h"
 #include "bam/ipc.h"
 #include "bacon/builder.h"
-#include "narrator.h"
 #include "narrator/fixed.h"
 
 #include "plan.h"
 #include "args.h"
 #include "command.h"
-#include "info.h"
 #include "params.h"
 
-#include "zcat.h"
 
 struct plan_args plan_args;
 static uint64_t requestid;

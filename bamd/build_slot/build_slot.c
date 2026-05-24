@@ -4,6 +4,7 @@
 #include <sys/syscall.h>
 #include <sys/wait.h>
 #include <errno.h>
+#include <linux/prctl.h>
 
 #include "types.h"
 

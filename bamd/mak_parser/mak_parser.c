@@ -2,27 +2,17 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 #include "xlinux/xstdlib.h"
-#include "bacon/parser.h"
-#include "bacon/make.h"
-#include "bacon/location.h"
-#include "common/attrs.h"
 
-#include "narrator.h"
 
 /* flex and bison do not agree on these names */
 #define YYSTYPE MAK_YYSTYPE
 #define YYLTYPE yyu_location
 
-#include "mak_parser/glue.h"
-#include "mak_parser.h"
 #include "mak.tab.h"
 #include "mak.tokens.h"
 #include "mak.lex.h"
 #include "mak.states.h"
 
-#include "mak_parser.h"
-#include "config.h"
-#include "zcat.h"
 
 static YYU_VTABLE(vtable, mak, mak);
 

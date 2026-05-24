@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include "valyria/rbtree.h"
 #include "moria.h"
 #include "foreach.h"
 

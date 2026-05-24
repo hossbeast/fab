@@ -5,21 +5,13 @@
 #include "xunit/assert.h"
 
 #include "xlinux/xstdlib.h"
-#include "moria/graph.h"
-#include "moria/vertex.h"
 #include "moria/parser.h"
-#include "valyria/list.h"
-#include "valyria/hashtable.h"
-#include "narrator.h"
 #include "narrator/growing.h"
-#include "bacon/value.h"
 #include "bacon/parser.h"
 #include "bacon/load.h"
-#include "bacon/builder.h"
 
 #include "generate.internal.h"
 #include "search.internal.h"
-#include "pattern_parser.h"
 #include "pattern_parser.internal.h"
 #include "pattern.h"
 #include "fsent.h"
@@ -28,9 +20,7 @@
 #include "node_operations_test.h"
 #include "fstree.h"
 #include "args.h"
-#include "edges.h"
 #include "vertices.h"
-#include "rule.h"
 
 typedef struct pattern_generate_test {
   XUNITTEST;

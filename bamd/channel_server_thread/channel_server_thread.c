@@ -5,10 +5,8 @@
 #include <sys/syscall.h>
 #include <errno.h>
 
-#include "bam/ipc.h"
 #include "bam/sigutil.h"
 #include "xlinux/xpthread.h"
-#include "xlinux/xunistd.h"
 
 #include "channel_server_thread.h"
 #include "channel_thread.h"

@@ -6,11 +6,7 @@
 
 #include "types.h"
 
-#include "xlinux/xpthread.h"
 #include "xlinux/xsignal.h"
-#include "xlinux/xunistd.h"
-#include "valyria/llist.h"
-#include "bam/ipc.h"
 #include "bam/sigutil.h"
 
 #include "monitor_thread.h"

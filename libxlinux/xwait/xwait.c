@@ -2,11 +2,8 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 #include <errno.h>
-#include <sys/wait.h>
 
 #include "types.h"
-#include "macros.h"
-
 #include "xwait.h"
 
 void xwait(int * restrict status)

@@ -2,10 +2,7 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 #include <errno.h>
-#include <sys/stat.h>
-#include <inttypes.h>
 
-#include "valyria/llist.h"
 #include "narrator/fixed.h"
 #include "bacon/builder.h"
 #include "lorien/path_normalize.h"

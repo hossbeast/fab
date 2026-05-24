@@ -2,20 +2,15 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 #include "moria/edge.h"
-#include "moria/vertex.h"
 #include "moria/connect.h"
 #include "valyria/llist.h"
-#include "narrator.h"
 #include "xlinux/xstdlib.h"
 
 #include "module_edge.h"
 #include "fsent.h"
-#include "fsedge.h"
 #include "vertex.h"
 #include "edge.h"
 #include "reconcile.h"
-#include "edges.h"
-#include "vertices.h"
 
 llist module_edge_list = LLIST_INITIALIZER(module_edge_list);   // active list
 static llist freelist = LLIST_INITIALIZER(freelist);            // freelist

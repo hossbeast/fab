@@ -12,6 +12,7 @@ SUMMARY
 */
 
 #include <stdarg.h>
+
 #include "types.h"
 
 /* initialize a string */

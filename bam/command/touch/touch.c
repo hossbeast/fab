@@ -5,15 +5,11 @@
 
 #include "bam/client.h"
 #include "bam/ipc.h"
-#include "narrator.h"
 #include "narrator/fixed.h"
 #include "bacon/builder.h"
-#include "narrator.h"
-#include "narrator/fixed.h"
 
 #include "touch.h"
 #include "command.h"
-#include "info.h"
 #include "params.h"
 
 static uint64_t requestid;

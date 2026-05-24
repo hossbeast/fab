@@ -6,7 +6,6 @@
 #include "types.h"
 
 #include "narrator.h"
-#include "bacon/writer.h"
 #include "bacon/value.h"
 #include "bacon/builder.h"
 #include "xlinux/xstdlib.h"
@@ -16,11 +15,9 @@
 #include "word.h"
 #include "generate.internal.h"
 #include "search.internal.h"
-#include "match.internal.h"
 #include "fsent.h"
 #include "zcat.h"
 
-#include "common/attrs.h"
 
 //
 // static

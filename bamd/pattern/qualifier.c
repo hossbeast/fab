@@ -7,11 +7,9 @@
 #include "bacon/builder.h"
 
 #include "qualifier.h"
-#include "segment.h"
 #include "pattern.internal.h"
 #include "generate.internal.h"
 #include "search.internal.h"
-#include "match.internal.h"
 
 #include "fsent.h"
 #include "vertex.h"

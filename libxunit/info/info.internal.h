@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include "types.h"
 #include "info.h"
 
 struct memblk;

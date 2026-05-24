@@ -1,35 +1,21 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include "bam/sigutil.h"
 #include "bam/events.h"
-#include "xlinux/xpthread.h"
 
 #include "reconcile.h"
-#include "channel.h"
+#include "graph.h"
 #include "config_system.h"
-#include "formula.h"
 #include "fsent.h"
-#include "request_handler.h"
-#include "module.h"
-#include "params.h"
 #include "rule_system.h"
-#include "stats.h"
+#include "rule.h"
 #include "walker.h"
 #include "system.h"
-#include "filesystem.h"
-#include "meta_edge.h"
 #include "bpe.h"
-#include "namespace.h"
-#include "varset.h"
 #include "plugin_system.h"
-#include "rma.h"
 #include "events/events.h"
 #include "symlink.h"
-#include "fsent_dir.h"
-
-#include "atomics.h"
-
+#include "rcu.h"
 
 uint16_t reconciliation_epoch;
 

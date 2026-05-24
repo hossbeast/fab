@@ -2,14 +2,10 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 #include "xlinux/xstdlib.h"
-
-#include "moria/edge.h"
-#include "moria/vertex.h"
 #include "moria/foreach.h"
 #include "narrator.h"
 #include "narrator/fixed.h"
 #include "bacon/builder.h"
-#include "valyria/hashtable.h"
 #include "common/hash.h"
 
 #include "bpe.h"
@@ -20,23 +16,17 @@
 #include "formula.h"
 #include "rma.h"
 #include "edges.h"
-#include "vertices.h"
-#include "rule.h"
-#include "channel.h"
 #include "system.h"
 #include "events/events.h"
 #include "shadow.h"
 #include "formula_record.h"
 #include "special_edge.h"
 #include "meta_edge.h"
-#include "detail.h"
 #include "build_record.h"
-#include "ref_edge.h"
 #include "identity.h"
 #include "disintegrate.h"
 
 #include "zcat.h"
-#include "times.h"
 
 llist bpe_list = LLIST_INITIALIZER(bpe_list);                 // active
 static llist bpe_freelist = LLIST_INITIALIZER(bpe_freelist);  // free

@@ -1,20 +1,13 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include <inttypes.h>
-
-#include "common/attrs.h"
 #include "bam/client.h"
 #include "bam/ipc.h"
 #include "bacon/builder.h"
-#include "narrator.h"
 #include "narrator/fixed.h"
 
 #include "stats.h"
-#include "info.h"
 #include "params.h"
-#include "zcat.h"
-#include "marshal.h"
 
 typeof(stats_command) stats_command;
 

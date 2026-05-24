@@ -3,9 +3,7 @@
 
 #include "xlinux/xstdlib.h"
 
-#include "narrator.h"
 
-#include "value.h"
 #include "location.h"
 
 /* flex and bison do not agree on these names */
@@ -30,7 +28,6 @@
 #include "expr.tab.h"
 #include "expr.tokens.h"
 
-#include "common/attrs.h"
 
 static YYU_VTABLE(value_vtable, value, value);
 static YYU_VTABLE(value_set_vtable, value, value_set);

@@ -21,7 +21,6 @@
 #include "dependency.h"
 #include "filesystem.h"
 #include "selection.h"
-#include "dependency.h"
 #include "disintegrate.h"
 #include "graph.h"
 #include "bpe.h"

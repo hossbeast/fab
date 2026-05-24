@@ -14,7 +14,6 @@
 #include "vertex.h"
 #include "descriptor.h"
 #include "stats.h"
-#include "types.h"
 
 struct bacon_writer;
 struct channel;

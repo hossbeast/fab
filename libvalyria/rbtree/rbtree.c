@@ -1,15 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include <stdlib.h>
-#include <string.h>
-
-#include "xlinux/xstdlib.h"
-
 #include "rbtree.h"
-#include "llist.h"
 
-#include "macros.h"
 #include "zcat.h"
 
 rbnode rbleaf = { color : RB_BLACK, parent : &rbleaf };

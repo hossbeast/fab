@@ -3,16 +3,11 @@
 
 #include "valyria/map.h"
 #include "bacon/builder.h"
-#include "moria.h"
-#include "moria/vertex.h"
-#include "narrator.h"
 #include "narrator/units.h"
 #include "narrator/fixed.h"
 #include "bam/ipc.h"
 
 #include "notify.h"
-#include "vertex.h"
-#include "notify_thread.h"
 #include "fsent.h"
 #include "request_handler.h"
 #include "shadow.h"
@@ -20,7 +15,6 @@
 #include "subsys.h"
 #include "sweeper_thread.h"
 
-#include "zcat.h"
 
 llist notify_watched_files;
 union stats_notify notify_stats;

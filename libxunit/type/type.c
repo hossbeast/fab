@@ -1,15 +1,11 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include <stddef.h>
-#include <stdarg.h>
 #include <inttypes.h>
 
 #include "type.h"
 
-#include "xunit.h"
 #include "info.h"
-#include "type.internal.h"
 
 #include "zcat.h"
 

@@ -11,7 +11,6 @@
 #include "vertex.h"
 #include "descriptor.h"
 #include "stats.h"
-#include "types.h"
 #include "lookup.h"
 
 struct hashtable;

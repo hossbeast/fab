@@ -2,13 +2,11 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 #include "bam/client.h"
-#include "bam/events.h"
 #include "bam/ipc.h"
 
 #include "adhoc.h"
 
 #include "zcat.h"
-#include "info.h"
 #include "params.h"
 
 struct adhoc_args adhoc_args;

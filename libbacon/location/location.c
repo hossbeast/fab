@@ -1,17 +1,11 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include "valyria/hashtable.h"
-#include "valyria/pstring.h"
-#include "valyria/hashtable.h"
-#include "valyria/llist.h"
 #include "xlinux/xstdlib.h"
-#include "yyutil/grammar.h"
 
 #include "location.h"
 #include "parser.h"
 
-#include "common/attrs.h"
 
 bacon_location * bacon_location_alloc(bacon_parser * restrict parser)
 {

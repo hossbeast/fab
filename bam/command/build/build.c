@@ -14,21 +14,16 @@
 #include "bam/client.h"
 #include "bam/events.h"
 #include "bam/ipc.h"
-#include "narrator.h"
 #include "narrator/fixed.h"
 #include "valyria/hashtable.h"
 #include "valyria/llist.h"
 #include "xlinux/xstdlib.h"
 #include "bacon/builder.h"
-#include "narrator.h"
-#include "narrator/fixed.h"
 
 #include "build.h"
 #include "params.h"
 #include "args.h"
 #include "command.h"
-#include "info.h"
-#include "params.h"
 
 static uint64_t requestid;
 static uint64_t eventsubid;

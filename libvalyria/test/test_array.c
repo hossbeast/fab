@@ -2,8 +2,6 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 #include <stdarg.h>
-#include <stdlib.h>
-#include <stdio.h>
 
 #include "array.h"
 #include "unit.h"

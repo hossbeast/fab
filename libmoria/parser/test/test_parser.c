@@ -1,11 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include "types.h"
-
-#include "narrator.h"
 #include "narrator/growing.h"
-#include "xlinux/xstdlib.h"
 #include "xunit.h"
 #include "xunit/assert.h"
 #include "moria/load.h"
@@ -15,7 +11,6 @@
 #include "parser.internal.h"
 #include "dispatch.h"
 
-#include "macros.h"
 
 typedef struct moria_parser_test {
   XUNITTEST;

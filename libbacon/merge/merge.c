@@ -1,19 +1,13 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include "valyria/hashtable.h"
-
-#include "value.h"
 #include "merge.h"
 #include "clone.h"
 #include "make.h"
 #include "parser.h"
 #include "set.h"
 
-#include "macros.h"
 
-#include "narrator.h"
-#include "common/attrs.h"
 
 void bacon_merge(bacon_parser * restrict parser, bacon_value ** restrict dstp, const bacon_value * restrict src)
 {

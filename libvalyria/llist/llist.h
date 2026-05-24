@@ -3,6 +3,9 @@
 
 #pragma once
 
+#include "types.h"
+#include "macros.h"
+
 /*
 
 SUMMARY
@@ -13,8 +16,6 @@ REMARKS
 
 */
 
-#include "types.h"
-#include "macros.h"
 
 typedef struct llist {
   struct llist *next;

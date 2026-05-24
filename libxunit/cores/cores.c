@@ -1,14 +1,9 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include "narrator.h"
 #include "narrator/fixed.h"
-#include "xlinux/xstdlib.h"
 
 #include "cores.h"
-#include "macros.h"
-
-#include <stdio.h>
 
 static inline void runf(narrator * restrict N, int * restrict status, const char * const restrict fmt, ...)
 {

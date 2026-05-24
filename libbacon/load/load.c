@@ -3,9 +3,7 @@
 
 #include "narrator/load.h"
 
-#include "value.h"
 #include "load.h"
-#include "registry.h"
 
 static int handles;
 

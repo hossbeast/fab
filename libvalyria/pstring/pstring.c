@@ -3,7 +3,6 @@
 
 #include <string.h>
 
-#include "xlinux/xstdlib.h"
 #include "common/assure.h"
 #include "pstring.h"
 

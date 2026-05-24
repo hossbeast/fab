@@ -4,7 +4,6 @@
 #pragma once
 
 #include <sys/epoll.h>
-#include <signal.h>
 
 #include "types.h"
 

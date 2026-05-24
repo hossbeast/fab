@@ -4,24 +4,18 @@
 #include <sys/syscall.h>
 #include <errno.h>
 
-#include "narrator.h"
-#include "narrator/fixed.h"
 #include "xlinux/xinotify.h"
 #include "xlinux/xpthread.h"
 #include "xlinux/xunistd.h"
 #include "xlinux/xtime.h"
-#include "bacon/writer.h"
-#include "bacon/builder.h"
 #include "valyria/map.h"
 
-#include "notify_thread.h"
 #include "fsent.h"
 #include "params.h"
 #include "sweeper_thread.h"
 #include "stats.h"
 #include "vertex.h"
 #include "probes.h"
-#include "filesystem.h"
 #include "notify.h"
 #include "walker.h"
 

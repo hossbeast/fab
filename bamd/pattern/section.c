@@ -1,22 +1,14 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include <errno.h>
-
-#include "common/attrs.h"
 #include "narrator.h"
 #include "xlinux/xstdlib.h"
 #include "moria.h"
-#include "bacon/value.h"
-#include "bacon/set.h"
 #include "bacon/builder.h"
 
 #include "section.h"
-#include "pattern.internal.h"
 #include "segment.h"
-#include "system.h"
 #include "events/events.h"
-#include "channel.h"
 #include "segments.h"
 #include "graph.h"
 

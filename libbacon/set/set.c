@@ -2,11 +2,9 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 #include "common/hash.h"
-#include "valyria/rbtree.h"
 #include "value.h"
 #include "set.h"
 
-#include "narrator.h"
 
 int bacon_set_key_cmp(void * restrict key, const rbnode * restrict B)
 {

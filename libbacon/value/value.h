@@ -3,9 +3,7 @@
 
 #pragma once
 
-#include "types.h"
 #include "valyria/rbtree.h"
-#include "valyria/llist.h"
 
 struct narrator;
 struct bacon_location;

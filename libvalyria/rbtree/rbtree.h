@@ -5,7 +5,6 @@
 
 /* red-black tree */
 
-#include "types.h"
 #include "llist.h"
 
 #define RBTREE_HASH  0

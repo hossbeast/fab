@@ -4,7 +4,6 @@
 #include "narrator.h"
 #include "xlinux/xstdlib.h"
 #include "xlinux/xstring.h"
-#include "common/attrs.h"
 #include "bacon/builder.h"
 
 #include "group.h"

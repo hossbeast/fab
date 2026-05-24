@@ -8,7 +8,6 @@
 #include "rmdirp.h"
 #include "nftwat.h"
 
-#include "macros.h"
 
 static void fn(int method, ftwinfo * restrict info, void *arg, int * stop)
 {
