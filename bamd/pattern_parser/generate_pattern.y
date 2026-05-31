@@ -125,8 +125,6 @@
 %type <list> pattern-dentry-segment-list
 %type <list> class-segments-list
 
-%type <yyu.umax> type-qualifiers type-qualifier-list type-qualifier
-
 %type <pattern> pattern
 
 %type <section> pattern-section pattern-section-self
@@ -138,6 +136,8 @@
 %type <segments> pattern-dentry-segments
 %type <segments> class-segments
 %type <segments> alternation-pattern
+%type <segments> type-qualifiers
+%type <segments> type-qualifier-segment
 
 %type <segment> escape
 %type <segment> class class-segment class-range class-char
@@ -147,6 +147,8 @@
 %type <segment> pattern-dentry-segment
 %type <segment> alternation
 %type <segment> alternation-pattern-part
+%type <segment> type-qualifier
+%type <segment> type-qualifier-group
 
 %destructor { pattern_free($$); } <pattern>
 %destructor { pattern_section_free($$); } <section>
@@ -169,9 +171,15 @@ utterance
 pattern
   : pattern-sections type-qualifiers
   {
+    llist list;
     pattern_section *last;
+
     last = llist_last(&$1, typeof(*last), lln);
-    last->type_qualifiers_mask = $2;
+    llist_init(&list);
+    llist_push(&list, &$2->lln);
+    llist_splice_tail(&last->qualifiers, &list);
+    last->has_type_qualifiers = true;
+
     pattern_mk(&$$, &@$, &$1);
   }
   | pattern-sections
@@ -184,32 +192,51 @@ pattern
  * this controls what kind of file nodes it generates */
 
 type-qualifiers
-  : '+' '(' type-qualifier-list ')'
+  : '+' type-qualifier-group
   {
-    $$ = $3;
+    llist list;
+    llist_init(&list);
+    llist_push(&list, &$2->lln);
+    pattern_segments_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_AND, true, &list);
   }
   ;
 
-type-qualifier-list
+type-qualifier-group
+  : '(' type-qualifier-segment ')'
+  {
+    llist list;
+    llist_init(&list);
+    llist_push(&list, &$2->lln);
+    pattern_group_mk(&$$, &@$, &list, NULL, 0, ++PARSER->group_counter, ++PARSER->capture_group_counter, true);
+  }
+  ;
+
+type-qualifier-segment
   : type-qualifier
+  {
+    llist list;
+    llist_init(&list);
+    llist_push(&list, &$1->lln);
+    pattern_segments_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_OR, 0, &list);
+  }
   ;
 
 type-qualifier
   : '/'
   {
-    $$ = PATTERN_QUALIFIER_TYPE_DIR;
+    pattern_qualifier_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_DIR);
   }
   | '.'
   {
-    $$ = PATTERN_QUALIFIER_TYPE_FILE;
+    pattern_qualifier_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_FILE);
   }
   | DOT
   {
-    $$ = PATTERN_QUALIFIER_TYPE_FILE;
+    pattern_qualifier_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_FILE);
   }
   | '@'
   {
-    $$ = PATTERN_QUALIFIER_TYPE_SYMLINK;
+    pattern_qualifier_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_SYMLINK);
   }
   ;
 

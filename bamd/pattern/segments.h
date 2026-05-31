@@ -11,6 +11,7 @@ struct bacon_writer;
 struct pattern_segments;
 struct moria_vertex;
 enum pattern_qualifier_type;
+enum vertex_type;
 
 size_t pattern_segments_list_cat(
     void * restrict dst
@@ -25,7 +26,7 @@ void pattern_segments_mk(
     struct pattern_segments ** restrict rv
   , const struct yyu_location * restrict loc
   , enum pattern_qualifier_type qualifier_type
-  , uint32_t type_qualifiers_mask
+  , bool has_type_qualifiers
   , struct llist * restrict segments
 )
   __attribute__((nonnull));
@@ -50,9 +51,15 @@ void pattern_segments_list_describe(
 )
   __attribute__((nonnull));
 
-bool pattern_segments_evaluate_type_qualifiers(
+bool pattern_segments_type_qualifiers_match(
     const struct pattern_segments * restrict segments
   , const struct moria_vertex * restrict v
+)
+  __attribute__((nonnull));
+
+bool pattern_segments_type_qualifiers_has(
+    const struct pattern_segments * restrict segments
+  , enum pattern_qualifier_type type
 )
   __attribute__((nonnull));
 

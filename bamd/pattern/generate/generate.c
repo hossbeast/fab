@@ -11,6 +11,7 @@
 #include "generate.internal.h"
 #include "fsedge.h"
 #include "fsent.h"
+#include "pattern/section.h"
 #include "vertex.h"
 #include "vertex/probes.h"
 #include "search.internal.h"
@@ -176,16 +177,14 @@ void pattern_segment_generate(pattern_generate_context * restrict ctx)
     }
   }
 
+  /* check type qualifiers for which kind of fsent to create */
   kind = VERTEX_FILE;
   nofollow = false;
-  switch(ctx->section_traversal.section->type_qualifiers_mask) {
-    case PATTERN_QUALIFIER_TYPE_DIR:
-      kind = VERTEX_DIR;
-      break;
-    case PATTERN_QUALIFIER_TYPE_SYMLINK:
-      kind = VERTEX_SYMLINK;
-      nofollow = true;
-      break;
+  if(pattern_section_type_qualifiers_has(ctx->section_traversal.section, PATTERN_QUALIFIER_TYPE_DIR)) {
+    kind = VERTEX_DIR;
+  } else if(pattern_section_type_qualifiers_has(ctx->section_traversal.section, PATTERN_QUALIFIER_TYPE_SYMLINK)) {
+    kind = VERTEX_SYMLINK;
+    nofollow = true;
   }
 
   next_context_vertex = moria_vertex_downw(&ctx->node->vertex, section, section_len);

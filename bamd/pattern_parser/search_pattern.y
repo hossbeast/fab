@@ -302,25 +302,26 @@ global-sysvar-token
 pattern-section
   : pattern-dentry-segments-list
   {
-    pattern_section_mk(&$$, &@$, 0, PATTERN_GRAPH_FS, PATTERN_AXIS_DOWN, &$1, PARSER->section_type_qualifiers_mask);
+    pattern_section_mk(&$$, &@$, 0, PATTERN_GRAPH_FS, PATTERN_AXIS_DOWN, &$1, PARSER->section_has_type_qualifiers);
+    PARSER->section_has_type_qualifiers = false;
   }
-  | STARSTAR pattern-qualifiers
+  | STARSTAR  pattern-qualifiers
   {
-    pattern_section_mk(&$$, &@$, 0, PATTERN_GRAPH_DIRS, PATTERN_AXIS_SELF_OR_BELOW, &$2, PARSER->section_type_qualifiers_mask);
+    pattern_section_mk(&$$, &@$, 0, PATTERN_GRAPH_DIRS, PATTERN_AXIS_SELF_OR_BELOW, &$2, PARSER->section_has_type_qualifiers);
+    PARSER->section_has_type_qualifiers = false;
   }
   ;
 
 pattern-dentry-segments-list
-  : pattern-dentry-segments { PARSER->section_type_qualifiers_mask = 0; } pattern-qualifier-list
+  : pattern-dentry-segments pattern-qualifier-list
   {
-    $$ = $3;
+    $$ = $2;
     llist_unshift(&$$, &$1->lln);
   }
   | pattern-dentry-segments
   {
     llist_init(&$$);
     llist_push(&$$, &$1->lln);
-    PARSER->section_type_qualifiers_mask = 0;
   }
   ;
 
@@ -415,13 +416,13 @@ pattern-qualifier-list
   ;
 
 pattern-qualifier
-  : '+' pattern-qualifier-parts
+  : '+' { PARSER->group_has_type_qualifiers = false; } pattern-qualifier-parts
   {
-    pattern_segments_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_AND, 0, &$2);
+    pattern_segments_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_AND, PARSER->group_has_type_qualifiers, &$3);
   }
-  | '~' pattern-qualifier-parts
+  | '~' { PARSER->group_has_type_qualifiers = false; } pattern-qualifier-parts
   {
-    pattern_segments_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_NOT, 0, &$2);
+    pattern_segments_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_NOT, PARSER->group_has_type_qualifiers, &$3);
   }
   ;
 
@@ -460,20 +461,20 @@ pattern-qualifier-part
   ;
 
 type-qualifiers
-  : { PARSER->group_type_qualifiers_mask = 0; } '(' type-qualifier-segments ')'
+  : '(' type-qualifier-segments ')'
   {
     llist list;
     llist_init(&list);
-    llist_push(&list, &$3->lln);
-    pattern_group_mk(&$$, &@$, &list, NULL, 0, ++PARSER->group_counter, ++PARSER->capture_group_counter, PARSER->group_type_qualifiers_mask);
-    PARSER->section_type_qualifiers_mask |= PARSER->group_type_qualifiers_mask;
+    llist_push(&list, &$2->lln);
+    pattern_group_mk(&$$, &@$, &list, NULL, 0, ++PARSER->group_counter, ++PARSER->capture_group_counter, PARSER->group_has_type_qualifiers);
+    PARSER->section_has_type_qualifiers |= PARSER->group_has_type_qualifiers;
   }
   ;
 
 type-qualifier-segments
   : type-qualifier-list
   {
-    pattern_segments_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_OR, 0, &$1);
+    pattern_segments_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_OR, PARSER->group_has_type_qualifiers, &$1);
   }
   ;
 
@@ -493,27 +494,27 @@ type-qualifier-list
 type-qualifier
   : '/'
   {
-    PARSER->group_type_qualifiers_mask |= PATTERN_QUALIFIER_TYPE_DIR;
+    PARSER->group_has_type_qualifiers = true;
     pattern_qualifier_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_DIR);
   }
   | 'F'
   {
-    PARSER->group_type_qualifiers_mask |= PATTERN_QUALIFIER_TYPE_DIR_NONEMPTY;
+    PARSER->group_has_type_qualifiers = true;
     pattern_qualifier_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_DIR_NONEMPTY);
   }
   | '.'
   {
-    PARSER->group_type_qualifiers_mask |= PATTERN_QUALIFIER_TYPE_FILE;
+    PARSER->group_has_type_qualifiers = true;
     pattern_qualifier_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_FILE);
   }
   | DOT
   {
-    PARSER->group_type_qualifiers_mask |= PATTERN_QUALIFIER_TYPE_FILE;
+    PARSER->group_has_type_qualifiers = true;
     pattern_qualifier_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_FILE);
   }
   | '@'
   {
-    PARSER->group_type_qualifiers_mask |= PATTERN_QUALIFIER_TYPE_SYMLINK;
+    PARSER->group_has_type_qualifiers = true;
     pattern_qualifier_mk(&$$, &@$, PATTERN_QUALIFIER_TYPE_SYMLINK);
   }
   ;

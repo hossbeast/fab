@@ -8,8 +8,9 @@
 struct yyu_location;
 union pattern_segment;
 struct pattern_segments;
-enum pattern_qualifier_type;
 struct moria_vertex;
+enum pattern_qualifier_type;
+enum vertex_type;
 
 void pattern_qualifier_mk(
     union pattern_segment ** restrict rv
@@ -18,8 +19,14 @@ void pattern_qualifier_mk(
 )
   __attribute__((nonnull));
 
-bool pattern_qualifier_evaluate(
+bool pattern_qualifier_match(
     enum pattern_qualifier_type qualifier_type
   , const struct moria_vertex * restrict v
+)
+  __attribute__((nonnull));
+
+bool pattern_qualifier_check(
+    enum pattern_qualifier_type qualifier_type
+  , enum vertex_type type
 )
   __attribute__((nonnull));

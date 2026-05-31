@@ -196,9 +196,9 @@ extern struct attrs16 *pattern_qualifier_type_attrs;
 
 // variable
 #define PATTERN_VARIABLE_TYPE_OPT 0x000f
-#define PATTERN_VARIABLE_TYPE_TABLE                       \
+#define PATTERN_VARIABLE_TYPE_TABLE                                                                       \
   DEF(PATTERN_VARIABLE_TYPE_NAME      , 0x0001) /* named variables, including bm_foo sysvars */           \
-  DEF(PATTERN_VARIABLE_TYPE_NUM       , 0x0002)           \
+  DEF(PATTERN_VARIABLE_TYPE_NUM       , 0x0002)                                                           \
 
 #undef DEF
 #define DEF(x, y) x = UINT16_C(y),
@@ -306,7 +306,7 @@ typedef struct pattern_segments {
   yyu_location loc;
   llist lln;                  /* in list-of-segments list */
   pattern_qualifier_type qualifier_type;
-  uint32_t type_qualifiers_mask;
+  bool has_type_qualifiers;
   llist list;                 // union pattern_segment *segment_head;
 } pattern_segments;
 
@@ -317,7 +317,7 @@ typedef struct pattern_section {
   pattern_graph graph;
   pattern_axis axis;
   llist qualifiers;           // struct pattern_segments
-  uint32_t type_qualifiers_mask;
+  bool has_type_qualifiers;
 } pattern_section;
 
 /* segment types */
@@ -362,9 +362,9 @@ typedef struct pattern_group {
   llist segments; // qualifiers, trailing
   uint16_t group_num;
   uint16_t capture_group_num;
-  char * name;
+  char *name;
   uint8_t name_len;
-  uint32_t type_qualifiers_mask;
+  bool has_type_qualifiers;
 } pattern_group;
 
 typedef struct pattern_star {

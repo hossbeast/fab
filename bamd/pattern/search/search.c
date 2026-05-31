@@ -9,7 +9,7 @@
 #include "narrator.h"
 
 #include "search.internal.h"
-#include "pattern.internal.h"
+#include "pattern/section.h"
 #include "fsent.h"
 #include "vertex.h"
 #include "module.h"
@@ -69,11 +69,11 @@ static void search_visit(
 {
   pattern_search_context * restrict ctx = _ctx;
   fsent * n;
-  uint32_t section_type_qualifiers_mask;
   int anchor_mod;
   moria_foreach_state st;
   moria_edge *edge;
   const module *mod;
+  bool section_matches_dirs;
 
   struct search_section_traversal saved_section_traversal;
   struct search_segments_traversal traversal;
@@ -116,7 +116,10 @@ static void search_visit(
     }
   }
 
-  section_type_qualifiers_mask = ctx->section_traversal.section->type_qualifiers_mask;
+  section_matches_dirs = false;
+  section_matches_dirs |= pattern_section_type_qualifiers_has(ctx->section_traversal.section, PATTERN_QUALIFIER_TYPE_DIR);
+  section_matches_dirs |= pattern_section_type_qualifiers_has(ctx->section_traversal.section, PATTERN_QUALIFIER_TYPE_DIR_NONEMPTY);
+
   /* outer segments */
   traversal = (typeof(traversal)) {
     segments_head : &ctx->section_traversal.section->qualifiers
@@ -153,8 +156,7 @@ static void search_visit(
     /* continue to the next section of the pattern */
     pattern_section_search(ctx, n);
   }
-  else if((vertex_filetype_get(&n->vertex) == VERTEX_FILETYPE_DIR)
-          && (section_type_qualifiers_mask & (PATTERN_QUALIFIER_TYPE_DIR | PATTERN_QUALIFIER_TYPE_DIR_NONEMPTY)) == 0)
+  else if((vertex_filetype_get(&n->vertex) == VERTEX_FILETYPE_DIR) && !section_matches_dirs)
   {
     /* to match a directory, it is necessary to specify a directory qualifier */
   }
@@ -263,7 +265,7 @@ void pattern_segments_search(pattern_search_context * ctx)
     }
 
     /* entire label was matched */
-    if(has_segments && !ctx->section_traversal.section->type_qualifiers_mask) {
+    if(has_segments && !ctx->section_traversal.section->has_type_qualifiers) {
       matched &= (traversal->offset == ctx->node->name.namel);
 
       if(invert) {

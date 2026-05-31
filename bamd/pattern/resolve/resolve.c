@@ -93,7 +93,7 @@ static int pattern_resolve_bound(resolve_context * restrict ctx)
          * and it may not contain any type qualifiers. this is enforced in the parser */
         segments = llist_first(&section->qualifiers, typeof(*segments), lln);
         RUNTIME_ASSERT(segments->qualifier_type == PATTERN_QUALIFIER_TYPE_AND);
-        RUNTIME_ASSERT(segments->type_qualifiers_mask == 0);
+        RUNTIME_ASSERT(!segments->has_type_qualifiers);
 
         /* TODO : should add a fast-path for single-segment word section */
         label_len = pattern_segments_cat(label, sizeof(label), ctx->vars, segments);

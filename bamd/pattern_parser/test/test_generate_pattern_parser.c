@@ -65,7 +65,7 @@ static void pattern_parser_test_entry(xunit_test * _test)
   narrator_growing_create(&N2);
   pattern_parser_create(&parser);
 
-  // round trip parse
+  // parse
   if(generate_pattern_parse_partial(parser, test->text, strlen(test->text) + 2, "-test-", 0, &loc, &A) != 0) {
     tracef("%.*s", (int)parser->error_len, parser->error);
   }
@@ -77,6 +77,7 @@ static void pattern_parser_test_entry(xunit_test * _test)
   narrator_read(&N1->base, buf, len, 0);
   buf[len] = buf[len + 1] = 0;
 
+  // round trip parse
   if(generate_pattern_parse_partial(parser, buf, len + 2, "-test-", 0, &loc, &B) != 0) {
     tracef("%.*s", (int)parser->error_len, parser->error);
   }
@@ -233,6 +234,16 @@ static xunit_unit xunit = {
       }}
     , (pattern_parser_test[]) {{
         text : (char[]) { "$bm_bamd_id\0" }
+      }}
+    /* qualifiers */
+    , (pattern_parser_test[]) {{
+        text : (char[]) { "A+(@)\0" }
+      }}
+    , (pattern_parser_test[]) {{
+        text : (char[]) { "A/B.C+(/)\0" }
+      }}
+    , (pattern_parser_test[]) {{
+        text : (char[]) { "A/B.C/D+(.)\0" }
       }}
     , 0
   }

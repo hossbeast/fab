@@ -18,6 +18,6 @@ void pattern_group_mk(
   , uint8_t name_len
   , uint16_t group_number
   , uint16_t capture_group_number
-  , uint32_t type_qualifiers_mask
+  , bool has_type_qualifiers
 )
   __attribute__((nonnull(1, 2)));

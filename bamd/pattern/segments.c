@@ -68,12 +68,13 @@ void pattern_segments_list_describe(const llist * restrict segments_list, struct
   { LIST
     llist_foreach(segments_list, segments, lln) {
       { SET
-        { MAPPING
-          STRING("type")
+        { MAPPING STRING("type")
           STRING(attrs16_name_byvalue(pattern_qualifier_type_attrs, segments->qualifier_type))
         }
-        { MAPPING
-          STRING("list")
+        { MAPPING STRING("has-type-qualifiers")
+          BOOL(segments->has_type_qualifiers)
+        }
+        { MAPPING STRING("list")
           pattern_segment_list_describe(&segments->list, builder_writer);
         }
       }
@@ -142,7 +143,7 @@ void pattern_segments_mk(
     pattern_segments ** restrict rv
   , const struct yyu_location * restrict loc
   , pattern_qualifier_type qualifier_type
-  , uint32_t type_qualifiers_mask
+  , bool has_type_qualifiers
   , llist * restrict list
 )
 {
@@ -152,7 +153,7 @@ void pattern_segments_mk(
   memcpy(&segments->loc, loc, sizeof(segments->loc));
 
   segments->qualifier_type = qualifier_type;
-  segments->type_qualifiers_mask = type_qualifiers_mask;
+  segments->has_type_qualifiers = has_type_qualifiers;
   llist_init(&segments->list);
   llist_splice_head(&segments->list, list);
   llist_init(&segments->lln);
@@ -184,26 +185,35 @@ void pattern_segments_free(pattern_segments * restrict segments)
   free(segments);
 }
 
-bool pattern_segments_evaluate_type_qualifiers(const pattern_segments * restrict segments, const moria_vertex * restrict v)
+static const pattern_segments *qualifiers_get(const pattern_segments * restrict segments)
 {
-  bool match;
   const pattern_group *group;
-  const pattern_qualifier *qualifier;
   const pattern_segments *group_segments;
 
   group = llist_first(&segments->list, typeof(*group), lln);
   RUNTIME_ASSERT(group->type == PATTERN_GROUP);
-  RUNTIME_ASSERT(group->type_qualifiers_mask);
+  RUNTIME_ASSERT(group->has_type_qualifiers);
 
   RUNTIME_ASSERT(llist_count(&group->segments) == 1);
   group_segments = llist_first(&group->segments, typeof(*group_segments), lln);
   RUNTIME_ASSERT(group_segments->qualifier_type == PATTERN_QUALIFIER_TYPE_OR);
 
+  return group_segments;
+}
+
+bool pattern_segments_type_qualifiers_match(const pattern_segments * restrict segments, const moria_vertex * restrict v)
+{
+  bool match;
+  const pattern_qualifier *qualifier;
+  const pattern_segments *qualifiers;
+
+  qualifiers = qualifiers_get(segments);
+
   /* evaluate each qualifier in the group */
   match = false;
-  llist_foreach(&group_segments->list, qualifier, lln) {
+  llist_foreach(&qualifiers->list, qualifier, lln) {
     RUNTIME_ASSERT(qualifier->type == PATTERN_QUALIFIER);
-    match |= pattern_qualifier_evaluate(qualifier->qualifier_type, v);
+    match |= pattern_qualifier_match(qualifier->qualifier_type, v);
   }
 
   /* overall match */
@@ -215,6 +225,23 @@ bool pattern_segments_evaluate_type_qualifiers(const pattern_segments * restrict
   }
 
   return true;
+}
+
+bool pattern_segments_type_qualifiers_has(const pattern_segments * restrict segments, pattern_qualifier_type type)
+{
+  const pattern_qualifier *qualifier;
+  const pattern_segments *qualifiers;
+
+  qualifiers = qualifiers_get(segments);
+
+  llist_foreach(&qualifiers->list, qualifier, lln) {
+    RUNTIME_ASSERT(qualifier->type == PATTERN_QUALIFIER);
+    if(qualifier->qualifier_type == type) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 size_t pattern_segments_cat(

@@ -326,7 +326,7 @@ int namespace_resolve(struct lookup_context * restrict ctx, lookup_pattern * res
   /* start with the last section, but if that section has file-type qualifiers, then
    * the initial section is preceding one */
   section = llist_last(&ctx->rctx.ref->sections, typeof(*section), lln);
-  if(section->type_qualifiers_mask) {
+  if(section->has_type_qualifiers) {
     last_section = section;
     init_section = llist_prev(&ctx->rctx.ref->sections, section, lln);
   } else {
@@ -336,12 +336,12 @@ int namespace_resolve(struct lookup_context * restrict ctx, lookup_pattern * res
 
   /* the section from which the namespace lookup is performed must have a single qualifiers-list
    * and it may not contain any type qualifiers. this is enforced in the parser */
-  RUNTIME_ASSERT(init_section->type_qualifiers_mask == 0);
+  RUNTIME_ASSERT(!init_section->has_type_qualifiers);
   RUNTIME_ASSERT(llist_count(&init_section->qualifiers) == 1);
 
   init_segments = llist_first(&init_section->qualifiers, typeof(*init_segments), lln);
   RUNTIME_ASSERT(init_segments->qualifier_type == PATTERN_QUALIFIER_TYPE_AND);
-  RUNTIME_ASSERT(init_segments->type_qualifiers_mask == 0);
+  RUNTIME_ASSERT(!init_segments->has_type_qualifiers);
 
   label_len = pattern_segments_cat(label, sizeof(label), ctx->rctx.vars, init_segments);
 
@@ -385,7 +385,7 @@ int namespace_resolve(struct lookup_context * restrict ctx, lookup_pattern * res
     }
 
     /* evaluate type qualifiers if any */
-    if(!pattern_section_evaluate_type_qualifiers(last_section, v)) {
+    if(!pattern_section_type_qualifiers_match(last_section, v)) {
       continue;
     }
 

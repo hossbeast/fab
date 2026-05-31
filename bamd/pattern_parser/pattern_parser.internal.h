@@ -26,8 +26,8 @@ struct pattern_parser {
   yyu_parser *yyu;
   uint16_t group_counter;
   uint16_t capture_group_counter;
-  uint32_t section_type_qualifiers_mask;  // for the current section
-  uint32_t group_type_qualifiers_mask;    // for the current group
+  bool section_has_type_qualifiers;
+  bool group_has_type_qualifiers;
 
   // (returns)
   struct pattern *pattern;

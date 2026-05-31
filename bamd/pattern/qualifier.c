@@ -66,7 +66,7 @@ static void qualifier_search(const pattern_segment * restrict segment, pattern_s
   const pattern_qualifier * qualifier = &segment->qualifier;
   bool satisfied = false;
 
-  satisfied = pattern_qualifier_evaluate(qualifier->qualifier_type, &ctx->node->vertex);
+  satisfied = pattern_qualifier_match(qualifier->qualifier_type, &ctx->node->vertex);
   ctx->traversal->unsatisfied = !satisfied;
 }
 
@@ -88,36 +88,40 @@ static pattern_segment_vtable vtable = PATTERN_SEGMENT_VTABLE(qualifier, PATTERN
 // public
 //
 
-bool pattern_qualifier_evaluate(pattern_qualifier_type qualifier_type, const moria_vertex * restrict v)
+bool pattern_qualifier_check(pattern_qualifier_type qualifier_type, vertex_type type)
 {
-  bool satisfied = false;
+  bool satisfied;
+  vertex_kind kind;
+  vertex_filetype filetype;
 
-  /* n.b. symlinks are resolved before rules are run */
+  kind = type;
+  kind &= VERTEX_KIND_OPT;
 
+  filetype = type;
+  filetype &= VERTEX_FILETYPE_OPT;
+
+  satisfied = false;
   switch(qualifier_type)
   {
     case PATTERN_QUALIFIER_TYPE_DIR:
-      v = moria_vertex_follow(v);
-      satisfied =  vertex_kind_get(v) == VERTEX_KIND_FSENT
-            && vertex_filetype_get(v) == VERTEX_FILETYPE_DIR
+      satisfied =  kind == VERTEX_KIND_FSENT
+            && filetype == VERTEX_FILETYPE_DIR
             ;
       break;
     case PATTERN_QUALIFIER_TYPE_DIR_NONEMPTY:
-      v = moria_vertex_follow(v);
-      satisfied =  vertex_kind_get(v) == VERTEX_KIND_FSENT
-            && vertex_filetype_get(v) == VERTEX_FILETYPE_DIR
+      satisfied =  kind == VERTEX_KIND_FSENT
+            && filetype == VERTEX_FILETYPE_DIR
             && 1    // actually check child-count
             ;
       break;
     case PATTERN_QUALIFIER_TYPE_FILE:
-      v = moria_vertex_follow(v);
-      satisfied =  vertex_kind_get(v) == VERTEX_KIND_FSENT
-            && vertex_filetype_get(v) == VERTEX_FILETYPE_REG
+      satisfied =  kind == VERTEX_KIND_FSENT
+            && filetype == VERTEX_FILETYPE_REG
             ;
       break;
     case PATTERN_QUALIFIER_TYPE_SYMLINK:
-      satisfied =  vertex_kind_get(v) == VERTEX_KIND_FSENT
-            && vertex_filetype_get(v) == VERTEX_FILETYPE_SYMLINK
+      satisfied =  kind == VERTEX_KIND_FSENT
+            && filetype == VERTEX_FILETYPE_SYMLINK
             ;
       break;
     default:
@@ -125,6 +129,23 @@ bool pattern_qualifier_evaluate(pattern_qualifier_type qualifier_type, const mor
   }
 
   return satisfied;
+}
+
+bool pattern_qualifier_match(pattern_qualifier_type qualifier_type, const moria_vertex * restrict v)
+{
+  /* N.B. symlinks are resolved before rules are run */
+  switch(qualifier_type)
+  {
+    case PATTERN_QUALIFIER_TYPE_DIR:
+    case PATTERN_QUALIFIER_TYPE_DIR_NONEMPTY:
+    case PATTERN_QUALIFIER_TYPE_FILE:
+    case PATTERN_QUALIFIER_TYPE_SYMLINK:
+      v = moria_vertex_follow(v);
+      return pattern_qualifier_check(qualifier_type, vertex_type_get(v));
+    default:
+  }
+
+  RTA;
 }
 
 void pattern_qualifier_mk(pattern_segment ** restrict rv, const yyu_location * restrict loc, pattern_qualifier_type qualifier_type)

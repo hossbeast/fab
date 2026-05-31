@@ -18,6 +18,7 @@
 #include "events/events.h"
 #include "channel.h"
 #include "segments.h"
+#include "graph.h"
 
 #include "zcat.h"
 
@@ -41,8 +42,8 @@ void pattern_section_describe(const pattern_section * restrict n, bacon_writer *
     STRING(attrs16_name_byvalue(pattern_axis_attrs, n->axis))
   }
   { MAPPING
-    STRING("type-qualifiers-mask")
-    HEX(n->type_qualifiers_mask)
+    STRING("has-type-qualifiers")
+    BOOL(n->has_type_qualifiers)
   }
   if(!llist_empty(&n->qualifiers)) {
     MAPPING
@@ -130,7 +131,7 @@ void pattern_section_mk(
   , pattern_graph graph
   , pattern_axis axis
   , llist * restrict qualifiers_list
-  , uint32_t type_qualifiers_mask
+  , bool has_type_qualifiers
 )
 {
   pattern_section *section;
@@ -146,7 +147,7 @@ void pattern_section_mk(
   if(qualifiers_list && qualifiers_list->next) {
     llist_splice_head(&section->qualifiers, qualifiers_list);
   }
-  section->type_qualifiers_mask = type_qualifiers_mask;
+  section->has_type_qualifiers = has_type_qualifiers;
 
   *rv = section;
 }
@@ -332,19 +333,36 @@ size_t pattern_section_cat(void * restrict dst, size_t sz, const struct pattern_
   return z;
 }
 
-bool pattern_section_evaluate_type_qualifiers(const pattern_section * restrict section, const moria_vertex * restrict v)
+bool pattern_section_type_qualifiers_match(const pattern_section * restrict section, const moria_vertex * restrict v)
 {
   pattern_segments *segments;
 
   llist_foreach(&section->qualifiers, segments, lln) {
-    if(!segments->type_qualifiers_mask) {
+    if(!segments->has_type_qualifiers) {
       continue;
     }
 
-    if(!pattern_segments_evaluate_type_qualifiers(segments, v)) {
+    if(!pattern_segments_type_qualifiers_match(segments, v)) {
       return false;
     }
   }
 
   return true;
+}
+
+bool pattern_section_type_qualifiers_has(const pattern_section * restrict section, pattern_qualifier_type type)
+{
+  pattern_segments *segments;
+
+  llist_foreach(&section->qualifiers, segments, lln) {
+    if(!segments->has_type_qualifiers) {
+      continue;
+    }
+
+    if(pattern_segments_type_qualifiers_has(segments, type)) {
+      return true;
+    }
+  }
+
+  return false;
 }

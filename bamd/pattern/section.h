@@ -15,6 +15,7 @@ struct bacon_value;
 struct bacon_writer;
 struct llist;
 struct moria_vertex;
+enum vertex_type;
 
 void pattern_section_mk(
     struct pattern_section ** restrict rv
@@ -23,7 +24,7 @@ void pattern_section_mk(
   , enum pattern_graph graph
   , enum pattern_axis axis
   , struct llist * restrict qualifiers // struct pattern_segments * restrict qualifiers
-  , uint32_t type_qualifiers_mask
+  , bool has_type_qualifiers
 )
   __attribute__((nonnull(1, 2)));
 
@@ -42,5 +43,8 @@ int pattern_section_cmp(const struct pattern_section *A, const struct pattern_se
 void pattern_section_show(const pattern_section * restrict section)
   __attribute__((nonnull));
 
-bool pattern_section_evaluate_type_qualifiers(const pattern_section * restrict section, const struct moria_vertex * restrict v)
+bool pattern_section_type_qualifiers_match(const pattern_section * restrict section, const struct moria_vertex * restrict v)
+  __attribute__((nonnull));
+
+bool pattern_section_type_qualifiers_has(const pattern_section * restrict section, enum pattern_qualifier_type type)
   __attribute__((nonnull));
