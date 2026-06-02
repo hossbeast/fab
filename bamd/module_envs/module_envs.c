@@ -41,7 +41,6 @@ module_envs *module_envs_create(struct module * restrict mod)
 
   envs->mod = mod;
 
-  vertex_protect_set(&envs->vertex, true);
   vertex_alloc_probe(&envs->vertex);
 
   return envs;

@@ -333,7 +333,7 @@ void fsent_root_setup()
 {
   fsent * n = 0;
 
-  fsent_alloc(&n, VERTEX_DIR, VERTEX_PROTECT_BIT | VERTEX_EXISTS_BIT, MMS("(root)"));
+  fsent_alloc(&n, VERTEX_DIR, VERTEX_EXISTS_BIT, MMS("(root)"));
 
   n->fst = &fstree_root;
   n->path_hash = 0xface;
@@ -393,7 +393,7 @@ void fsent_graft(const char * restrict base, fsent ** restrict rn)
     }
     else
     {
-      fsent_create(&child, VERTEX_DIR, VERTEX_OK | VERTEX_PROTECT_BIT, seg, end - seg);
+      fsent_create(&child, VERTEX_DIR, VERTEX_OK, seg, end - seg);
 
       r = moria_preconnect(&ctx, &g_graph, &child->vertex, &parent->vertex, EDGE_FS, 0);
       RUNTIME_ASSERT(r == MORIA_NOEDGE);

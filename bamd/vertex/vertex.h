@@ -185,52 +185,6 @@ void vertex_invalid_set(moria_vertex * restrict v)
 bool vertex_invalid_get(const moria_vertex * restrict v)
   __attribute__((nonnull));
 
-static inline bool vertex_protect_get(const moria_vertex * restrict v)
-{
-  uint32_t attrs;
-
-  attrs = v->attrs;
-  attrs &= VERTEX_PROTECT_BIT;
-
-  return !!attrs;
-}
-
-static inline void vertex_protect_set(moria_vertex * restrict v, bool b)
-{
-  uint32_t attrs;
-
-  attrs = v->attrs;
-  attrs &= ~VERTEX_PROTECT_BIT;
-  if(b) {
-    attrs |= VERTEX_PROTECT_BIT;
-  }
-
-  vertex_attrs_set(v, attrs);
-}
-
-static inline bool vertex_shield_get(const moria_vertex * restrict v)
-{
-  uint32_t attrs;
-
-  attrs = v->attrs;
-  attrs &= VERTEX_SHIELD_BIT;
-
-  return !!attrs;
-}
-
-static inline void vertex_shield_set(moria_vertex * restrict v, bool b)
-{
-  uint32_t attrs;
-
-  attrs = v->attrs;
-  attrs &= ~VERTEX_SHIELD_BIT;
-  if(b) {
-    attrs |= VERTEX_SHIELD_BIT;
-  }
-
-  vertex_attrs_set(v, attrs);
-}
-
 static inline enum vertex_type vertex_type_get(const moria_vertex * restrict v)
 {
   uint32_t attrs = v->attrs;

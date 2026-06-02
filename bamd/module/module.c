@@ -480,9 +480,6 @@ void module_initialize(fsent * mod_dir_n, fsent * mod_anchor_n, fsent * restrict
   mod->self_node = mod_file_n;
   mod_file_n->self_mod = mod;
 
-  /* protect the special node from disintegration */
-  vertex_protect_set(&mod->vertex, true);
-
   /* magick the file node */
   vertex_type_set(&mod_file_n->vertex, VERTEX_MODULE_FILE);
 }

@@ -40,7 +40,6 @@ module_vars *module_vars_create(struct module * restrict mod)
 
   vars->mod = mod;
 
-  vertex_protect_set(&vars->vertex, true);
   vertex_alloc_probe(&vars->vertex);
 
   return vars;

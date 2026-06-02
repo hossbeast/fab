@@ -60,8 +60,6 @@ VERTEX_TYPE_TABLE
 #undef DEF
 #define DEF(x, s, n, r, y) { name : s, value : y, range : r },
 VERTEX_STATE_TABLE
-    { name : "protect", value : VERTEX_PROTECT_BIT, range : VERTEX_PROTECT_BIT },
-    { name : "shield", value : VERTEX_SHIELD_BIT, range : VERTEX_SHIELD_BIT },
   }
 }};
 

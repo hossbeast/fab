@@ -97,14 +97,10 @@ static xunit_unit xunit = {
       (node_graft_test[]) {{
           operations : ""
         , path : "/a/b/c"
-/* graft always creates protected directories */
-        , graph : "1-(root)!dir|protect 2-a!dir|protect 3-b!dir|protect 4-c!dir|protect"
+        , graph : "1-(root)!dir 2-a!dir 3-b!dir 4-c!dir"
                  " 2:fs:1 3:fs:2 4:fs:3"
       }}
     , 0
   }
 };
 XUNIT_UNIT(xunit);
-
-//1-(root)!dir|protect 2-a!dir|protect 3-b!dir|protect 4-c!dir|protect                    2:fs:1 3:fs:2 4:fs:3
-//1-(root)!dir|protect 2-a!dir|protect 3-b!dir|protect 4-base!dir|protect 5-c!dir|protect 2:fs:1 4:fs:1 3:fs:2 5:fs:3

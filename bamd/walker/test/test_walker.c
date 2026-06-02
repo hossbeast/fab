@@ -228,7 +228,7 @@ static xunit_unit xunit = {
           operations : "A/B"
         , base : "A"
         , sequence : "*0A AB 0A*"
-        , graph :  "1-(root)!dir|protect 2-A!dir"
+        , graph :  "1-(root)!dir 2-A!dir"
                   " 3-B!file"
                   " 2:fs:1 3:fs:2"
       }}
@@ -236,7 +236,7 @@ static xunit_unit xunit = {
           operations : "A/B A/C"
         , base : "A"
         , sequence : "*0A AB AC 0A*"
-        , graph :  "1-(root)!dir|protect 2-A!dir"
+        , graph :  "1-(root)!dir 2-A!dir"
                   " 3-B!file 4-C!file"
                   " 2:fs:1 3:fs:2 4:fs:2"
       }}
@@ -244,7 +244,7 @@ static xunit_unit xunit = {
           operations : "A/B A/C B/D B/E C/F C/G"
         , base : "A"
         , sequence : "*0A *AB BD BE AB* *AC CF CG AC* 0A*"
-        , graph :  "1-(root)!dir|protect 2-A!dir 3-B!dir 4-C!dir"
+        , graph :  "1-(root)!dir 2-A!dir 3-B!dir 4-C!dir"
                   " 5-D!file 6-E!file 7-F!file 8-G!file"
                   " 2:fs:1 3:fs:2 4:fs:2 5:fs:3 6:fs:3 7:fs:4 8:fs:4"
       }}
@@ -252,7 +252,7 @@ static xunit_unit xunit = {
           operations : "A/B"
         , base : "A"
         , sequence : "*0A *AB BD BE AB* *AC CF CG AC* 0A*"
-        , graph :  "1-(root)!dir|protect 2-A!dir 3-B!dir 4-C!dir"
+        , graph :  "1-(root)!dir 2-A!dir 3-B!dir 4-C!dir"
                   " 5-D!file 6-E!file 7-F!file 8-G!file"
                   " 2:fs:1 3:fs:2 4:fs:2 5:fs:3 6:fs:3 7:fs:4 8:fs:4"
       }}
@@ -260,7 +260,7 @@ static xunit_unit xunit = {
           operations : "A/B B/D B/E"
         , base : "A"
         , sequence : "*0A *AB BD BE AB* *AC CF CG AC* 0A*"
-        , graph :  "1-(root)!dir|protect 2-A!dir 3-B!dir 4-C!dir"
+        , graph :  "1-(root)!dir 2-A!dir 3-B!dir 4-C!dir"
                   " 5-D!file 6-E!file 7-F!file 8-G!file"
                   " 2:fs:1 3:fs:2 4:fs:2 5:fs:3 6:fs:3 7:fs:4 8:fs:4"
       }}
@@ -268,7 +268,7 @@ static xunit_unit xunit = {
           operations : "A/B A/C"
         , base : "A"
         , sequence : "*0A AB 0A*"
-        , graph :  "1-(root)!dir|protect 2-A!dir"
+        , graph :  "1-(root)!dir 2-A!dir"
                   " 3-B!file"
                   " 2:fs:1 3:fs:2"
       }}
@@ -276,14 +276,14 @@ static xunit_unit xunit = {
           operations : "A/B A/C B/D B/E C/F C/G"
         , base : "A"
         , sequence : "*0A *AB AB* *AC AC* 0A*"
-        , graph :  "1-(root)!dir|protect 2-A!dir 3-B!dir 4-C!dir"
+        , graph :  "1-(root)!dir 2-A!dir 3-B!dir 4-C!dir"
                   " 2:fs:1 3:fs:2 4:fs:2"
       }}
     , (walker_test[]) {{        // deleted directory
           operations : "A/B A/C B/D B/E C/F C/G"
         , base : "A"
         , sequence : "*0A *AB BD BE AB* 0A*"
-        , graph :  "1-(root)!dir|protect 2-A!dir 3-B!dir"
+        , graph :  "1-(root)!dir 2-A!dir 3-B!dir"
                   " 4-D!file 5-E!file"
                   " 2:fs:1 3:fs:2 4:fs:3 5:fs:3"
       }}

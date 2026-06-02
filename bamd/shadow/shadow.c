@@ -136,7 +136,7 @@ static void shadow_mk(fsent * restrict parent, fsent ** restrict dst, enum verte
   fsedge *fse;
   fsent *n;
 
-  fsent_create(&n, type, VERTEX_OK | VERTEX_PROTECT_BIT, name, name_len);
+  fsent_create(&n, type, VERTEX_OK, name, name_len);
   n->fst = &fstree_shadow;
   moria_preconnect(&ctx, &g_graph, &n->vertex, &parent->vertex, EDGE_FSTREE, 0);
   fsedge_alloc(&fse);
@@ -150,7 +150,7 @@ static void shadow_mk(fsent * restrict parent, fsent ** restrict dst, enum verte
 void shadow_setup()
 {
   /* shadow root */
-  fsent_create(&g_shadow, VERTEX_SHADOW_DIR, VERTEX_OK | VERTEX_PROTECT_BIT, MMS("(shadow)"));
+  fsent_create(&g_shadow, VERTEX_SHADOW_DIR, VERTEX_OK, MMS("(shadow)"));
   g_shadow->fst = &fstree_shadow;
   g_shadow->path_hash = 0xbeef;
   fsent_compute_identifiers(g_shadow);
