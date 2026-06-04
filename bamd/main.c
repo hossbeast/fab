@@ -146,7 +146,7 @@ int main(int argc, char ** argv)
 {
   int r;
   int fd;
-  char buf[32];
+  char buf[PATH_MAX];
 
   setvbuf(stdout, NULL, _IONBF, 0);
   setvbuf(stderr, NULL, _IONBF, 0);
@@ -167,20 +167,21 @@ int main(int argc, char ** argv)
 
   args_setup(argc, argv);
   params_setup();
-  xrealpathf(g_base_dir, "%.*s/basedir", (int)g_params.ipcdir_len, g_params.ipcdir);
-  g_base_dir_len = strlen(g_base_dir);
-  g_base_dirfd = xopens(O_PATH | O_DIRECTORY, g_base_dir);
+  snprintf(buf, sizeof(buf), "%.*s/basedir", (int)g_params.ipcdir_len, g_params.ipcdir);
+  xreadlinks(buf, g_basedir, sizeof(g_basedir));
+  g_basedir_len = strlen(g_basedir);
+  g_basedirfd = xopens(O_PATH | O_DIRECTORY, g_basedir);
 
-  dprintf(1, "hash : %s\n", g_args.hash_str);
+  dprintf(1, "bamd_id : %.*s\n", g_args.bamd_id_len, g_args.bamd_id);
   dprintf(1, "pid : %d\n", g_params.pid);
   dprintf(1, "homedir : %.*s\n", (int)g_params.homedir_len, g_params.homedir);
   dprintf(1, "ipcdir : %.*s\n", (int)g_params.ipcdir_len, g_params.ipcdir);
-  dprintf(1, "basedir : %.*s\n", (int)g_base_dir_len, g_base_dir);
+  dprintf(1, "basedir : %.*s\n", (int)g_basedir_len, g_basedir);
 
   /* for convenience, display basedir in argv */
-  if(g_argv_base_dir_space) {
-    memset(g_argv_base_dir_space, 0, 100);
-    zcatf(g_argv_base_dir_space, 100, "[%.*s]", g_base_dir_len, g_base_dir);
+  if(g_argv_basedir_space) {
+    memset(g_argv_basedir_space, 0, 100);
+    zcatf(g_argv_basedir_space, 100, "%.*s", g_basedir_len, g_basedir);
   }
 
   getlock();

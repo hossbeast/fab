@@ -100,9 +100,9 @@ static llist fsent_unlinklist = LLIST_INITIALIZER(fsent_unlinklist);    // fresn
 
 fsent *g_root;
 fsent *g_base;
-char g_base_dir[PATH_MAX] = "/base";
-uint16_t g_base_dir_len;
-int g_base_dirfd;
+char g_basedir[PATH_MAX] = "/base";
+uint16_t g_basedir_len;
+int g_basedirfd;
 
 attrs32 * fsent_property_attrs = (attrs32[]) {{
 #undef DEF
@@ -352,7 +352,7 @@ void fsent_root_setup()
 
 void fsent_base_setup()
 {
-  fsent_graft(g_base_dir, &g_base);
+  fsent_graft(g_basedir, &g_base);
 }
 
 void fsent_cleanup()

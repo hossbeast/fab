@@ -50,9 +50,9 @@ extern const char *fsent_name_config;
 // globally scoped fsents
 extern struct fsent *g_root;            // directory node at /
 extern struct fsent *g_base;            // directory node at the base directory
-extern char g_base_dir[PATH_MAX];
-extern uint16_t g_base_dir_len;
-extern int g_base_dirfd;
+extern char g_basedir[PATH_MAX];
+extern uint16_t g_basedir_len;
+extern int g_basedirfd;
 
 // active list
 extern llist fsent_list;
