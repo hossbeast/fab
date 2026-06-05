@@ -4,6 +4,7 @@
 #include "moria/connect.h"
 #include "moria/graph.h"
 #include "moria/edge.h"
+#include "moria/foreach.h"
 #include "xlinux/xstdlib.h"
 #include "bacon/builder.h"
 #include "narrator.h"
@@ -13,28 +14,33 @@
 #include "vertex.h"
 #include "stats.h"
 #include "filesystem.h"
+#include "edge.h"
+#include "fsname.h"
+#include "namespace.h"
 
-llist index_edge_list = LLIST_INITIALIZER(index_edge_list);                 // active
-static llist index_edge_freelist = LLIST_INITIALIZER(index_edge_freelist);  // free
+llist ns_edge_list = LLIST_INITIALIZER(ns_edge_list);   // active
+static llist freelist = LLIST_INITIALIZER(freelist);    // free
 
 static void ns_edge_dispose(ns_edge * restrict se)
 {
   llist_delete(&se->edge.owner);
-  llist_append(&index_edge_freelist, &se->edge.owner);
+  llist_append(&freelist, &se->edge.owner);
+  ASAN_TAINT(se);
 }
 
 ns_edge *ns_edge_alloc()
 {
   ns_edge *se;
 
-  if((se = llist_shift(&index_edge_freelist, typeof(*se), edge.owner)) == 0) {
-    xmalloc(&se, sizeof(*se));
-  } else {
+  if((se = llist_shift(&freelist, typeof(*se), edge.owner))) {
+    ASAN_CLEAN(se);
     memset(se, 0, sizeof(*se));
+  } else {
+    xmalloc(&se, sizeof(*se));
   }
 
   moria_edge_init(&se->edge, &g_graph);
-  llist_append(&index_edge_list, &se->edge.owner);
+  llist_append(&ns_edge_list, &se->edge.owner);
 
   return se;
 }
@@ -53,15 +59,11 @@ void ns_edge_setup(void)
 
 void ns_edge_cleanup(void)
 {
-  ns_edge *se;
-  llist *T;
+  ns_edge *e;
 
-  llist_foreach_safe(&index_edge_list, se, edge.owner, T) {
-    ns_edge_dispose(se);
-  }
-
-  llist_foreach_safe(&index_edge_freelist, se, edge.owner, T) {
-    free(se);
+  while((e = llist_shift(&freelist, typeof(*e), edge.owner))) {
+    ASAN_CLEAN(e);
+    free(e);
   }
 }
 

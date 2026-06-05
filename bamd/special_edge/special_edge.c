@@ -17,13 +17,13 @@
 #include "edges.h"
 #include "vertices.h"
 #include "formula.h"
+#include "config_system.h"
+#include "namespace.h"
 #include "varset.h"
 #include "configset.h"
 #include "ruleset.h"
-#include "module.h"
-#include "config_system.h"
 
-static llist special_edge_list = LLIST_INITIALIZER(special_edge_list);          // active list
+llist special_edge_list = LLIST_INITIALIZER(special_edge_list);                 // active list
 static llist special_edge_freelist = LLIST_INITIALIZER(special_edge_freelist);  // freelist
 
 //
@@ -55,8 +55,7 @@ static void special_edge_dispose(special_edge * restrict se)
 void special_edge_release(special_edge * restrict se)
 {
   /* this edge must have been previously excised from the graph */
-  RUNTIME_ASSERT(!rbnode_attached(&se->edge.rbn_up));
-  RUNTIME_ASSERT(!rbnode_attached(&se->edge.rbn_down));
+  RUNTIME_ASSERT(moria_edge_degree(&se->edge) == 0);
 
   special_edge_dispose(se);
 }
@@ -113,13 +112,8 @@ void special_connect(
 void special_edge_cleanup()
 {
   special_edge *se;
-  llist *T;
 
-  llist_foreach_safe(&special_edge_list, se, edge.owner, T) {
-    special_edge_dispose(se);
-  }
-
-  llist_foreach_safe(&special_edge_freelist, se, edge.owner, T) {
+  while((se = llist_shift(&special_edge_freelist, typeof(*se), edge.owner))) {
     free(se);
   }
 }

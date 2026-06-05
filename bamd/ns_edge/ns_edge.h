@@ -5,24 +5,22 @@
 
 #include "types.h"
 #include "moria.h"
+#include "valyria/llist.h"
 
 struct graph_invalidation_context;
 struct entlist;
 enum edge_type;
 
 /*
- * EDGE_FSNAME_FSINDEX aka fsname B -> namespace B
- * EDGE_DIR_FSNAME aka dirnode B -> fsname A
- *
- * These edges are created for dirnodes in filesystems that are indexed for lookup.
- * When the set of directory nodes attached to the index-vertex changes, that
- * invalidation is propagated upwards to rmas (whose search matched that index-vertex)
- * and to modules (which had referenced that index-vertex for imports).
+ * EDGE_FSNAME_NS aka fsname B -> namespace A
+ * EDGE_FSTREE_NS aka fstree B -> namespace A
  */
 typedef struct ns_edge {
   struct moria_edge edge;
   uint32_t epoch;
 } ns_edge;
+
+extern llist ns_edge_list;
 
 void ns_edge_release(ns_edge * restrict se)
   __attribute__((nonnull));

@@ -110,6 +110,7 @@ static void __attribute__((nonnull)) fsent_dispose(fsent * restrict n)
 
   llist_delete(&n->vertex.owner);
   llist_append(&fsent_freelist, &n->vertex.owner);
+  ASAN_TAINT(n);
 }
 
 static void fsent_alloc(
@@ -125,10 +126,11 @@ static void fsent_alloc(
   RUNTIME_ASSERT(label_len);
   RUNTIME_ASSERT((attrs & VERTEX_TYPE_OPT) == 0);
 
-  if((n = llist_shift(&fsent_freelist, typeof(*n), vertex.owner)) == 0) {
-    xmalloc(&n, sizeof(*n));
-  } else {
+  if((n = llist_shift(&fsent_freelist, typeof(*n), vertex.owner))) {
+    ASAN_CLEAN(n);
     memset(n, 0, sizeof(*n));
+  } else {
+    xmalloc(&n, sizeof(*n));
   }
 
   fsent_name_init(&n->name, label, label_len);
@@ -394,14 +396,10 @@ void fsent_root_cleanup()
 
 void fsent_cleanup()
 {
-  llist *T;
   fsent *n;
 
-  llist_foreach_safe(&fsent_list, n, vertex.owner, T) {
-    fsent_dispose(n);
-  }
-
-  llist_foreach_safe(&fsent_freelist, n, vertex.owner, T) {
+  while((n = llist_shift(&fsent_freelist, typeof(*n), vertex.owner))) {
+    ASAN_CLEAN(n);
     free(n);
   }
 }

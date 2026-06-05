@@ -5,6 +5,7 @@
 
 #include "types.h"
 #include "moria.h"
+#include "valyria/llist.h"
 
 struct graph_invalidation_context;
 struct rule_module_association;
@@ -44,6 +45,8 @@ typedef struct meta_edge {
   struct fsent *tgt;
   struct fsname *index;
 } meta_edge;
+
+extern llist meta_edge_list;
 
 void meta_edge_cleanup(void);
 

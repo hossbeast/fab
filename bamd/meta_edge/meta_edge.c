@@ -23,42 +23,39 @@
 #include "vertices.h"
 #include "rule_system.h"
 
-static llist meta_edge_list = LLIST_INITIALIZER(meta_edge_list);          // active list
-static llist meta_edge_freelist = LLIST_INITIALIZER(meta_edge_freelist);  // freelist
+llist meta_edge_list = LLIST_INITIALIZER(meta_edge_list);          // active list
+static llist freelist = LLIST_INITIALIZER(freelist);               // freelist
 
 //
 // static
 //
 
-static void meta_edge_alloc(meta_edge ** restrict mep)
+static meta_edge *meta_edge_alloc(void)
 {
   meta_edge *se;
 
-  if((se = llist_shift(&meta_edge_freelist, typeof(*se), edge.owner)) == 0) {
-    xmalloc(&se, sizeof(*se));
-  } else {
+  if((se = llist_shift(&freelist, typeof(*se), edge.owner))) {
+    ASAN_CLEAN(se);
     memset(se, 0, sizeof(*se));
+  } else {
+    xmalloc(&se, sizeof(*se));
   }
 
   moria_edge_init(&se->edge, &g_graph);
 
   llist_append(&meta_edge_list, &se->edge.owner);
-  *mep = se;
-}
 
-static void meta_edge_dispose(meta_edge * restrict se)
-{
-  llist_delete(&se->edge.owner);
-  llist_append(&meta_edge_freelist, &se->edge.owner);
+  return se;
 }
 
 void meta_edge_release(meta_edge * restrict se)
 {
   /* this edge must have been previously excised from the graph */
-  RUNTIME_ASSERT(!rbnode_attached(&se->edge.rbn_up));
-  RUNTIME_ASSERT(!rbnode_attached(&se->edge.rbn_down));
+  RUNTIME_ASSERT(moria_edge_degree(&se->edge) == 0);
 
-  meta_edge_dispose(se);
+  llist_delete(&se->edge.owner);
+  llist_append(&freelist, &se->edge.owner);
+  ASAN_TAINT(se);
 }
 
 void meta_edge_cleanup()
@@ -93,7 +90,7 @@ meta_edge *meta_connect(
     return containerof(e, meta_edge, edge);
   }
   RUNTIME_ASSERT(r == MORIA_NOEDGE);
-  meta_edge_alloc(&me);
+  me = meta_edge_alloc();
   moria_connect(&ctx, &g_graph, &me->edge, B, A, type);
 
   /* update cached fields */
@@ -197,19 +194,5 @@ void meta_disconnecting(
       break;
     default:
       RTA;
-  }
-}
-
-void meta_edge_cleanup()
-{
-  meta_edge *se;
-  llist *T;
-
-  llist_foreach_safe(&meta_edge_list, se, edge.owner, T) {
-    meta_edge_dispose(se);
-  }
-
-  llist_foreach_safe(&meta_edge_freelist, se, edge.owner, T) {
-    free(se);
   }
 }

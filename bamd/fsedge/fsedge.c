@@ -8,7 +8,6 @@
 #include "moria/traverse.h"
 #include "moria/connect.h"
 #include "narrator.h"
-#include "common/hash.h"
 
 #include "fsedge.h"
 #include "fsent.h"
@@ -33,27 +32,13 @@ static void fsedge_dispose(fsedge * restrict fse)
 {
   llist_delete(&fse->edge.owner);
   llist_append(&fsedge_freelist, &fse->edge.owner);
+  ASAN_TAINT(fse);
 }
 
 void fsedge_release(fsedge * restrict fse)
 {
-  int x;
-
   /* this edge must have been previously excised from the graph */
-  if(fse->edge.attrs & MORIA_EDGE_HYPER)
-  {
-    for(x = 0; x < fse->edge.Alen; x++) {
-      RUNTIME_ASSERT(!rbnode_attached(&fse->edge.Alist[x].rbn));
-    }
-    for(x = 0; x < fse->edge.Blen; x++) {
-      RUNTIME_ASSERT(!rbnode_attached(&fse->edge.Blist[x].rbn));
-    }
-  }
-  else
-  {
-    RUNTIME_ASSERT(!rbnode_attached(&fse->edge.rbn_up));
-    RUNTIME_ASSERT(!rbnode_attached(&fse->edge.rbn_down));
-  }
+  RUNTIME_ASSERT(moria_edge_degree(&fse->edge) == 0);
 
   fsedge_dispose(fse);
 }
@@ -64,14 +49,10 @@ void fsedge_release(fsedge * restrict fse)
 
 void fsedge_cleanup()
 {
-  llist *T;
   fsedge *fse;
 
-  llist_foreach_safe(&fsedge_list, fse, edge.owner, T) {
-    fsedge_dispose(fse);
-  }
-
-  llist_foreach_safe(&fsedge_freelist, fse, edge.owner, T) {
+  while((fse = llist_shift(&fsedge_freelist, typeof(*fse), edge.owner))) {
+    ASAN_CLEAN(fse);
     free(fse);
   }
 }
@@ -80,8 +61,10 @@ void fsedge_alloc(fsedge ** restrict rv)
 {
   fsedge *fse;
 
-  if((fse = llist_shift(&fsedge_freelist, typeof(*fse), edge.owner)) == 0)
-  {
+  if((fse = llist_shift(&fsedge_freelist, typeof(*fse), edge.owner))) {
+    ASAN_CLEAN(fse);
+    memset(fse, 0, sizeof(*fse));
+  } else {
     xmalloc(&fse, sizeof(*fse));
   }
 

@@ -30,23 +30,8 @@ static void dir_rma_edge_dispose(dir_rma_edge * restrict drm)
 
 void dir_rma_edge_release(dir_rma_edge * restrict rde)
 {
-  int x;
-
   /* this edge must have been previously excised from the graph */
-  if(rde->edge.attrs & MORIA_EDGE_HYPER)
-  {
-    for(x = 0; x < rde->edge.Alen; x++) {
-      RUNTIME_ASSERT(!rbnode_attached(&rde->edge.Alist[x].rbn));
-    }
-    for(x = 0; x < rde->edge.Blen; x++) {
-      RUNTIME_ASSERT(!rbnode_attached(&rde->edge.Blist[x].rbn));
-    }
-  }
-  else
-  {
-    RUNTIME_ASSERT(!rbnode_attached(&rde->edge.rbn_up));
-    RUNTIME_ASSERT(!rbnode_attached(&rde->edge.rbn_down));
-  }
+  RUNTIME_ASSERT(moria_edge_degree(&rde->edge) == 0);
 
   dir_rma_edge_dispose(rde);
 }
@@ -73,28 +58,22 @@ static void dir_rma_alloc(dir_rma_edge ** restrict drmp)
 
 void dir_rma_cleanup(void)
 {
-  llist *T;
   dir_rma_edge *rde;
 
-  llist_foreach_safe(&drm_list, rde, edge.owner, T) {
-    dir_rma_edge_dispose(rde);
-  }
-
-  llist_foreach_safe(&drm_freelist, rde, edge.owner, T) {
+  while((rde = llist_shift(&drm_freelist, typeof(*rde), edge.owner))) {
     free(rde);
   }
 }
 
 void dir_rma_connect(fsent * restrict dir, rule_module_association *rma)
 {
-  moria_edge *e;
   dir_rma_edge *drm = 0;
   moria_connect_context ctx;
   int r;
 
   RUNTIME_ASSERT(vertex_filetype_get(&dir->vertex) == VERTEX_FILETYPE_DIR);
 
-  r = moria_preconnect(&ctx, &g_graph, &dir->vertex, &rma->vertex, EDGE_DIR_RMA, &e);
+  r = moria_preconnect(&ctx, &g_graph, &dir->vertex, &rma->vertex, EDGE_DIR_RMA, NULL);
   if(r == MORIA_HASEDGE) {
     return;
   }
