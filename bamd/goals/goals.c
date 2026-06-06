@@ -21,7 +21,6 @@
 #include "selector.h"
 #include "channel.h"
 #include "request_handler.h"
-#include "path_cache.h"
 #include "shadow.h"
 #include "vertex.h"
 
@@ -41,8 +40,8 @@ char goals_label[128];
 uint16_t goals_label_len;
 bool goals_reconcile;
 bool goals_build;
-static selector * goals_target_direct_selector;
-static selector * goals_target_transitive_selector;
+static selector *goals_target_direct_selector;
+static selector *goals_target_transitive_selector;
 static selector_context goals_selector_context;
 subsys sys_goals;
 
@@ -61,7 +60,7 @@ void goals_create_buildplan()
 
   /* targets selector, if any */
   if(goals_target_direct_selector || goals_target_transitive_selector) {
-    goals_selector_context.mod = vertex_module_get(&g_base->vertex);
+    goals_selector_context.mod = vertex_module_of(&g_base->vertex);
     goals_selector_context.cwd = g_base;
 
     if(goals_target_direct_selector)
@@ -77,18 +76,15 @@ void goals_create_buildplan()
       selector_exec(goals_target_transitive_selector, &goals_selector_context);
       buildplan_select_transitive(&goals_selector_context.selection->list);
     }
-  /* //targets, if used */
+  /* //targets, if referenced by any rules */
   } else if(!rbtree_empty(&g_shadow_targets->vertex.down)) {
     buildplan_add_transitive(&g_shadow_targets->vertex, 0);
-  /* otherwise, build everything (slow to compute) */
   } else {
+  /* otherwise, build everything (slow to compute) */
     moria_vertex_traversal_begin(&g_graph, &state);
     llist_foreach(&fsent_list, fse, vertex.owner) {
-      switch(vertex_type_get(&fse->vertex)) {
-        case VERTEX_FILE:
-          break;
-        default:
-          continue;
+      if(fsent_is_primary(fse)) {
+        continue;
       }
 
       buildplan_add_transitive(&fse->vertex, state);
@@ -167,39 +163,27 @@ void goals_sys_describe(const struct moria_vertex * restrict v, bacon_writer * r
         MAPPING
         STRING("target-direct")
         { LIST
-          selector_writer_write(goals_target_direct_selector, builder_writer);
+          selector_describe(goals_target_direct_selector, builder_writer);
         }
       }
       if(goals_target_transitive_selector) {
         MAPPING
         STRING("target-transitive")
         { LIST
-          selector_writer_write(goals_target_transitive_selector, builder_writer);
+          selector_describe(goals_target_transitive_selector, builder_writer);
         }
       }
       if(goals_build) {
         STRING("build");
       }
+      vertex_relations_describe(v, builder_writer);
     }
   }
 }
 
-void goals_say(narrator * restrict N)
+void goals_set_event(request_handler * restrict handler)
 {
-  bacon_writer writer;
-
-  bacon_writer_init(&writer);
-  bacon_writer_open(&writer, N);
-
-  goals_describe(&writer);
-
-  bacon_writer_close(&writer);
-  bacon_writer_destroy(&writer);
-}
-
-void goals_set_event()
-{
-  event_bacon *msg;
+  bamipc_message *msg;
   events_context ectx;
   bacon_writer writer, *builder_writer;
   narrator_fixed fixed;
@@ -247,7 +231,7 @@ void goals_set(
 
   clock_gettime(CLOCK_MONOTONIC, &goals_time);
 
-  goals_set_event();
+  goals_set_event(0);
 }
 
 void goals_sys_stats_build(const moria_vertex * restrict v, bool reset, struct bacon_writer * restrict builder_writer)

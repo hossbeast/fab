@@ -25,7 +25,6 @@ extern uint32_t goals_id;
 extern struct timespec goals_time;
 extern bool goals_reconcile;
 extern bool goals_build;
-extern struct moria_vertex *g_goals;
 
 void goals_set(
     pid_t pid
@@ -43,15 +42,13 @@ void goals_kickoff(struct request_handler * restrict handler)
 
 void goals_setup(void);
 void goals_cleanup(void);
-void goals_say(struct narrator * restrict N)
-  __attribute__((nonnull));
 
-void goals_describe(struct bacon_writer * restrict writer)
+void goals_sys_describe(const struct moria_vertex * restrict v, struct bacon_writer * restrict writer)
   __attribute__((nonnull));
 
 void goals_create_buildplan(void);
 
-void goals_set_event(void);
+void goals_set_event(struct request_handler * restrict handler);
 
-void goals_stats_build(bool reset, struct bacon_writer * restrict)
+void goals_sys_stats_build(const struct moria_vertex * restrict, bool reset, struct bacon_writer * restrict)
   __attribute__((nonnull));
