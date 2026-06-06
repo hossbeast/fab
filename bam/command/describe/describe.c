@@ -23,7 +23,18 @@
 static void usage(command * restrict cmd)
 {
   printf(
-"describe [<path>...]\n"
+"describe positional args\n"
+" <path>                       target to describe\n"
+"\n"
+"describe options\n"
+" --special                    also show nodes attached via the specials graph\n"
+" --no-special       (default) dont traverse into the specials graph\n"
+" -s                           also show nodes attached via the specials graph\n"
+" -S                           only show nodes attached via the specials graph\n"
+" --hidden           (default) show files not yet created\n"
+" --no-hidden\n"
+" --follow                     follow symlinks\n"
+" --no-follow        (default) visit, dont follow, symlinks\n"
   );
 }
 
@@ -35,37 +46,33 @@ void command_describe_connected(command * restrict cmd, bam_client * restrict cl
   narrator_fixed fixed;
   int x;
 
-  msg = bam_client_produce(client);
+  msg = client_tx(client);
   msg->type = BAMIPC_MSG_REQUEST;
   cmd->request_id = msg->id = ++client->msgid;
 
-  N = narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
+  N = narrator_fixed_init(&fixed, msg->text, msg->size);
   bacon_writer_init(&writer);
   builder_writer = bacon_writer_open(&writer, N);
 
   { LIST
-    if(cmd->context_module && g_args.context_module_id_len) {
-      MAPPING
-      STRING("context")
-      { SET
-        { MAPPING
-          STRING("module")
-          BYTES(g_args.context_module_id, g_args.context_module_id_len)
-        }
-      }
-    }
+    command_context(builder_writer);
     { MAPPING
       STRING("select")
       { LIST
         for(x = 0; x < cmd->targets_len; x++) {
           { MAPPING
-            STRING("lookup")
+            STRING("path")
             { SET
-              { MAPPING STRING("path")
-                BYTES(cmd->targets[x].s, cmd->targets[x].len)
+              { MAPPING STRING("pattern")
+                bacon_writer_push_bytes(builder_writer);
+                narrator_sayw(builder_writer->N, cmd->targets[x], cmd->targets_lens[x]);
+                bacon_writer_pop_bytes(builder_writer);
+              }
+              { MAPPING STRING("nofollow")
+                BOOL(cmd->nofollow)
               }
               { MAPPING STRING("hidden")
-                BOOL(true)
+                BOOL(cmd->hidden)
               }
             }
           }
@@ -73,13 +80,14 @@ void command_describe_connected(command * restrict cmd, bam_client * restrict cl
         { MAPPING
           STRING("traverse")
           { SET
-            { MAPPING
-              STRING("direction")
+            { MAPPING STRING("direction")
               STRING("up")
             }
-            { MAPPING
-              STRING("graph")
+            { MAPPING STRING("graph")
               STRING("special")
+            }
+            { MAPPING STRING("nofollow")
+              BOOL(true)
             }
             if(cmd->special == 0) {
               { MAPPING STRING("min-distance") UINT(0) }
@@ -103,8 +111,8 @@ void command_describe_connected(command * restrict cmd, bam_client * restrict cl
   narrator_sayc(N, 0);
   narrator_sayc(N, 0);
 
-  msg->size = fixed.l;
-  client_post(client, msg);
+  msg->len = fixed.l;
+  client_publish(client, msg);
 }
 
 void command_describe_process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
@@ -125,7 +133,7 @@ void command_describe_process(command * restrict cmd, bam_client * restrict clie
   if(cmd->any) {
     (void)!write(1, "\n", 1);
   }
-  (void)!write(1, msg->text, msg->size);
+  (void)!write(1, msg->text, msg->len);
   cmd->any = true;
 }
 
@@ -142,8 +150,12 @@ void command_describe_disconnected(command * restrict cmd)
 
 typeof(describe_command) describe_command = {
     usage : usage
+  , name : "describe"
   , connected : command_describe_connected
   , process : command_describe_process
   , disconnected : command_describe_disconnected
-  , context_module : true
+
+  /* defaults */
+  , hidden : true
+  , nofollow : true
 };

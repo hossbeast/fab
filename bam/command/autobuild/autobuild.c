@@ -47,6 +47,7 @@ static void process(command * restrict cmd, bam_client * restrict client, bamipc
   }
   else if(msg->evtype == BAMIPC_EVENT_GOALS_SET)
   {
+    /* goals will be considered to have been reassigned if the token was changed */
     if((token_str = strstr(msg->text, "token : 0x")) == 0) {
       goto reassigned;
     }
@@ -67,12 +68,21 @@ static void process(command * restrict cmd, bam_client * restrict client, bamipc
     }
 
 reassigned:
-    printf("goals reassigned by %"PRId64" with token %"PRIx64"\n", pid, token);
+    printf("goals reassigned by pid %"PRId64" with token %"PRIx64"\n", pid, token);
+    printf("%.*s\n", msg->len, msg->text);
     g_params.shutdown = true;
   }
   else if(msg->evtype == BAMIPC_EVENT_AUTORUN_SET)
   {
-    // gratuitous autorun-set event
+    /* gratuitous autorun-set event */
+  }
+  else if(msg->evtype == BAMIPC_EVENT_BUILD_START)
+  {
+    /* reset exit status on new build */
+    build_was_failed_slot = 0;
+  }
+  else if(msg->evtype == BAMIPC_EVENT_BUILD_END)
+  {
   }
   else
   {
@@ -93,23 +103,29 @@ static void connected(command * restrict cmd, bam_client * restrict client)
   bacon_writer writer, *builder_writer;
 
   /* subscribe to relevant events */
-  msg = bam_client_produce(client);
+  msg = client_tx(client);
   msg->type = BAMIPC_MSG_EVENTSUB;
   eventsubid = msg->id = ++client->msgid;
   msg->attrs = 0
+    /* needed for build */
     | BAMIPC_EVENT_FORMULA_FORK_BIN
-    | BAMIPC_EVENT_FORMULA_WAIT_BIN
+    | BAMIPC_EVENT_FORMULA_REAP_BIN
     | BAMIPC_EVENT_FORMULA_STDOUT_BIN
     | BAMIPC_EVENT_FORMULA_STDERR_BIN
     | BAMIPC_EVENT_FORMULA_AUXOUT_BIN
+    | BAMIPC_EVENT_SYSTEM_STATE_CHANGE
+    | BAMIPC_EVENT_BUILD_START
+    | BAMIPC_EVENT_BUILD_END
+    | BAMIPC_EVENT_RECONCILE_START
+    | BAMIPC_EVENT_RECONCILE_END
+    /* needed for autobuild */
     | BAMIPC_EVENT_GOALS_SET
     | BAMIPC_EVENT_AUTORUN_SET
-    | BAMIPC_EVENT_SYSTEM_STATE_CHANGE
     ;
-  client_post(client, msg);
+  client_publish(client, msg);
 
   /* send the request */
-  msg = bam_client_produce(client);
+  msg = client_tx(client);
   msg->type = BAMIPC_MSG_REQUEST;
   requestid = msg->id = ++client->msgid;
 
@@ -135,11 +151,13 @@ static void connected(command * restrict cmd, bam_client * restrict client)
   narrator_sayc(request_narrator, 0);
   narrator_sayc(request_narrator, 0);
 
-  msg->size = fixed.l;
-  client_post(client, msg);
+  msg->len = fixed.l;
+  client_publish(client, msg);
 }
 
-static void disconnected(command * restrict cmd) { }
+static void disconnected(command * restrict cmd)
+{
+}
 
 struct command autobuild_command = {
     name : "autobuild"

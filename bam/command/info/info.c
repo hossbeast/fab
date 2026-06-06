@@ -27,11 +27,11 @@ static void connected(command * restrict cmd, bam_client * restrict client)
   narrator *N;
   narrator_fixed fixed;
 
-  msg = bam_client_produce(client);
+  msg = client_tx(client);
   msg->type = BAMIPC_MSG_REQUEST;
   requestid = msg->id = ++client->msgid;
 
-  N = narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
+  N = narrator_fixed_init(&fixed, msg->text, msg->size);
   bacon_writer_init(&writer);
   builder_writer = bacon_writer_open(&writer, N);
 
@@ -40,10 +40,10 @@ static void connected(command * restrict cmd, bam_client * restrict client)
       STRING("select")
       { LIST
         MAPPING
-        STRING("lookup")
+        STRING("path")
         { SET
-          { MAPPING STRING("path")
-            LOADF("//system")
+          { MAPPING STRING("pattern")
+            LOADF("//bm/sys-system")
           }
         }
       }
@@ -57,8 +57,8 @@ static void connected(command * restrict cmd, bam_client * restrict client)
   narrator_sayc(N, 0);
   narrator_sayc(N, 0);
 
-  msg->size = fixed.l;
-  client_post(client, msg);
+  msg->len = fixed.l;
+  client_publish(client, msg);
 }
 
 static void process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
@@ -73,7 +73,7 @@ static void process(command * restrict cmd, bam_client * restrict client, bamipc
   }
 
   RUNTIME_ASSERT(msg->type == BAMIPC_MSG_RESULT);
-  (void)!write(1, msg->text, msg->size);
+  (void)!write(1, msg->text, msg->len);
   any = true;
 }
 

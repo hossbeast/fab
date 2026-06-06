@@ -32,7 +32,7 @@ typeof(varset_command) varset_command = {
   , connected : special_describe_connected
   , process : special_describe_process
   , disconnected : special_describe_disconnected
-  , prefix : "//varsets"
+  , prefix : "//bm/varsets"
   , visit : "varset"
 };
 
@@ -42,6 +42,6 @@ typeof(varsets_command) varsets_command = {
   , connected : special_list_connected
   , process : special_list_process
   , disconnected : special_list_disconnected
-  , path : "//varsets"
+  , path : "//bm/varsets"
   , visit : "varset"
 };

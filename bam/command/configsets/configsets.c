@@ -25,7 +25,7 @@ typeof(configset_command) configset_command = {
   , connected : special_describe_connected
   , process : special_describe_process
   , disconnected : special_describe_disconnected
-  , prefix : "//configsets"
+  , prefix : "//bm/configsets"
   , visit : "configset"
 };
 
@@ -35,6 +35,6 @@ typeof(configsets_command) configsets_command = {
   , connected : special_list_connected
   , process : special_list_process
   , disconnected : special_list_disconnected
-  , path : "//configsets"
+  , path : "//bm/configsets"
   , visit : "configset"
 };

@@ -115,12 +115,13 @@ static void connected(command * restrict cmd, bam_client * restrict client)
 
   if(args->targets_len)
   {
+    args->success.show_nodes = true;
+    args->success.show_sources = true;
+    args->success.show_targets = true;
     args->success.show_path = true;
     args->success.show_arguments = true;
     args->success.show_command = true;
     args->success.show_cwd = true;
-    args->success.show_sources = true;
-    args->success.show_targets = true;
     args->success.show_environment = true;
     args->success.show_status = true;
     args->success.show_stdout = true;
@@ -129,21 +130,25 @@ static void connected(command * restrict cmd, bam_client * restrict client)
   }
 
   /* subscribe to relevant events */
-  msg = bam_client_produce(client);
+  msg = client_tx(client);
   msg->type = BAMIPC_MSG_EVENTSUB;
   eventsubid = msg->id = ++client->msgid;
   msg->attrs = 0
     | BAMIPC_EVENT_FORMULA_FORK_BIN
-    | BAMIPC_EVENT_FORMULA_WAIT_BIN
+    | BAMIPC_EVENT_FORMULA_REAP_BIN
     | BAMIPC_EVENT_FORMULA_STDOUT_BIN
     | BAMIPC_EVENT_FORMULA_STDERR_BIN
     | BAMIPC_EVENT_FORMULA_AUXOUT_BIN
     | BAMIPC_EVENT_SYSTEM_STATE_CHANGE
+    | BAMIPC_EVENT_BUILD_START
+    | BAMIPC_EVENT_BUILD_END
+    | BAMIPC_EVENT_RECONCILE_START
+    | BAMIPC_EVENT_RECONCILE_END
     ;
-  client_post(client, msg);
+  client_publish(client, msg);
 
   /* send the request */
-  msg = bam_client_produce(client);
+  msg = client_tx(client);
   msg->type = BAMIPC_MSG_REQUEST;
   requestid = msg->id = PID_AS_MSGID(getpid());
 
@@ -151,10 +156,7 @@ static void connected(command * restrict cmd, bam_client * restrict client)
   bacon_writer_init(&writer);
   builder_writer = bacon_writer_open(&writer, request_narrator);
 
-  { MAPPING
-    STRING("autorun")
-    BOOL(false)
-  }
+  { MAPPING STRING("autorun") BOOL(false) }
 
   /* re-configure goals */
   build_command_collate_goals(MMS("bam-build"), builder_writer);
@@ -170,8 +172,8 @@ static void connected(command * restrict cmd, bam_client * restrict client)
   narrator_sayc(request_narrator, 0);
   narrator_sayc(request_narrator, 0);
 
-  msg->size = nstor.l;
-  client_post(client, msg);
+  msg->len = nstor.l;
+  client_publish(client, msg);
 }
 
 static void slot_alloc(build_slot ** slotp, uint32_t pid)
@@ -228,12 +230,9 @@ static void slot_print(build_slot *bs_zero)
   exit = 0;
   sig = 0;
   core = false;
-  if(WIFEXITED(results->status))
-  {
+  if(WIFEXITED(results->status)) {
     exit = WEXITSTATUS(results->status);
-  }
-  else if(WIFSIGNALED(results->status))
-  {
+  } else if(WIFSIGNALED(results->status)) {
     sig = WTERMSIG(results->status);
     core = WCOREDUMP(results->status);
   }
@@ -243,11 +242,12 @@ static void slot_print(build_slot *bs_zero)
     success = false;
   }
 
-  color = (typeof(color)){ 0 };
-  if(success)
+  color = (typeof(color)){ };
+  if(success) {
     color = (typeof(color)){ GREEN };
-  else
+  } else {
     color = (typeof(color)){ RED };
+  }
 
   if(color.len) {
     (void)!write(1, color.b, color.len);
@@ -282,12 +282,6 @@ static void slot_print(build_slot *bs_zero)
   }
   xsays("\n");
 
-  if((success && args->success.show_path) || (!success && args->error.show_path))
-  {
-    xsayf(" rule %.*s\n", (int)bs_zero->info.rule_id_len, bs_zero->info.rule_id);
-    xsayf(" formula %.*s\n", (int)bs_zero->info.formula_abspath_len, bs_zero->info.formula_abspath);
-    xsayf(" path %.*s\n", (int)bs_zero->info.path_len, bs_zero->info.path);
-  }
   if((success && args->success.show_command) || (!success && args->error.show_command))
   {
     y = 0;
@@ -307,45 +301,17 @@ static void slot_print(build_slot *bs_zero)
     }
     xsays("\n");
   }
-  if((success && args->success.show_environment) || (!success && args->error.show_environment))
+  if((success && args->success.show_nodes) || (!success && args->error.show_nodes))
   {
-    xsayf(" envp %2d\n", bs_zero->info.env_list_count);
-    y = 0;
-    for(bs = bs_zero; bs; bs = bs->next)
-    {
-      z = 0;
-      for(x = 0; x < bs->info.env_list_len; x++)
-      {
-        z += descriptor_type_unmarshal(&str, &descriptor_bam_build_string, bs->info.env_list + z, bs->info.env_list_size - z);
-        xsayf("  [%2d] %.*s\n", y, (int)str.text_len, str.text);
-        y++;
-      }
-      RUNTIME_ASSERT((z + 6) == bs->info.env_list_size);
-    }
-  }
-  if((success && args->success.show_arguments) || (!success && args->error.show_arguments))
-  {
-    xsayf(" argv %2d\n", bs_zero->info.arg_list_count);
-    y = 0;
-    for(bs = bs_zero; bs; bs = bs->next)
-    {
-      z = 0;
-      for(x = 0; x < bs->info.arg_list_len; x++)
-      {
-        z += descriptor_type_unmarshal(&str, &descriptor_bam_build_string, bs->info.arg_list + z, bs->info.arg_list_size - z);
-        xsayf("  [%2d] %.*s\n", y, (int)str.text_len, str.text);
-        y++;
-      }
-      RUNTIME_ASSERT((z + 6) == bs->info.arg_list_size);
-    }
-  }
-  if((success && args->success.show_cwd) || (!success && args->error.show_cwd))
-  {
-    xsayf(" cwd %.*s\n", (int)bs_zero->info.pwd_len, bs_zero->info.pwd);
+    xsayf(" %-10s %.*s %.*s\n", "bpe", (int)bs_zero->info.bpe_id_len, bs_zero->info.bpe_id, (int)bs_zero->info.bpe_path_len, bs_zero->info.bpe_path);
+    xsayf(" %-10s %.*s %.*s\n", "rma", (int)bs_zero->info.rma_id_len, bs_zero->info.rma_id, (int)bs_zero->info.rma_path_len, bs_zero->info.rma_path);
+    xsayf(" %-10s %.*s %.*s\n", "rule", (int)bs_zero->info.rule_id_len, bs_zero->info.rule_id, (int)bs_zero->info.rule_path_len, bs_zero->info.rule_path);
+    xsayf(" %-10s %.*s %.*s\n", "module", (int)bs_zero->info.module_id_len, bs_zero->info.module_id, (int)bs_zero->info.module_path_len, bs_zero->info.module_path);
+    xsayf(" %-10s %.*s %.*s\n", "formula", (int)bs_zero->info.formula_id_len, bs_zero->info.formula_id, (int)bs_zero->info.formula_path_len, bs_zero->info.formula_path);
   }
   if((success && args->success.show_sources) || (!success && args->error.show_sources))
   {
-    xsayf(" sources %2d\n", bs_zero->info.source_list_count);
+    xsayf(" sources (%d)\n", bs_zero->info.source_list_count);
     y = 0;
     for(bs = bs_zero; bs; bs = bs->next)
     {
@@ -361,7 +327,7 @@ static void slot_print(build_slot *bs_zero)
   }
   if((success && args->success.show_targets) || (!success && args->error.show_targets))
   {
-    xsayf(" targets %2d\n", bs_zero->info.target_list_count);
+    xsayf(" targets (%d)\n", bs_zero->info.target_list_count);
     y = 0;
     for(bs = bs_zero; bs; bs = bs->next)
     {
@@ -375,9 +341,48 @@ static void slot_print(build_slot *bs_zero)
       RUNTIME_ASSERT((z + 6) == bs->info.target_list_size);
     }
   }
+
+  if((success && args->success.show_path) || (!success && args->error.show_path)) {
+    xsayf(" file %.*s\n", (int)bs_zero->info.exec_path_len, bs_zero->info.exec_path);
+  }
+  if((success && args->success.show_cwd) || (!success && args->error.show_cwd)) {
+    xsayf(" cwd %.*s\n", (int)bs_zero->info.cwd_len, bs_zero->info.cwd);
+  }
+  if((success && args->success.show_environment) || (!success && args->error.show_environment))
+  {
+    xsayf(" envp (%d)\n", bs_zero->info.env_list_count);
+    y = 0;
+    for(bs = bs_zero; bs; bs = bs->next)
+    {
+      z = 0;
+      for(x = 0; x < bs->info.env_list_len; x++)
+      {
+        z += descriptor_type_unmarshal(&str, &descriptor_bam_build_string, bs->info.env_list + z, bs->info.env_list_size - z);
+        xsayf("  [%2d] %.*s\n", y, (int)str.text_len, str.text);
+        y++;
+      }
+      RUNTIME_ASSERT((z + 6) == bs->info.env_list_size);
+    }
+  }
+  if((success && args->success.show_arguments) || (!success && args->error.show_arguments))
+  {
+    xsayf(" argv (%d)\n", bs_zero->info.arg_list_count);
+    y = 0;
+    for(bs = bs_zero; bs; bs = bs->next)
+    {
+      z = 0;
+      for(x = 0; x < bs->info.arg_list_len; x++)
+      {
+        z += descriptor_type_unmarshal(&str, &descriptor_bam_build_string, bs->info.arg_list + z, bs->info.arg_list_size - z);
+        xsayf("  [%2d] %.*s\n", y, (int)str.text_len, str.text);
+        y++;
+      }
+      RUNTIME_ASSERT((z + 6) == bs->info.arg_list_size);
+    }
+  }
   if((success && args->success.show_status) || (!success && args->error.show_status))
   {
-    xsayf(" status %d exit %d signal %d core %s\n", results->status, exit, sig, core ? "true" : "false");
+    xsayf(" status %d exit %d signal %d core %s stdout %u stderr %u auxout %u\n", results->status, exit, sig, core ? "true" : "false", results->stdout_total, results->stderr_total, results->auxout_total);
   }
   if(color.len) {
     (void)!write(1, NOCOLOR);
@@ -516,20 +521,11 @@ static void slot_print(build_slot *bs_zero)
 
 static void process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
 {
-  if(msg->type == BAMIPC_MSG_RESPONSE)
-  {
-    if(msg->id == requestid) {
-      g_params.shutdown = true;
-    } else {
-      RUNTIME_ASSERT(msg->id == eventsubid);
-    }
+  if(msg->code != 0) {
+    g_params.shutdown = true;
+    return;
   }
-  else if(msg->type == BAMIPC_MSG_EVENTS && msg->evtype == BAMIPC_EVENT_SYSTEM_STATE_CHANGE)
-  {
-    /* printed in main */
-  }
-  else if(msg->type == BAMIPC_MSG_EVENTS)
-  {
+  if(msg->type == BAMIPC_MSG_EVENTS) {
     build_command_process_event(client, msg);
   }
 }
@@ -565,16 +561,14 @@ void build_command_collate_invalidations(bacon_writer * restrict builder_writer)
             continue;
           }
           { MAPPING
-            STRING("lookup")
+            STRING("path")
             { SET
-              { MAPPING
-                STRING("path")
-                BYTES(arg->s, (int)arg->sl)
-              }
-              { MAPPING
-                STRING("hidden")
-                BOOL(true)
-              }
+              { MAPPING STRING("pattern") BYTES(arg->s, (int)arg->sl) }
+              { MAPPING STRING("hidden") BOOL(true) }
+
+              /* dont require successful lookup for invalidations because reconcile may
+               * not have run yet and the requested node may be unknown */
+              { MAPPING STRING("expect") STRING("any") }
             }
           }
         }
@@ -604,16 +598,11 @@ void build_command_collate_invalidations(bacon_writer * restrict builder_writer)
             continue;
           }
           { MAPPING
-            STRING("lookup")
+            STRING("path")
             { SET
-              { MAPPING
-                STRING("path")
-                BYTES(arg->s, (int)arg->sl)
-              }
-              { MAPPING
-                STRING("hidden")
-                BOOL(true)
-              }
+              { MAPPING STRING("pattern") BYTES(arg->s, (int)arg->sl) }
+              { MAPPING STRING("hidden") BOOL(true) }
+              { MAPPING STRING("expect") STRING("any") }
             }
           }
         }
@@ -631,14 +620,8 @@ void build_command_collate_goals(const char * restrict label, uint16_t label_len
   MAPPING
   STRING("goals")
   { SET
-    { MAPPING
-      STRING("token")
-      HEX(g_params.pid)
-    }
-    { MAPPING
-      STRING("label")
-      BYTES(label, label_len)
-    }
+    { MAPPING STRING("token") HEX(g_params.pid) }
+    { MAPPING STRING("label") BYTES(label, label_len) }
 
     STRING("reconcile");
 
@@ -663,16 +646,11 @@ void build_command_collate_goals(const char * restrict label, uint16_t label_len
             continue;
           }
           { MAPPING
-            STRING("lookup")
+            STRING("path")
             { SET
-              { MAPPING
-                STRING("path")
-                BYTES(arg->s, (int)arg->sl)
-              }
-              { MAPPING
-                STRING("hidden")
-                BOOL(true)
-              }
+              { MAPPING STRING("pattern") BYTES(arg->s, (int)arg->sl) }
+              { MAPPING STRING("hidden") BOOL(true) }
+              { MAPPING STRING("expect") STRING("nonzero") }
             }
           }
         }
@@ -700,16 +678,11 @@ void build_command_collate_goals(const char * restrict label, uint16_t label_len
             continue;
           }
           { MAPPING
-            STRING("lookup")
+            STRING("path")
             { SET
-              { MAPPING
-                STRING("path")
-                BYTES(arg->s, (int)arg->sl)
-              }
-              { MAPPING
-                STRING("hidden")
-                BOOL(true)
-              }
+              { MAPPING STRING("pattern") BYTES(arg->s, (int)arg->sl) }
+              { MAPPING STRING("hidden") BOOL(true) }
+              { MAPPING STRING("expect") STRING("nonzero") }
             }
           }
         }
@@ -744,6 +717,24 @@ void build_command_process_event(bam_client * restrict client, bamipc_message * 
   bam_build_slot_info key;
   bool r;
 
+  if(msg->evtype == BAMIPC_EVENT_SYSTEM_STATE_CHANGE) {
+    if(msg->code != 0) {
+      g_params.shutdown = true;
+    }
+    return;
+  } if(msg->evtype == BAMIPC_EVENT_RECONCILE_START) {
+    return;
+  } else if(msg->evtype == BAMIPC_EVENT_RECONCILE_END) {
+    return;
+  } else if(msg->evtype == BAMIPC_EVENT_BUILD_START) {
+    build_was_failed_slot = 0;
+    return;
+  } else if(msg->evtype == BAMIPC_EVENT_BUILD_END) {
+    /* build completed */
+    g_params.shutdown = true;
+    return;
+  }
+
   ctx.entry = &key;
   pid = key.pid = msg->id;
   r = hashtable_search(build_slots_bypid, &ctx);
@@ -764,42 +755,42 @@ void build_command_process_event(bam_client * restrict client, bamipc_message * 
       hashtable_set(build_slots_bypid, &ctx);
     }
 
-    RUNTIME_ASSERT(msg->size <= sizeof(bs->info_buf));
-    memcpy(bs->info_buf, msg->text, msg->size);
+    RUNTIME_ASSERT(msg->len <= sizeof(bs->info_buf));
+    memcpy(bs->info_buf, msg->text, msg->len);
 
-    z = descriptor_type_unmarshal(&bs->info, &descriptor_bam_build_slot_info, bs->info_buf, msg->size);
-    RUNTIME_ASSERT(z == msg->size);
+    z = descriptor_type_unmarshal(&bs->info, &descriptor_bam_build_slot_info, bs->info_buf, msg->len);
+    RUNTIME_ASSERT(z == msg->len);
   }
   else
   {
     if(!r) {
-      fprintf(stderr, "unknown pid %"PRIu32" 0x%016x head %5u\n", pid, pid, containerof(msg, bamipc_page, msg)->head);
+      fprintf(stderr, "unknown pid %"PRIu32" 0x%016x index %5u\n", pid, pid, msg->index);
       return;
     }
     bs = hashtable_fetch(build_slots_bypid, &ctx);
 
     if(msg->evtype == BAMIPC_EVENT_FORMULA_STDOUT_BIN)
     {
-      assure(&bs->stdout_text, 1, bs->stdout_len + msg->size, &bs->stdout_alloc);
-      memcpy(bs->stdout_text + bs->stdout_len, msg->text, msg->size);
-      bs->stdout_len += msg->size;
+      assure(&bs->stdout_text, 1, bs->stdout_len + msg->len, &bs->stdout_alloc);
+      memcpy(bs->stdout_text + bs->stdout_len, msg->text, msg->len);
+      bs->stdout_len += msg->len;
     }
     else if(msg->evtype == BAMIPC_EVENT_FORMULA_STDERR_BIN)
     {
-      assure(&bs->stderr_text, 1, bs->stderr_len + msg->size, &bs->stderr_alloc);
-      memcpy(bs->stderr_text + bs->stderr_len, msg->text, msg->size);
-      bs->stderr_len += msg->size;
+      assure(&bs->stderr_text, 1, bs->stderr_len + msg->len, &bs->stderr_alloc);
+      memcpy(bs->stderr_text + bs->stderr_len, msg->text, msg->len);
+      bs->stderr_len += msg->len;
     }
     else if(msg->evtype == BAMIPC_EVENT_FORMULA_AUXOUT_BIN)
     {
-      assure(&bs->auxout_text, 1, bs->auxout_len + msg->size, &bs->auxout_alloc);
-      memcpy(bs->auxout_text + bs->auxout_len, msg->text, msg->size);
-      bs->auxout_len += msg->size;
+      assure(&bs->auxout_text, 1, bs->auxout_len + msg->len, &bs->auxout_alloc);
+      memcpy(bs->auxout_text + bs->auxout_len, msg->text, msg->len);
+      bs->auxout_len += msg->len;
     }
-    else if(msg->evtype == BAMIPC_EVENT_FORMULA_WAIT_BIN)
+    else if(msg->evtype == BAMIPC_EVENT_FORMULA_REAP_BIN)
     {
-      z = descriptor_type_unmarshal(&bs->results, &descriptor_bam_build_slot_results, msg->text, msg->size);
-      RUNTIME_ASSERT(z == msg->size);
+      z = descriptor_type_unmarshal(&bs->results, &descriptor_bam_build_slot_results, msg->text, msg->len);
+      RUNTIME_ASSERT(z == msg->len);
 
       build_was_failed_slot |= bs->results.status != 0;
       build_was_failed_slot |= bs->results.stderr_total > 0;

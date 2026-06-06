@@ -32,7 +32,6 @@ static void formula_usage(command * restrict cmd)
 static void formulas_usage(command * restrict cmd)
 {
   printf(
-"\n"
 "formulas options (none)\n"
   );
 }
@@ -43,7 +42,7 @@ typeof(formula_command) formula_command = {
   , connected : special_describe_connected
   , process : special_describe_process
   , disconnected : special_describe_disconnected
-  , prefix : "//formulas"
+  , prefix : "//bm/formulas"
   , visit : "formula"
 };
 
@@ -53,6 +52,6 @@ typeof(formulas_command) formulas_command = {
   , connected : special_list_connected
   , process : special_list_process
   , disconnected : special_list_disconnected
-  , path : "//formulas"
+  , path : "//bm/formulas"
   , visit : "formula"
 };

@@ -28,9 +28,6 @@ extern struct {
 extern struct command module_command;
 extern struct command modules_command;
 
-void module_command_identify(struct command * restrict cmd, struct bacon_writer * restrict builder_writer)
-  __attribute__((nonnull));
-
 void module_command_identify_dot(struct command * restrict cmd, struct bacon_writer * restrict builder_writer)
   __attribute__((nonnull));
 void module_command_identify_id(struct command * restrict cmd, struct bacon_writer * restrict builder_writer)
@@ -38,5 +35,5 @@ void module_command_identify_id(struct command * restrict cmd, struct bacon_writ
 void module_command_identify_target(struct command * restrict cmd, struct bacon_writer * restrict builder_writer)
   __attribute__((nonnull));
 
-void module_command_process(struct command * restrict cmd, struct bam_client * restrict client, struct bamipc_message * restrict msg)
+void module_command_connected(struct command * restrict cmd, struct bam_client * restrict client)
   __attribute__((nonnull));

@@ -13,6 +13,7 @@
 
 struct adhoc_args adhoc_args;
 static uint64_t requestid;
+static bool any;
 
 static void usage(command * restrict cmd)
 {
@@ -27,45 +28,52 @@ static void connected(command * restrict cmd, bam_client * restrict client)
   size_t z;
 
   /* send the request */
-  msg = bam_client_produce(client);
+  msg = client_tx(client);
   msg->type = BAMIPC_MSG_REQUEST;
   requestid = msg->id = ++client->msgid;
 
   z = 0;
-  z += zcatw(msg->text + z, sizeof(msg->text) - z, adhoc_args.request.s, adhoc_args.request.len);
-  z += zcatw(msg->text + z, sizeof(msg->text) - z, (char[]) { 0x00, 0x00 }, 2);
-  msg->size = z;
+  z += zcatw(msg->text + z, msg->size - z, adhoc_args.request, adhoc_args.request_len);
+  z += zcatw(msg->text + z, msg->size - z, (char[]) { 0x00, 0x00 }, 2);
+  msg->len = z;
 
-  client_post(client, msg);
+  client_publish(client, msg);
 }
 
 static void process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
 {
-  RUNTIME_ASSERT(msg->id == requestid);
+  if(msg->id != requestid) {
+    return;
+  }
 
   if(msg->type == BAMIPC_MSG_RESPONSE) {
-    if(msg->code != 0) {
-      fprintf(stderr, "response code %d msg %.*s\n", msg->code, msg->size, msg->text);
-    }
     g_params.shutdown = true;
     return;
   }
 
-  if(msg->type == BAMIPC_MSG_RESULT) {
-    (void)!write(1, msg->text, msg->size);
+  RUNTIME_ASSERT(msg->type == BAMIPC_MSG_RESULT);
+  if(msg->code != 0) {
+    return;
+  }
+
+  if(any) {
     (void)!write(1, "\n", 1);
   }
+  (void)!write(1, msg->text, msg->len);
+  any = true;
 }
 
-static void attached(command * restrict cmd, bam_client * restrict client)
+static void disconnected(command * restrict cmd)
 {
-
+  if(any) {
+    (void)!write(1, "\n", 1);
+  }
 }
 
 command adhoc_command = {
     name : "adhoc"
   , usage : usage
-  , attached : attached
   , connected : connected
+  , disconnected : disconnected
   , process : process
 };

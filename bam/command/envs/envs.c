@@ -18,7 +18,7 @@
 #include "args.h"
 
 static bam_envs_tell_result result;
-static bamipc_message *texts[64];
+static bamipc_message *texts[512];
 static uint16_t texts_len;
 
 //
@@ -28,7 +28,7 @@ static uint16_t texts_len;
 static void usage(command * restrict cmd)
 {
   printf(
-"envs options (none)\n"
+"module envs options (none)\n"
   );
 }
 
@@ -39,11 +39,11 @@ static void envs_command_tell(struct command * restrict cmd, bacon_writer * rest
       STRING("select")
       { LIST
         { MAPPING
-          STRING("lookup")
+          STRING("path")
           { SET
             { MAPPING
-              STRING("path")
-              LOADF("//modules/%.*s/envs", cmd->module_id_len, cmd->module_id)
+              STRING("pattern")
+              LOADF("//bm/modules/%.*s/envs", cmd->module_id_len, cmd->module_id)
             }
           }
         }
@@ -54,22 +54,6 @@ static void envs_command_tell(struct command * restrict cmd, bacon_writer * rest
   }
 }
 
-static void connected(command * restrict cmd, bam_client * restrict client)
-{
-  if(cmd->target_len == 0) {
-    cmd->identify_id_1 = command_post(cmd, client, module_command_identify_dot);
-  } else if(memmem(cmd->target, cmd->target_len, MMS("/")) != 0) {
-    cmd->identify_id_1 = command_post(cmd, client, module_command_identify_target);
-  } else {
-    cmd->identify_id_0 = command_post(cmd, client, module_command_identify_id);
-    cmd->identify_id_1 = command_post(cmd, client, module_command_identify_target);
-  }
-
-  message_no_error_list[0] = cmd->identify_id_0;
-  message_no_error_list[1] = cmd->identify_id_1;
-  message_no_error_list_len = 2;
-}
-
 static void process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
 {
   bam_envs_tell_item item;
@@ -77,54 +61,46 @@ static void process(command * restrict cmd, bam_client * restrict client, bamipc
   int x;
 
   if(msg->id == cmd->identify_id_0 && msg->type == BAMIPC_MSG_RESULT) {
-    if(msg->code == 0 && msg->size > 10) {
-      cmd->module_id_len = command_identify_result_parse(msg, cmd->module_id, sizeof(cmd->module_id));
+    if(msg->code == 0 && msg->len > 10) {
+      cmd->module_id_len = command_identify_result_parse(cmd->module_id, sizeof(cmd->module_id), msg);
     }
-    return;
-  }
-  if(msg->id == cmd->identify_id_1 && msg->type == BAMIPC_MSG_RESULT) {
-    if(msg->code == 0 && msg->size > 10) {
-      cmd->module_id_len = command_identify_result_parse(msg, cmd->module_id, sizeof(cmd->module_id));
+  } else if(msg->id == cmd->identify_id_1 && msg->type == BAMIPC_MSG_RESULT) {
+    if(msg->code == 0 && msg->len > 10) {
+      cmd->module_id_len = command_identify_result_parse(cmd->module_id, sizeof(cmd->module_id), msg);
     }
-    return;
-  }
-  if(msg->id == cmd->identify_id_0 && msg->type == BAMIPC_MSG_RESPONSE) {
-    return;
-  }
-  if(msg->id == cmd->identify_id_1 && msg->type == BAMIPC_MSG_RESPONSE) {
+  } else if(msg->id == cmd->identify_id_0 && msg->type == BAMIPC_MSG_RESPONSE) {
+    cmd->identify_id_1 = command_post(cmd, client, module_command_identify_target);
+  } else if(msg->id == cmd->identify_id_1 && msg->type == BAMIPC_MSG_RESPONSE) {
     if(cmd->module_id_len == 0) {
       /* lookup failure */
       dprintf(2, "module not found %.*s\n", (int)cmd->target_len, cmd->target);
       g_params.waserror = true;
       g_params.shutdown = true;
-      return;
+    } else {
+      cmd->tell_id = command_post(cmd, client, envs_command_tell);
     }
-    cmd->tell_id = command_post(cmd, client, envs_command_tell);
-    return;
-  }
-
-  if(msg->code != 0) {
+  } else if(msg->id == cmd->tell_id && msg->type == BAMIPC_MSG_RESPONSE) {
     g_params.shutdown = true;
-    return;
-  }
-
-  if(msg->id == cmd->tell_id && msg->type == BAMIPC_MSG_RESPONSE) {
-    g_params.shutdown = true;
-    goto end;
-  }
-
-  RUNTIME_ASSERT(msg->id == cmd->tell_id && msg->type == BAMIPC_MSG_RESULT);
-
-  if(msg->attrs == descriptor_bam_envs_tell_result.id) {
-    descriptor_type_unmarshal(&result, &descriptor_bam_envs_tell_result, msg->text, msg->size);
-  } else if(msg->attrs == 0) {
-    texts[texts_len++] = msg;
+    goto show;
+  } else if(msg->id == cmd->tell_id && msg->type == BAMIPC_MSG_RESULT) {
+    switch(msg->format) {
+      case DESCRIPTOR_ID_bam_envs_tell_result:
+        descriptor_type_unmarshal(&result, &descriptor_bam_envs_tell_result, msg->text, msg->len);
+        break;
+      case BAMIPC_MSG_BACON:
+      case BAMIPC_MSG_TEXT:
+        RUNTIME_ASSERT(texts_len < ARRAY_LEN(texts));
+        texts[texts_len++] = msg;
+        break;
+      default:
+        RTA;
+    }
   } else {
     RTA;
   }
   return;
 
-end:
+show:
   printf("#\n");
   printf("# %s\n", "module");
   printf("#  %.*s %.*s\n", result.module_id_len, result.module_id, result.module_abspath_len, result.module_abspath);
@@ -143,11 +119,12 @@ end:
   }
 
   for(x = 0; x < texts_len; x++) {
-    (void)!write(1, texts[x]->text, texts[x]->size);
+    (void)!write(1, texts[x]->text, texts[x]->len);
   }
 
   (void)!write(1, "\n", 1);
 }
+
 //
 // public
 //
@@ -155,6 +132,6 @@ end:
 typeof(envs_command) envs_command = {
     name : "envs"
   , usage : usage
-  , connected : connected
+  , connected : module_command_connected
   , process : process
 };

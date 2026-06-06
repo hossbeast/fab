@@ -21,8 +21,22 @@ typeof(stats_command) stats_command;
 static void usage(command * restrict cmd)
 {
   printf(
+"stats positional arguments\n"
+" <path>            (optional) select the subject node to show stats for\n"
+"                              with no subject, show global stats e.g. //bm/sys-system\n"
 "\n"
 "stats options\n"
+" --reset | -r                 read and clear stats for visited nodes\n"
+" --no-reset         (default) read but do not clear stats\n"
+"\n"
+" --special                    also visit nodes attached via the specials graph\n"
+" --no-special       (default) dont traverse into the specials graph\n"
+" -s                           also visit nodes attached via the specials graph\n"
+" -S                           only visit nodes attached via the specials graph\n"
+" --hidden           (default) show files not yet created\n"
+" --no-hidden\n"
+" --follow                     follow symlinks\n"
+" --no-follow        (default) visit, dont follow, symlinks\n"
   );
 }
 
@@ -39,47 +53,43 @@ static void connected(command * restrict cmd, bam_client * restrict client)
   narrator_fixed fixed;
 
   /* send the request */
-  msg = bam_client_produce(client);
+  msg = client_tx(client);
   msg->type = BAMIPC_MSG_REQUEST;
   cmd->request_id = msg->id = ++client->msgid;
 
-  N = narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
+  N = narrator_fixed_init(&fixed, msg->text, msg->size);
   bacon_writer_init(&writer);
   builder_writer = bacon_writer_open(&writer, N);
 
   { LIST
-    if(cmd->context_module && g_args.context_module_id_len) {
-      MAPPING
-      STRING("context")
-      { SET
-        { MAPPING
-          STRING("module")
-          BYTES(g_args.context_module_id, g_args.context_module_id_len)
-        }
-      }
-    }
+    command_context(builder_writer);
     { MAPPING
       STRING("select")
       { LIST
         if(cmd->targets_len == 0) {
           { MAPPING
-            STRING("lookup")
+            STRING("path")
             { SET
-              { MAPPING STRING("path")
-                STRING("//system")
+              { MAPPING STRING("pattern")
+                STRING("//bm/sys-system")
               }
             }
           }
         }
         for(x = 0; x < cmd->targets_len; x++) {
           { MAPPING
-            STRING("lookup")
+            STRING("path")
             { SET
-              { MAPPING STRING("path")
-                BYTES(cmd->targets[x].s, cmd->targets[x].len)
+              { MAPPING STRING("pattern")
+                bacon_writer_push_bytes(builder_writer);
+                narrator_sayw(builder_writer->N, cmd->targets[x], cmd->targets_lens[x]);
+                bacon_writer_pop_bytes(builder_writer);
+              }
+              { MAPPING STRING("nofollow")
+                BOOL(cmd->nofollow)
               }
               { MAPPING STRING("hidden")
-                BOOL(true)
+                BOOL(cmd->hidden)
               }
             }
           }
@@ -87,12 +97,10 @@ static void connected(command * restrict cmd, bam_client * restrict client)
         { MAPPING
           STRING("traverse")
           { SET
-            { MAPPING
-              STRING("direction")
+            { MAPPING STRING("direction")
               STRING("up")
             }
-            { MAPPING
-              STRING("graph")
+            { MAPPING STRING("graph")
               STRING("special")
             }
             if(cmd->special == 0) {
@@ -121,8 +129,8 @@ static void connected(command * restrict cmd, bam_client * restrict client)
   narrator_sayc(N, 0);
   narrator_sayc(N, 0);
 
-  msg->size = fixed.l;
-  client_post(client, msg);
+  msg->len = fixed.l;
+  client_publish(client, msg);
 }
 
 static void process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
@@ -139,7 +147,7 @@ static void process(command * restrict cmd, bam_client * restrict client, bamipc
   if(cmd->any) {
     (void)!write(1, "\n", 1);
   }
-  (void)!write(1, msg->text, msg->size);
+  (void)!write(1, msg->text, msg->len);
   cmd->any = true;
 }
 
@@ -156,8 +164,12 @@ static void disconnected(command * restrict cmd)
 
 typeof(stats_command) stats_command = {
     usage : usage
+  , name : "stats"
   , connected : connected
   , process : process
   , disconnected : disconnected
-  , context_module : true
+
+  /* defaults */
+  , hidden : true
+  , nofollow : true
 };

@@ -32,11 +32,11 @@ static void connected(command * restrict cmd, bam_client * restrict client)
   narrator *N;
   narrator_fixed fixed;
 
-  msg = bam_client_produce(client);
+  msg = client_tx(client);
   msg->type = BAMIPC_MSG_REQUEST;
   requestid = msg->id = ++client->msgid;
 
-  N = narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
+  N = narrator_fixed_init(&fixed, msg->text, msg->size);
   bacon_writer_init(&writer);
   builder_writer = bacon_writer_open(&writer, N);
 
@@ -45,11 +45,10 @@ static void connected(command * restrict cmd, bam_client * restrict client)
       STRING("select")
       { LIST
         MAPPING
-        STRING("lookup")
+        STRING("path")
         { SET
-          { MAPPING
-            STRING("path")
-            LOADF("//config")
+          { MAPPING STRING("pattern")
+            LOADF("//bm/sys-config")
           }
         }
       }
@@ -63,8 +62,8 @@ static void connected(command * restrict cmd, bam_client * restrict client)
   narrator_sayc(N, 0);
   narrator_sayc(N, 0);
 
-  msg->size = fixed.l;
-  client_post(client, msg);
+  msg->len = fixed.l;
+  client_publish(client, msg);
 }
 
 static void process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
@@ -84,11 +83,12 @@ static void process(command * restrict cmd, bam_client * restrict client, bamipc
 
   RUNTIME_ASSERT(msg->type == BAMIPC_MSG_RESULT);
 
-  switch(msg->attrs) {
+  switch(msg->format) {
     case DESCRIPTOR_ID_bam_config_tell_result:
-      descriptor_type_unmarshal(&result, &descriptor_bam_config_tell_result, msg->text, msg->size);
+      descriptor_type_unmarshal(&result, &descriptor_bam_config_tell_result, msg->text, msg->len);
       break;
-    case 0:
+    case BAMIPC_MSG_BACON:
+    case BAMIPC_MSG_TEXT:
       texts[texts_len++] = msg;
       break;
     default:
@@ -113,7 +113,7 @@ end:
   }
 
   for(x = 0; x < texts_len; x++) {
-    (void)!write(1, texts[x]->text, texts[x]->size);
+    (void)!write(1, texts[x]->text, texts[x]->len);
   }
 
   (void)!write(1, "\n", 1);

@@ -22,17 +22,17 @@ static void fstree_usage(command * restrict cmd)
 static void fstree_identify(struct command * restrict cmd, bacon_writer * restrict builder_writer)
 {
   { LIST
-    command_context(cmd, builder_writer);
+    command_context(builder_writer);
     { MAPPING
       STRING("select")
       { LIST
         { MAPPING
-          STRING("lookup")
+          STRING("path")
           { SET
             { MAPPING
-              STRING("path")
+              STRING("pattern")
               if(cmd->fstree_id_len) {
-                LOADF("//fstrees/%.*s", cmd->fstree_id_len, cmd->fstree_id)
+                LOADF("//bm/fstrees/%.*s", cmd->fstree_id_len, cmd->fstree_id)
               } else if(cmd->target_len) {
                 BYTES(cmd->target, cmd->target_len)
               } else {
@@ -56,11 +56,11 @@ static void fstree_describe(struct command * restrict cmd, bacon_writer * restri
       STRING("select")
       { LIST
         { MAPPING
-          STRING("lookup")
+          STRING("path")
           { SET
             { MAPPING
-              STRING("path")
-              LOADF("//fstrees/%.*s", cmd->fstree_id_len, cmd->fstree_id)
+              STRING("pattern")
+              LOADF("//bm/fstrees/%.*s", cmd->fstree_id_len, cmd->fstree_id)
             }
             { MAPPING
               STRING("nofollow")
@@ -95,11 +95,11 @@ static void describe_process(command * restrict cmd, bam_client * restrict clien
   }
 
   if(msg->id == cmd->identify_id && msg->type == BAMIPC_MSG_RESULT) {
-    cmd->fstree_id_len = command_identify_result_parse(msg, cmd->fstree_id, sizeof(cmd->fstree_id));
+    cmd->fstree_id_len = command_identify_result_parse(cmd->fstree_id, sizeof(cmd->fstree_id), msg);
     cmd->describe_id = command_post(cmd, client, fstree_describe);
   } else if(msg->id == cmd->identify_id && msg->type == BAMIPC_MSG_RESPONSE) {
   } else if(msg->id == cmd->describe_id && msg->type == BAMIPC_MSG_RESULT) {
-    (void)!write(1, msg->text, msg->size);
+    (void)!write(1, msg->text, msg->len);
     cmd->any = true;
   } else if(msg->id == cmd->describe_id && msg->type == BAMIPC_MSG_RESPONSE) {
     goto end;
@@ -137,8 +137,6 @@ typeof(fstree_command) fstree_command = {
   , connected : describe_connected
   , process : describe_process
   , disconnected : describe_disconnected
-//  , prefix : "//fstrees"
-//  , visit : "fstree"
 };
 
 typeof(fstrees_command) fstrees_command = {
@@ -147,6 +145,6 @@ typeof(fstrees_command) fstrees_command = {
   , connected : special_list_connected
   , process : special_list_process
   , disconnected : special_list_disconnected
-  , path : "//fstrees"
+  , path : "//bm/fstrees"
   , visit : "fstree"
 };

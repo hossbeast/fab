@@ -11,14 +11,6 @@ struct bam_client;
 
 typedef struct command_describe {
   command cmd;
-  bead targets[64];
-  uint16_t targets_len;
-
-  int special;
-
-  uint64_t requestid;
-  bool any;
-  bool context_module;
 } command_describe;
 
 extern struct command describe_command;

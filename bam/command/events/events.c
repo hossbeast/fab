@@ -21,21 +21,37 @@ struct events_args events_args;
 static void usage(command * restrict cmd)
 {
   printf(
+"events positional args\n"
+" -a                          show all events\n"
+" <event>                     show this event\n"
 "\n"
-"events\n"
-" stale\n"
-" fresh\n"
-" delete\n"
-" global-invalidate\n"
-" exec-fork\n"
-" exec-wait\n"
-" exec-stdout\n"
-" exec-stderr\n"
-" exec-auxout\n"
-" goals\n"
-" build-start\n"
-" build-end\n"
+"events list (text payload)\n"
+" stale                       node becomes invalidated\n"
+" fresh                       node is reconciled\n"
+" create                      node created\n"
+" delete                      node deleted\n"
+" goals-set                   goals are set\n"
+" autorun-set                 autorun is set\n"
+" system-state-change         global system state change\n"
+" build-start                 build begins\n"
+" build-end                   build completes\n"
+" reconcile-start             reconciliation begins\n"
+" reconcile-end               reconciliation completes\n"
+" formula-fork                formula execution begins\n"
+" formula-reap                formula execution completes\n"
+" rma-start                   rule execution begins\n"
+" rma-end                     rule execution completes\n"
+" rma-search                  rule search pattern nodes\n"
+" rma-generate                rule generate pattern nodes\n"
+" rma-resolve                 bind rule namespace resolution\n"
+" rma-bind                    bind rule attachments\n"
 "\n"
+"events list (binary payload)\n"
+" exec-fork                   formula child forked\n"
+" exec-wait                   formula child waited\n"
+" exec-stdout                 formula child writes to stdout\n"
+" exec-stderr                 formula child writes to stderr\n"
+" exec-auxout                 formula child writes to auxout\n"
   );
 }
 
@@ -48,19 +64,19 @@ static void connected(command * restrict cmd, bam_client * restrict client)
   bamipc_message * msg;
 
   /* subscribe to relevant events */
-  msg = bam_client_produce(client);
+  msg = client_tx(client);
   msg->type = BAMIPC_MSG_EVENTSUB;
   msg->id = ++client->msgid;
   msg->attrs = events_args.event_mask;
 
-  client_post(client, msg);
+  client_publish(client, msg);
 }
 
 static void process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
 {
   switch(msg->evtype) {
     case BAMIPC_EVENT_FORMULA_FORK_BIN:
-    case BAMIPC_EVENT_FORMULA_WAIT_BIN:
+    case BAMIPC_EVENT_FORMULA_REAP_BIN:
     case BAMIPC_EVENT_FORMULA_STDOUT_BIN:
     case BAMIPC_EVENT_FORMULA_STDERR_BIN:
     case BAMIPC_EVENT_FORMULA_AUXOUT_BIN:
@@ -68,7 +84,9 @@ static void process(command * restrict cmd, bam_client * restrict client, bamipc
       printf("0x%-16"PRIx64" %s\n", msg->id, attrs32_name_byvalue(&bamipc_event_type_attrs, msg->evtype));
       break;
     default:
-      printf("0x%-16"PRIx64" %s %.*s\n", msg->id, attrs32_name_byvalue(&bamipc_event_type_attrs, msg->evtype), msg->size, msg->text);
+      /* all other events carry bacon text or freetext */
+      printf("%.*s\n", msg->len, msg->text);
+      break;
   }
 }
 

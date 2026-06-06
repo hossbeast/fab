@@ -29,8 +29,7 @@ static uint16_t texts_len;
 static void usage(command * restrict cmd)
 {
   printf(
-"\n"
-"vars options\n"
+"module vars options\n"
   );
 }
 
@@ -41,11 +40,11 @@ static void vars_command_tell(struct command * restrict cmd, bacon_writer * rest
       STRING("select")
       { LIST
         { MAPPING
-          STRING("lookup")
+          STRING("path")
           { SET
             { MAPPING
-              STRING("path")
-              LOADF("//modules/%.*s/vars", cmd->module_id_len, cmd->module_id)
+              STRING("pattern")
+              LOADF("//bm/modules/%.*s/vars", cmd->module_id_len, cmd->module_id)
             }
           }
         }
@@ -56,22 +55,6 @@ static void vars_command_tell(struct command * restrict cmd, bacon_writer * rest
   }
 }
 
-static void connected(command * restrict cmd, bam_client * restrict client)
-{
-  if(cmd->target_len == 0) {
-    cmd->identify_id_1 = command_post(cmd, client, module_command_identify_dot);
-  } else if(memmem(cmd->target, cmd->target_len, MMS("/")) != 0) {
-    cmd->identify_id_1 = command_post(cmd, client, module_command_identify_target);
-  } else {
-    cmd->identify_id_0 = command_post(cmd, client, module_command_identify_id);
-    cmd->identify_id_1 = command_post(cmd, client, module_command_identify_target);
-  }
-
-  message_no_error_list[0] = cmd->identify_id_0;
-  message_no_error_list[1] = cmd->identify_id_1;
-  message_no_error_list_len = 2;
-}
-
 static void process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
 {
   bam_vars_tell_item item;
@@ -79,14 +62,15 @@ static void process(command * restrict cmd, bam_client * restrict client, bamipc
   int x;
 
   if(msg->id == cmd->identify_id_0 && msg->type == BAMIPC_MSG_RESULT) {
-    if(msg->code == 0 && msg->size > 10) {
-      cmd->module_id_len = command_identify_result_parse(msg, cmd->module_id, sizeof(cmd->module_id));
+    if(msg->code == 0 && msg->len > 10) {
+      cmd->module_id_len = command_identify_result_parse(cmd->module_id, sizeof(cmd->module_id), msg);
     }
   } else if(msg->id == cmd->identify_id_1 && msg->type == BAMIPC_MSG_RESULT) {
-    if(msg->code == 0 && msg->size > 10) {
-      cmd->module_id_len = command_identify_result_parse(msg, cmd->module_id, sizeof(cmd->module_id));
+    if(msg->code == 0 && msg->len > 10) {
+      cmd->module_id_len = command_identify_result_parse(cmd->module_id, sizeof(cmd->module_id), msg);
     }
   } else if(msg->id == cmd->identify_id_0 && msg->type == BAMIPC_MSG_RESPONSE) {
+    cmd->identify_id_1 = command_post(cmd, client, module_command_identify_target);
   } else if(msg->id == cmd->identify_id_1 && msg->type == BAMIPC_MSG_RESPONSE) {
     if(cmd->module_id_len == 0) {
       /* lookup failure */
@@ -100,12 +84,16 @@ static void process(command * restrict cmd, bam_client * restrict client, bamipc
     g_params.shutdown = true;
     goto show;
   } else if(msg->id == cmd->tell_id && msg->type == BAMIPC_MSG_RESULT) {
-    if(msg->attrs == descriptor_bam_vars_tell_result.id) {
-      descriptor_type_unmarshal(&result, &descriptor_bam_vars_tell_result, msg->text, msg->size);
-    } else if(msg->attrs == 0) {
-      texts[texts_len++] = msg;
-    } else {
-      RTA;
+    switch(msg->format) {
+      case DESCRIPTOR_ID_bam_vars_tell_result:
+        descriptor_type_unmarshal(&result, &descriptor_bam_vars_tell_result, msg->text, msg->len);
+        break;
+      case BAMIPC_MSG_BACON:
+      case BAMIPC_MSG_TEXT:
+        texts[texts_len++] = msg;
+        break;
+      default:
+        RTA;
     }
   } else {
     RTA;
@@ -131,7 +119,7 @@ show:
   }
 
   for(x = 0; x < texts_len; x++) {
-    (void)!write(1, texts[x]->text, texts[x]->size);
+    (void)!write(1, texts[x]->text, texts[x]->len);
   }
 
   (void)!write(1, "\n", 1);
@@ -144,6 +132,6 @@ show:
 typeof(vars_command) vars_command = {
     name : "vars"
   , usage : usage
-  , connected : connected
+  , connected : module_command_connected
   , process : process
 };

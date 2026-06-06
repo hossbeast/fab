@@ -20,12 +20,13 @@ extern struct build_args {
   uint16_t targets_len;
 
   struct show_settings {
+    bool show_nodes;
+    bool show_sources;
+    bool show_targets;
     bool show_path;
     bool show_arguments;
     bool show_command;
     bool show_cwd;
-    bool show_sources;
-    bool show_targets;
     bool show_environment;
     bool show_status;
 

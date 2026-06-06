@@ -11,6 +11,7 @@
 #include "zcat.h"
 
 static uint64_t requestid;
+static uint64_t eventsubid;
 
 static void usage(command * restrict cmd)
 {
@@ -28,49 +29,57 @@ static void connected(command * restrict cmd, bam_client * restrict client)
   bamipc_message * msg;
   size_t z;
 
+  /* subscribe to relevant events */
+  msg = client_tx(client);
+  msg->type = BAMIPC_MSG_EVENTSUB;
+  eventsubid = msg->id = ++client->msgid;
+  msg->attrs = 0
+    | BAMIPC_EVENT_SYSTEM_STATE_CHANGE
+    | BAMIPC_EVENT_RECONCILE_START
+    | BAMIPC_EVENT_RECONCILE_END
+    ;
+  client_publish(client, msg);
+
   /* send the request */
-  msg = bam_client_produce(client);
+  msg = client_tx(client);
   msg->type = BAMIPC_MSG_REQUEST;
   requestid = msg->id = ++client->msgid;
 
   z = 0;
-  z += zcats(msg->text + z, sizeof(msg->text) - z, "reconcile");
+  z += zcats(msg->text + z, msg->size - z, "reconcile");
 
   // two terminating null bytes
-  z += zcatc(msg->text + z, sizeof(msg->text) - z, 0);
-  z += zcatc(msg->text + z, sizeof(msg->text) - z, 0);
-  msg->size = z;
+  z += zcatc(msg->text + z, msg->size - z, 0);
+  z += zcatc(msg->text + z, msg->size - z, 0);
+  msg->len = z;
 
-  client_post(client, msg);
+  client_publish(client, msg);
 }
 
 static void process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
 {
-  if(msg->type == BAMIPC_MSG_EVENTS && msg->evtype == BAMIPC_EVENT_SYSTEM_STATE_CHANGE) {
+  if(msg->type == BAMIPC_MSG_EVENTS) {
+    /* wait until the reconcile-end event, which will happen even if there is an error
+     * emitted during the reconcile process */
+    if(msg->evtype == BAMIPC_EVENT_RECONCILE_END) {
+      g_params.shutdown = true;
+    }
     return;
   }
 
-  RUNTIME_ASSERT(msg->id == requestid);
+  RUNTIME_ASSERT(msg->id == requestid || msg->id == eventsubid);
   RUNTIME_ASSERT(msg->type == BAMIPC_MSG_RESPONSE);
 
-  g_params.shutdown = true;
-}
-
-static void attached(command * restrict cmd, bam_client * restrict client)
-{
-
+  //g_params.shutdown = true;
 }
 
 //
 // public
 //
 
-static void disconnected(command * restrict cmd) { }
 struct command reconcile_command = {
     name : "reconcile"
-  , attached : attached
   , usage : usage
   , connected : connected
   , process : process
-  , disconnected : disconnected
 };

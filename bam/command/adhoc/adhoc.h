@@ -7,7 +7,8 @@
 #include "args.h"
 
 extern struct adhoc_args {
-  bead request;
+  const char *request;
+  uint16_t request_len;
 } adhoc_args;
 
 extern struct command adhoc_command;

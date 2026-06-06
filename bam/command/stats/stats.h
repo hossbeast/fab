@@ -9,7 +9,8 @@
 typedef struct {
   command cmd;
 
-  bead targets[64];
+  const char *targets[64];
+  uint16_t targets_lens[64];
   uint16_t targets_len;
 
   bool reset;
