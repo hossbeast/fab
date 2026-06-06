@@ -8,3 +8,4 @@
 
 extern struct command ruleset_command;
 extern struct command rulesets_command;
+extern struct command module_rulesets_command;

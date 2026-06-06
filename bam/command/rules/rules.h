@@ -4,7 +4,6 @@
 #pragma once
 
 #include "command.h"
-#include "modules.h"
 
 /* rules commands */
 extern command rule_command;

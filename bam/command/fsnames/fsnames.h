@@ -8,3 +8,5 @@
 
 extern struct command fsname_command;
 extern struct command fsnames_command;
+extern struct command namespace_fsname_command;
+extern struct command namespace_fsnames_command;

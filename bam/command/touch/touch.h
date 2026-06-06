@@ -7,8 +7,20 @@
 #include "args.h"
 
 extern struct touch_args {
-  bead targets[64];
+  /* targets args */
+  const char *targets[64];
+  uint16_t targets_lens[64];
   uint16_t targets_len;
+  bool nofollow;
+  bool hidden;
+
+  /* general */
+  bool recursive;
+  bool primary;
+  bool cross_module;
+  bool cross_fstree;
+  uint16_t min_distance;
+  uint16_t max_distance;
 } touch_args;
 
 extern struct command touch_command;

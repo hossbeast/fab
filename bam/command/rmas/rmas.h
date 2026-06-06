@@ -8,14 +8,13 @@
 
 /* rmas commands */
 extern struct command rma_command;
+extern struct command rma_run_command;
 extern struct command rmas_command;
+extern struct command module_rma_command;
+extern struct command module_rma_run_command;
+extern struct command module_rmas_command;
 
-/* module rmas subcommand */
-extern struct {
-  char module_id[40];
-  uint16_t module_id_len;
-  uint64_t module_identify_id;
-  uint64_t list_id;
-} h;
-
-extern command module_rmas_command;
+extern struct rma_run_args {
+  bool show_paths;
+  bool show_ids;
+} rma_run_args;

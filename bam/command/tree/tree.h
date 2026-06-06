@@ -9,8 +9,10 @@
 #define TREE_LS 1
 
 extern struct tree_args {
-  bead target;            // identifies the node to start the tree from
-  bool nofollow;          // on target lookup
+  const char *targets[64]; // identifies the node to start the tree from
+  uint16_t targets_lens[64];
+  uint16_t targets_len;
+  bool nofollow;          // only on target lookup
   bool hidden;
   const char *graph;
   uint16_t graph_len;
@@ -23,6 +25,10 @@ extern struct tree_args {
   bool show_paths;
   uint16_t min_distance;
   uint16_t max_distance;
+  int special;
+  bool primary;
+  bool cross_module;
+  bool cross_fstree;
 } tree_args;
 
 extern struct command tree_command;
