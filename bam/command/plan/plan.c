@@ -8,7 +8,7 @@
 #include "narrator.h"
 #include "narrator/fixed.h"
 
-#include "buildplan.h"
+#include "plan.h"
 #include "args.h"
 #include "command.h"
 #include "info.h"
@@ -16,7 +16,7 @@
 
 #include "zcat.h"
 
-struct buildplan_args buildplan_args;
+struct plan_args plan_args;
 static uint64_t requestid;
 static bool any;
 
@@ -27,7 +27,7 @@ static bool any;
 static void usage(command * restrict cmd)
 {
   printf(
-"buildplan options (none)\n"
+"plan options (none)\n"
   );
 }
 
@@ -38,24 +38,21 @@ static void connected(command * restrict cmd, bam_client * restrict client)
   narrator *N;
   narrator_fixed fixed;
 
-  msg = bam_client_produce(client);
+  msg = client_tx(client);
   msg->type = BAMIPC_MSG_REQUEST;
   requestid = msg->id = ++client->msgid;
 
-  N = narrator_fixed_init(&fixed, msg->text, sizeof(msg->text));
+  N = narrator_fixed_init(&fixed, msg->text, msg->size);
   bacon_writer_init(&writer);
   builder_writer = bacon_writer_open(&writer, N);
 
   { LIST
-    { MAPPING
-      STRING("select")
+    { MAPPING STRING("select")
       { LIST
-        MAPPING
-        STRING("lookup")
+        MAPPING STRING("path")
         { SET
-          { MAPPING
-            STRING("path")
-            LOADF("//buildplan")
+          { MAPPING STRING("pattern")
+            LOADF("//bm/sys-plan")
           }
         }
       }
@@ -69,13 +66,16 @@ static void connected(command * restrict cmd, bam_client * restrict client)
   narrator_sayc(N, 0);
   narrator_sayc(N, 0);
 
-  msg->size = fixed.l;
-  client_post(client, msg);
+  msg->len = fixed.l;
+  client_publish(client, msg);
 }
 
 static void process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
 {
-  if(msg->id != requestid) {
+  if(msg->code != 0) {
+    g_params.shutdown = true;
+    return;
+  } else if(msg->id != requestid) {
     return;
   }
 
@@ -85,15 +85,17 @@ static void process(command * restrict cmd, bam_client * restrict client, bamipc
   }
 
   RUNTIME_ASSERT(msg->type == BAMIPC_MSG_RESULT);
-  (void)!write(1, msg->text, msg->size);
-  (void)!write(1, "\n", 1);
+  if(any) {
+    (void)!write(1, "\n", 1);
+  }
+  (void)!write(1, msg->text, msg->len);
   any = true;
 }
 
 static void disconnected(command * restrict cmd)
 {
   if(any) {
-    printf("\n");
+    (void)!write(1, "\n", 1);
   }
 }
 
@@ -101,8 +103,9 @@ static void disconnected(command * restrict cmd)
 // public
 //
 
-struct command buildplan_command = {
+struct command plan_command = {
     usage : usage
+  , name : "plan"
   , connected : connected
   , process : process
   , disconnected : disconnected

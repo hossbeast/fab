@@ -5,7 +5,7 @@
 
 #include "command.h"
 
-extern struct buildplan_args {
-} buildplan_args;
+extern struct plan_args {
+} plan_args;
 
-extern struct command buildplan_command;
+extern struct command plan_command;
