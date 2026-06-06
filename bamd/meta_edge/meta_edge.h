@@ -16,13 +16,19 @@ struct entlist;
 
 /*
 meta-edge types
- EDGE_RMA_RULES
+ EDGE_FML_BPE
+ EDGE_FML_REC_BPE
+ EDGE_FML_REC_BUILD_REC
+ EDGE_FML_RMA
+ EDGE_FSNAME_MOD
+ EDGE_FSNAME_PLUGIN
+ EDGE_FSNAME_RMA
+ EDGE_LOOKUP
+ EDGE_RMA_BIND
+ EDGE_RMA_BPE
  EDGE_RMA_MOD
  EDGE_RULE_RMA
- EDGE_FML_BPE
- EDGE_RMA_BPE
- EDGE_BMA_TGT
- EDGE_FSINDEX_BMA
+ EDGE_RULE_RULESET
 */
 
 typedef struct meta_edge {
@@ -51,11 +57,10 @@ void meta_disconnecting(
 void meta_edge_release(meta_edge * restrict se)
   __attribute__((nonnull));
 
-bool meta_connect(
+meta_edge *meta_connect(
     struct moria_vertex * restrict B
   , struct moria_vertex * restrict A
   , enum edge_type type
   , struct graph_invalidation_context * restrict invaliation
-  , meta_edge ** restrict mep
 )
   __attribute__((nonnull));

@@ -60,12 +60,21 @@ void meta_edge_release(meta_edge * restrict se)
   meta_edge_dispose(se);
 }
 
-bool meta_connect(
+void meta_edge_cleanup()
+{
+  meta_edge *se;
+
+  while((se = llist_shift(&freelist, typeof(*se), edge.owner))) {
+    ASAN_CLEAN(se);
+    free(se);
+  }
+}
+
+meta_edge *meta_connect(
     moria_vertex * restrict B
   , moria_vertex * restrict A
   , edge_type type
   , graph_invalidation_context * restrict invalidation
-  , meta_edge ** restrict mep
 )
 {
   meta_edge *me;
@@ -77,12 +86,10 @@ bool meta_connect(
   fsent *tgt;
   formula *fml;
   struct rule *rule;
-  struct ruleset *rules;
 
   r = moria_preconnect(&ctx, &g_graph, B, A, type, &e);
   if(r == MORIA_HASEDGE) {
-    *mep = containerof(e, meta_edge, edge);
-    return false;
+    return containerof(e, meta_edge, edge);
   }
   RUNTIME_ASSERT(r == MORIA_NOEDGE);
   meta_edge_alloc(&me);
@@ -90,11 +97,7 @@ bool meta_connect(
 
   /* update cached fields */
   switch(type) {
-    case EDGE_RMA_RULESET:
-      rma = containerof(B, typeof(*rma), vertex);
-      rules = containerof(A, typeof(*rules), vertex);
-      me->rma = rma;
-      rma->rules = rules;
+    case EDGE_RULE_RULESET:
       break;
     case EDGE_RULE_RMA:
       rule = containerof(B, typeof(*rule), vertex);
@@ -118,7 +121,7 @@ bool meta_connect(
       bpe->rma = rma;
       bpe->rma_bpe_me = me;
       break;
-    case EDGE_RMA_TGT:
+    case EDGE_RMA_BIND:
       rma = containerof(B, typeof(*rma), vertex);
       tgt = containerof(A, typeof(*tgt), vertex);
       me->rma = rma;
@@ -127,13 +130,19 @@ bool meta_connect(
     case EDGE_RMA_MOD:
     case EDGE_FSNAME_RMA:
     case EDGE_FSNAME_MOD:
+    case EDGE_FSNAME_PLUGIN:
+    case EDGE_NS_RMA:
+    case EDGE_LOOKUP:
+    case EDGE_LOOKUP_PLUGIN_FILE:
+    case EDGE_FML_REC_BPE:
+    case EDGE_FML_REC_BUILD_REC:
+    case EDGE_FML_BPE:
       break;
     default:
       RTA;
   }
 
-  *mep = me;
-  return true;
+  return me;
 }
 
 void meta_disconnecting(
@@ -188,6 +197,10 @@ void meta_disconnecting(
     case EDGE_RMA_MOD:
     case EDGE_FSNAME_RMA:
     case EDGE_FSNAME_MOD:
+    case EDGE_FSNAME_PLUGIN:
+    case EDGE_FML_REC_BPE:
+    case EDGE_FML_REC_BUILD_REC:
+    case EDGE_FML_BPE:
       break;
     default:
       RTA;
