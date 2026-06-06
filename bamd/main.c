@@ -1,79 +1,61 @@
 /* SPDX-License-Identifier: GPL-3.0 */
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include <errno.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
+#include "bacon/load.h"
 #include "bam/load.h"
+#include "bam/lockfile.h"
+#include "bam/sigutil.h"
 #include "lorien/load.h"
 #include "moria/load.h"
 #include "narrator/load.h"
-#include "bacon/load.h"
-
-#include "xlinux/xstdlib.h"
 #include "xlinux/xfcntl.h"
-#include "xlinux/xunistd.h"
 #include "xlinux/xpthread.h"
-#include "xlinux/xsignal.h"
-#include "bam/ipc.h"
-#include "bam/sigutil.h"
-#include "bam/lockfile.h"
+#include "xlinux/xstdlib.h"
+#include "xlinux/xunistd.h"
 
+#include "args.h"
+#include "bpe.h"
 #include "build.h"
 #include "buildplan.h"
-#include "configset.h"
+#include "channel.h"
+#include "channel_server_thread.h"
+#include "client.h"
 #include "config.h"
 #include "config_system.h"
-#include "filesystem.h"
-#include "formula.h"
-#include "rule_system.h"
-#include "module.h"
-#include "block.h"
-#include "rma.h"
-#include "module_edge.h"
-#include "monitor_thread.h"
-#include "timeout_thread.h"
-#include "fsent.h"
-#include "shadow.h"
-#include "notify_thread.h"
-#include "params.h"
-#include "args.h"
-#include "request.h"
-#include "channel_server_thread.h"
-#include "dependency.h"
-#include "sweeper_thread.h"
-#include "handler_thread.h"
-#include "reconcile.h"
-#include "channel.h"
-#include "request_handler.h"
-#include "varset.h"
-#include "goals.h"
-#include "stats.h"
-#include "selection.h"
-#include "ruleset.h"
-#include "special_edge.h"
-#include "ns_edge.h"
-#include "dir_rma_edge.h"
-#include "meta_edge.h"
-#include "rma.h"
-#include "bpe.h"
-#include "fsedge.h"
-#include "rcu.h"
-#include "fsname.h"
-#include "plugin.h"
+#include "configset.h"
+#include "dir_fsname_edge.h"
 #include "events/events.h"
-#include "fstree.h"
-#include "namespace.h"
+#include "exec_value.h"
+#include "formula.h"
 #include "filesystem.h"
-#include "system.h"
+#include "formula_record.h"
+#include "fsent.h"
+#include "fsname.h"
+#include "fstree.h"
+#include "goals.h"
+#include "monitor_thread.h"
+#include "namespace.h"
 #include "notify.h"
-
-#include "common/parseint.h"
-#include "common/hash.h"
-
-#include "locks.h"
+#include "notify_thread.h"
+#include "ns_edge.h"
+#include "params.h"
+#include "plugin.h"
+#include "plugin_system.h"
+#include "plugin_thread.h"
+#include "request_handler.h"
+#include "rule_system.h"
+#include "ruleset.h"
+#include "shadow.h"
+#include "sweeper_thread.h"
+#include "system.h"
+#include "sysvar.h"
+#include "timeout_thread.h"
+#include "timers.h"
+#include "varset.h"
 #include "zcat.h"
 
 #if CONFIG_DEVEL
@@ -89,6 +71,8 @@ static void xmain()
 
   // allow creation of world+rw files
   umask(0);
+
+  /* signal handling */
   sigutil_install_handlers();
   timers_setup();
 
@@ -192,69 +176,48 @@ int main(int argc, char ** argv)
   uxunlinks("core");
 
   // modules
+  fsent_root_setup();
+  shadow_root_setup();
+  fstree_root_setup();
+  shadow_setup();
+  fstree_setup();
   rcu_setup();
   build_setup();
   formula_setup();
   buildplan_setup();
   graph_setup();
   rule_system_setup();
-  fsent_root_setup();
   fsent_base_setup();
-  fsindex_setup();
+  namespace_setup();
   notify_setup();
   filesystem_setup();
   system_setup();
   fsname_setup();
-  shadow_setup();
-  fstree_setup();
+  config_setup();
+  goals_setup();
   module_setup();
   configset_setup();
-  config_setup();
   notify_thread_setup();
   varset_setup();
-  goals_setup();
-  handler_setup();
+  request_handler_setup();
   ruleset_setup();
+  sysvar_setup();
   buildplan_entity_setup();
+  formula_record_setup();
+  vertices_setup();
   config_system_setup();
   events_setup();
-  system_setup();
+  exec_value_setup();
+  plugin_system_setup();
+  plugin_setup();
+  channel_setup();
+  client_setup();
+  ns_edge_setup();
+  dir_fsname_edge_setup();
 
   xmain();
 
-  // modules
-  buildplan_cleanup();
-  configset_cleanup();
-  config_system_cleanup();
-  config_cleanup();
-  module_cleanup();
-  fsent_cleanup();
-  shadow_cleanup();
-  notify_thread_cleanup();
-  sweeper_thread_cleanup();
-  build_cleanup();
-  formula_cleanup();
-  varset_cleanup();
-  fstree_cleanup();
-  goals_cleanup();
-  handler_cleanup();
-  selection_cleanup();
-  dependency_cleanup();
-  request_cleanup();
-  graph_cleanup();
-  block_cleanup();
-  module_module_cleanup();
-  ruleset_cleanup();
-  special_edge_cleanup();
-  fsindex_edge_cleanup();
-  dir_rma_cleanup();
-  meta_edge_cleanup();
-  rule_module_association_cleanup();
-  fsname_cleanup();
-  plugin_cleanup();
-  events_cleanup();
-  fsindex_cleanup();
-  notify_cleanup();
+  smp_mb();
 
   // libraries
   bam_unload();
