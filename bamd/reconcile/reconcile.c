@@ -2,6 +2,7 @@
 /* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
 
 #include "bam/sigutil.h"
+#include "bam/events.h"
 #include "xlinux/xpthread.h"
 
 #include "reconcile.h"
@@ -22,11 +23,24 @@
 #include "namespace.h"
 #include "varset.h"
 #include "plugin_system.h"
+#include "rma.h"
+#include "events/events.h"
+#include "symlink.h"
+#include "fsent_dir.h"
 
 #include "atomics.h"
 
 
 uint16_t reconciliation_epoch;
+
+static void reconcile_event(enum bamipc_event_type evtype)
+{
+  events_context ctx;
+
+  if(events_bacon_would(&ctx, evtype)) {
+    events_publish(&ctx);
+  }
+}
 
 /*
  * This function is always invoked on the run thread
@@ -36,13 +50,14 @@ void reconcile()
   graph_invalidation_context invalidation = { };
   rule_run_context rule_ctx;
   bool work;
-
-  reconciliation_epoch++;
   rcu_thread rcu;
 
   rule_run_context_init(&rule_ctx);
   graph_invalidation_begin(&invalidation);
   rcu_enter(&rcu);
+
+  reconciliation_epoch++;
+  reconcile_event(BAMIPC_EVENT_RECONCILE_START);
 
   system_has_error = false;
   do {
@@ -67,9 +82,8 @@ void reconcile()
 
   /* prune no-longer-mounted filesystem trees */
   /* refresh fse -> fst mappings */
-  /* refresh the index */
   /* refresh inotify watches */
-  system_state_change(SYSTEM_STATE_FILESYSTEM_RECONCILE);
+  system_state_change(SYSTEM_STATE_FSTREE_RECONCILE);
   fsent_fstree_reconcile(&invalidation);
   rcu_quiesce(&rcu);
   if(system_has_error) {
@@ -152,8 +166,10 @@ void reconcile()
   system_state_change(SYSTEM_STATE_FSENT_RECONCILE);
   fsent_primary_reconcile(&invalidation);
   rcu_quiesce(&rcu);
+  system_state_change(SYSTEM_STATE_READY);
 
 end:
+  reconcile_event(BAMIPC_EVENT_RECONCILE_END);
   rcu_leave(&rcu);
   graph_invalidation_end(&invalidation);
   rule_run_context_destroy(&rule_ctx);
