@@ -23,11 +23,12 @@ extern struct g_params
 
   char     cwd[PATH_MAX];  // working directory
   uint16_t cwd_len;
-  char     cwd_hash[40];
-  uint16_t cwd_hash_len;
+  char     cwd_module_id[64];
+  uint16_t cwd_module_id_len;
 
 #if CONFIG_DEVEL
-  char    *exedir;         // path to the directory containing the executable
+  /* path to the bamd executable */
+  char    bamd_path[PATH_MAX];
 #endif
 } g_params;
 
@@ -44,5 +45,5 @@ void params_setup(void);
 //
 void params_teardown(void);
 
-size_t params_path_hash(char *dst, size_t dst_size, const char * restrict path, uint16_t path_len)
+size_t module_compute_id(char *dst, size_t dst_size, const char * restrict path, uint16_t path_len)
   __attribute__((nonnull));

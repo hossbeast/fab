@@ -23,9 +23,6 @@ COMMAND_ATTRS_TABLE
 
 extern struct attrs32 command_attrs;
 
-extern uint64_t message_no_error_list[8];
-extern uint16_t message_no_error_list_len;
-
 typedef struct command {
   char *name;
   void (*usage)(struct command *cmd);
@@ -45,39 +42,73 @@ typedef struct command {
   uint16_t module_id_len;
 
   /* arguments */
+  char id[40];
+  uint16_t id_len;
   char prefix[64];
-  uint64_t id;
   const char *visit;
+
+  bool nofollow;          // on target lookup
+  bool hidden;
 
   bool any;
   char path[255];
 
-  uint64_t ids[64];
-  uint16_t ids_len;
-
-  bead targets[64];
+  const char *targets[64];
+  uint16_t targets_lens[64];
   uint16_t targets_len;
 
   char *target;           // path to resolve the module of
   uint16_t target_len;
 
   int special;
-  bead special_target;
+  const char *special_target;
+  uint16_t special_target_len;
 
   char fstree_id[40];
   uint16_t fstree_id_len;
 
+  char rule_id[40];
+  uint16_t rule_id_len;
+  const char *rule_name;
+  uint16_t rule_name_len;
+
+  char rma_id[40];
+  uint16_t rma_id_len;
+  const char *rma_name;
+  uint16_t rma_name_len;
+
+  char namespace_id[40];
+  uint16_t namespace_id_len;
+  const char *namespace_name;
+  uint16_t namespace_name_len;
+
+  char build_record_id[40];
+  uint16_t build_record_id_len;
+  uint16_t build_record_order;
+
+  char fsname_id[40];
+  uint16_t fsname_id_len;
+  const char *fsname_name;
+  uint16_t fsname_name_len;
+
+  const char *show_detail;
+  uint16_t show_detail_len;
+
+  /* runtime state */
+
+  /* command ids */
   uint64_t request_id;
   uint64_t list_id;
+  uint64_t tell_id;
   uint64_t identify_id;
+  uint64_t run_id;
   uint64_t describe_id;
   uint64_t module_describe_id;
-  bool context_module;
-  uint64_t tell_id;
-//  uint64_t module_identify_id;
   uint64_t identify_id_0;
   uint64_t identify_id_1;
+  uint64_t identify_id_2;
   bool reset;
+  bool trace;
 } command;
 
 extern struct command *g_cmd;
@@ -87,13 +118,10 @@ typedef void (command_builder)(struct command * restrict cmd, struct bacon_write
 uint64_t command_post(struct command * restrict cmd, struct bam_client * restrict client, command_builder *builder)
   __attribute__((nonnull));
 
-void client_post(struct bam_client * restrict client, struct bamipc_message * restrict msg)
+void command_context(struct bacon_writer * restrict builder_writer)
   __attribute__((nonnull));
 
-void command_context(struct command * restrict cmd, struct bacon_writer * restrict builder_writer)
-  __attribute__((nonnull));
-
-size_t command_identify_result_parse(struct bamipc_message * restrict msg, char *dst, size_t dst_size)
+size_t command_identify_result_parse(char *dst, size_t dst_size, struct bamipc_message * restrict msg)
   __attribute__((nonnull))
   __attribute__((warn_unused_result));
 
@@ -101,4 +129,23 @@ void command_set(struct command * restrict cmd)
   __attribute__((nonnull));
 
 void command_sub_set(struct command * restrict cmd)
+  __attribute__((nonnull));
+
+//
+//
+//
+
+struct bamipc_message *client_tx(struct bam_client * restrict client)
+  __attribute__((nonnull));
+
+void client_publish(struct bam_client * restrict client, struct bamipc_message * restrict msg)
+  __attribute__((nonnull));
+
+int client_rx(struct bam_client * restrict client, struct timespec * restrict timeout, struct bamipc_message ** restrict msg)
+  __attribute__((nonnull));
+
+void client_ping(struct bam_client * restrict client, uint64_t msgid)
+  __attribute__((nonnull));
+
+void client_pong(struct bam_client * restrict client, uint64_t msgid)
   __attribute__((nonnull));

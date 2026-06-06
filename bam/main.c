@@ -44,77 +44,6 @@ __thread int32_t tid;
 __thread int *errnop;
 static uint64_t eventsubid;
 
-static void client_acquired(bam_client * restrict client, bamipc_message * restrict msg)
-{
-  uint32_t h;
-  uint32_t i;
-  char buf[64];
-  size_t z;
-  struct bamipc_page *page;
-
-  if(g_args.verbose < 2) {
-    return;
-  }
-
-  page = containerof(msg, bamipc_page, msg);
-  h = page->head;
-  i = page - client->shm->server_ring.pages;
-  z = attrs32_zcat(buf, sizeof(buf), bamipc_msg_type_attrs, msg->type);
-  printf("rx head %5u idx %5u id 0x%016"PRIx64" code %8d type %.*s", h, i, msg->id, msg->code, (int)z, buf);
-  if(msg->type == BAMIPC_MSG_EVENTS)
-  {
-    z = attrs32_zcat(buf, sizeof(buf), &bamipc_event_type_attrs, msg->evtype);
-    printf(" attrs %.*s", (int)z, buf);
-  }
-  else if(msg->attrs)
-  {
-    printf(" attrs 0x%08x", msg->attrs);
-  }
-  printf(" size %hu", msg->size);
-  if(g_args.verbose >= 3) {
-    printf(" %.*s", (int)msg->size, msg->text);
-  }
-  if(msg->type == BAMIPC_MSG_RESPONSE || msg->type == BAMIPC_MSG_EVENTS)
-  {
-    switch(msg->evtype) {
-      case BAMIPC_EVENT_GOALS_SET:
-      case BAMIPC_EVENT_SYSTEM_STATE_CHANGE:
-        printf(" %.*s", (int)msg->size, msg->text);
-      break;
-    }
-  }
-  printf("\n");
-}
-
-void client_post(struct bam_client * restrict client, bamipc_message * restrict msg)
-{
-  bam_client_post(client, msg);
-
-  uint32_t h;
-  char buf[64];
-  size_t z;
-
-  if(g_args.verbose < 1) {
-    return;
-  }
-
-  h = containerof(msg, bamipc_page, msg)->tail;
-  z = attrs32_zcat(buf, sizeof(buf), bamipc_msg_type_attrs, msg->type);
-  printf("tx tail %5u id 0x%016"PRIx64" code %8d type %.*s", h, msg->id, msg->code, (int)z, buf);
-  if(msg->type == BAMIPC_MSG_EVENTS)
-  {
-    z = attrs32_zcat(buf, sizeof(buf), &bamipc_event_type_attrs, msg->evtype);
-    printf(" attrs %.*s", (int)z, buf);
-  }
-  else if(msg->attrs)
-  {
-    printf(" attrs 0x%08x", msg->attrs);
-  }
-  printf(" size %hu ", msg->size);
-  printf("%.*s", (int)msg->size, msg->text);
-  printf("\n");
-}
-
 struct proc {
   llist lln;
   int pfd;
@@ -255,7 +184,7 @@ static int connect(bam_client * restrict client)
   interval.tv_sec = 0;
   interval.tv_nsec = 500000000;
 
-  while(!g_sigterm && !g_params.shutdown)
+  while(!g_sigquit && !g_sigterm && !g_params.shutdown)
   {
     err = sigutil_timedwait(&sigs, &info, &interval);
     if(err == 0) {                  // signal received
@@ -279,11 +208,10 @@ static void xmain()
   sigset_t sigs;
   bam_client client_s, *client = 0;
   bamipc_message * msg = 0;
-  uint16_t pulse;
-  int iter;
-  int r = 0;
   struct timespec interval;
   int x;
+  int r;
+  uint64_t ping_id;
 
   struct proc procs[16], *proc;
   llist procs_list;
@@ -305,20 +233,19 @@ static void xmain()
   xpthread_sigmask(SIG_SETMASK, &sigs, 0);
 
 #if CONFIG_DEVEL
-  static char space[PATH_MAX];
-  snprintf(space, sizeof(space), "%s", "/home/todd/bam-build/bamd/devel/bamd");
-  g_bam_client_bamd_path = space;
-  if(g_args.system_config_path.s) {
-    g_bam_client_system_config_path = strndup(g_args.system_config_path.s, g_args.system_config_path.len);
+  g_bam_client_bamd_path = g_params.bamd_path;
+
+  if(g_args.system_config_path) {
+    g_bam_client_system_config_path = strndup(g_args.system_config_path, g_args.system_config_path_len);
   }
-  if(g_args.user_config_path.s) {
-    g_bam_client_user_config_path = strndup(g_args.user_config_path.s, g_args.user_config_path.len);
+  if(g_args.user_config_path) {
+    g_bam_client_user_config_path = strndup(g_args.user_config_path, g_args.user_config_path_len);
   }
-  if(g_args.default_filesystem_invalidation.s) {
-    g_bam_client_default_filesystem_invalidation = strndup(g_args.default_filesystem_invalidation.s, g_args.default_filesystem_invalidation.len);
+  if(g_args.default_filesystem_invalidation) {
+    g_bam_client_default_filesystem_invalidation = strndup(g_args.default_filesystem_invalidation, g_args.default_filesystem_invalidation_len);
   }
-  if(g_args.sweeper_period_nsec.s) {
-    g_bam_client_sweeper_period_nsec = strndup(g_args.sweeper_period_nsec.s, g_args.sweeper_period_nsec.len);
+  if(g_args.sweeper_period_nsec) {
+    g_bam_client_sweeper_period_nsec = strndup(g_args.sweeper_period_nsec, g_args.sweeper_period_nsec_len);
   }
 #endif
   client = &client_s;
@@ -382,83 +309,79 @@ static void xmain()
   }
 
   /* always-on event subscriptions */
-  msg = bam_client_produce(client);
+  msg = client_tx(client);
   msg->type = BAMIPC_MSG_EVENTSUB;
   eventsubid = msg->id = ++client->msgid;
   msg->attrs = 0
     | BAMIPC_EVENT_SYSTEM_STATE_CHANGE
     ;
-  client_post(client, msg);
+  client_publish(client, msg);
 
   /* event subscription and send the request */
   g_cmd->connected(g_cmd, client);
 
-  /* 125 millis */
-  interval.tv_sec = 0;
-  interval.tv_nsec = 125 * 1000 * 1000;
-  iter = 0;
-  pulse = client->shm->server_pulse;
-  while(!g_sigterm && !g_params.shutdown)
+  ping_id = 0;
+  interval.tv_sec = 1;
+  interval.tv_nsec = 0;
+  while(!g_sigquit && !g_params.shutdown)
   {
-    client->shm->client_pulse++;
-    if(!(msg = bam_client_acquire(client))) {
+    r = client_rx(client, &interval, &msg);
+    if(r != BAMIPC_OK && g_sigterm) {
+      break;
+    }
+    if(r == BAMIPC_ETIMEDOUT) {
       if(client->shm->server_exit) {
-        /* normally the daemon will send a response message with nonzero code on error */
-        dprintf(2, "bamd %"PRId64" exited\n", client->bamd_pid);
+        /* normally the server will send a response message with nonzero code on error */
+        dprintf(2, "[%5"PRId64"] bamd %"PRId64"/%"PRId64" exited\n", (int64_t)getpid(), (int64_t)client->shm->server_pid, (int64_t)client->shm->server_tid);
         break;
       }
-
-      atomic_store(&client->shm->server_ring.waiters, 1);
-      r = uxfutex(&client->shm->server_ring.waiters, FUTEX_WAIT, 1, &interval, 0, 0);
-      if(r == EINTR || r == EAGAIN) {
-        continue;
-      }
-
-      /* 5 seconds */
-      if(((++iter) % 25) == 0) {
-        if(pulse == client->shm->server_pulse) {
-          /* watchdog timeout - unresponsive daemon */
-          dprintf(2, "bamd %"PRId64" unresponsive\n", client->bamd_pid);
-          g_params.waserror = true;
-          break;
-        }
-        pulse = client->shm->server_pulse;
-      }
-
-      continue;
-    }
-
-    iter = 0;
-    RUNTIME_ASSERT(msg->type);
-    client_acquired(client, msg);
-    if(msg->type == BAMIPC_MSG_RESPONSE && msg->id == eventsubid)
-    {
-      RUNTIME_ASSERT(msg->code == 0);
-      bam_client_consume(client, msg);
-      continue;
-    }
-    if((msg->type == BAMIPC_MSG_RESULT || msg->type == BAMIPC_MSG_RESPONSE) && msg->code != 0)
-    {
-      /* suppress errors for message ids in this list */
-      for(x = 0; x < message_no_error_list_len; x++) {
-        if(message_no_error_list[x] == msg->id) {
-          break;
-        }
-      }
-      if(x >= message_no_error_list_len) {
-        (void)!write(2, msg->text, msg->size);
-        (void)!write(2, "\n", 1);
+      /* check for unresponsive peer */
+      if(ping_id) {
+        dprintf(2, "[%5"PRId64"] bamd %"PRId64"/%"PRId64" unresponsive\n", (int64_t)getpid(), (int64_t)client->shm->server_pid, (int64_t)client->shm->server_tid);
         g_params.waserror = true;
+        break;
       }
+      ping_id = ++client->msgid;
+      client_ping(client, ping_id);
     }
-    else if((msg->type == BAMIPC_MSG_EVENTS && msg->evtype == BAMIPC_EVENT_SYSTEM_STATE_CHANGE && msg->code != 0))
-    {
-      (void)!write(2, msg->text, msg->size);
+    if(r != BAMIPC_OK) {
+      continue;
+    }
+
+    RUNTIME_ASSERT(msg->type);
+    if(msg->type == BAMIPC_MSG_PING) {
+      bam_client_release(client, msg);
+      client_pong(client, msg->id);
+      continue;
+    }
+    if(msg->type == BAMIPC_MSG_PONG) {
+      bam_client_release(client, msg);
+      if(msg->id == ping_id) {
+        ping_id = 0;
+      }
+      continue;
+    }
+    if(msg->type == BAMIPC_MSG_RESPONSE && msg->id == eventsubid) {
+      RUNTIME_ASSERT(msg->code == 0);
+      bam_client_release(client, msg);
+      continue;
+    }
+    if(msg->type == BAMIPC_MSG_RESULT && msg->code != 0) {
+      (void)!write(2, msg->text, msg->len);
+      (void)!write(2, "\n", 1);
+      g_params.waserror = true;
+    }
+    if(msg->type == BAMIPC_MSG_RESPONSE && msg->code != 0) {
+      (void)!write(2, msg->text, msg->len);
+      (void)!write(2, "\n", 1);
+      g_params.waserror = true;
+    } else if((msg->type == BAMIPC_MSG_EVENTS && msg->evtype == BAMIPC_EVENT_SYSTEM_STATE_CHANGE && msg->code != 0)) {
+      (void)!write(2, msg->text, msg->len);
       (void)!write(2, "\n", 1);
       g_params.waserror = true;
     }
     g_cmd->process(g_cmd, client, msg);
-    bam_client_consume(client, msg);
+    bam_client_release(client, msg);
   }
 
   if(g_cmd->disconnected) {
@@ -470,13 +393,26 @@ err:
   g_params.waserror = true;
 end:
   bam_client_disconnect(client);
-  bam_client_destroy(client);
 
+  if(client->shm && g_args.verbose >= 2) {
+    printf("\n");
+    printf("%-25.*s %10u %-10s %-10s\n", client->shm->client_id_len, client->shm->client_id, client->shm->shmid, "TX pipe", "RX pipe");
+    printf(" %-25s %-10u %-10u\n", "tx_fast", client->shm->tx.stats.tx_fast, client->shm->rx.stats.tx_fast);
+    printf(" %-25s %-10u %-10u\n", "tx_waits", client->shm->tx.stats.tx_waits, client->shm->rx.stats.tx_waits);
+    printf(" %-25s %-10u %-10u\n", "tx_stalls", client->shm->tx.stats.tx_stalls, client->shm->rx.stats.tx_stalls);
+    printf(" %-25s %-10u %-10u\n", "publish_fast", client->shm->tx.stats.publish_fast, client->shm->rx.stats.publish_fast);
+    printf(" %-25s %-10u %-10u\n", "publish_stalls", client->shm->tx.stats.publish_stalls, client->shm->rx.stats.publish_stalls);
+  }
+
+  bam_client_destroy(client);
   xclose(epfd);
 }
 
 int main(int argc, char ** argv)
 {
+  setvbuf(stdout, NULL, _IONBF, 0);
+  setvbuf(stderr, NULL, _IONBF, 0);
+
   tid = syscall(SYS_gettid);
   errnop = &errno;
 

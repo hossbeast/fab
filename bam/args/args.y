@@ -895,7 +895,7 @@ plugin-subcommand
   ;
 
 plugin-target
-  : BECH32 { CMD->target = @1.s; CMD->target_len = @1.l; }
+  : BECH32 { CMD->id_len = zcatw(CMD->id, sizeof(CMD->id), @1.s, @1.l); }
   | word { CMD->target = @1.s; CMD->target_len = @1.l; }
   ;
 

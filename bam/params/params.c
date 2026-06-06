@@ -4,13 +4,16 @@
 #include <unistd.h>
 #include <errno.h>
 #include <inttypes.h>
+#include <fcntl.h>
 
 #include "types.h"
 
 #include "xlinux/xstdlib.h"
 #include "xlinux/xstring.h"
 #include "xlinux/xunistd.h"
-#include "common/hash.h"
+#include "common/sha1.h"
+#include "common/bech32.h"
+#include "lorien/path_normalize.h"
 
 #include "info.h"
 #include "params.h"
@@ -22,65 +25,89 @@ struct g_params g_params;
 // public
 //
 
-size_t params_path_hash(char *dst, size_t dst_size, const char * restrict path, uint16_t path_len)
+size_t module_compute_id(char *dst, size_t dst_size, const char * restrict path, uint16_t path_len)
 {
-  char inpath[PATH_MAX];
-  char abspath[PATH_MAX];
-  uint16_t abspath_len;
-  uint64_t hash;
+  sha1_ctx sha;
+  uint8_t hash[20];
 
-  zcatw(inpath, sizeof(inpath), path, path_len);
-  inpath[path_len] = 0;
-  if((realpath(inpath, abspath)) == 0) {
-    dprintf(2, "realpath(%s) : %s\n", inpath, strerror(errno));
-    exit(1);
-  }
-  abspath_len = strlen(abspath);
+  sha1_init(&sha);
+  sha1_update(&sha, MMS("module "));
+  sha1_update(&sha, path, path_len);
+  sha1_final(hash, &sha);
 
-  hash = hash64(0, abspath, abspath_len);
-
-  return zcatf(dst, dst_size, "%016"PRIx64, hash);
+  return bech32_encode(dst, dst_size, MMS("bm"), hash, 12);
 }
 
 void params_setup()
 {
-  const char *ipc;
+  char path[PATH_MAX];
+  const char *val;
+  path_normalize_context ctx;
 
   g_params.pid = getpid();
 
-  // current working directory
-  xgetcwd(g_params.cwd, sizeof(g_params.cwd));
-  g_params.cwd_len = strlen(g_params.cwd);
-  g_params.cwd_hash_len = params_path_hash(g_params.cwd_hash, sizeof(g_params.cwd_hash), g_params.cwd, g_params.cwd_len);
+  /* current working directory */
+  if(getcwd(path, sizeof(path)) == 0) {
+    dprintf(2, "getcwd failed %s\n", strerror(errno));
+    exit(1);
+  }
+  if((val = getenv("PWD"))) {
+    ctx.base = path;
+    ctx.base_len = strlen(path);
+    g_params.cwd_len = path_normalize(&ctx, g_params.cwd, sizeof(g_params.cwd), val, strlen(val));
+  } else {
+    g_params.cwd_len = zcats(g_params.cwd, sizeof(g_params.cwd), path);
+  }
+
+  /* module id from cwd */
+  g_params.cwd_module_id_len = module_compute_id(
+      g_params.cwd_module_id
+    , sizeof(g_params.cwd_module_id)
+    , g_params.cwd
+    , g_params.cwd_len
+  );
 
   // ipc directory
-  if((ipc = getenv("BAM_IPC_DIR"))) {
-    g_params.ipcdir_len = zcats(g_params.ipcdir, sizeof(g_params.ipcdir), ipc);
-  } else if((ipc = getenv("XDG_RUNTIME_DIR"))) {
-    g_params.ipcdir_len = zcatf(g_params.ipcdir, sizeof(g_params.ipcdir), "%s/bam", ipc);
+  if((val = getenv("BAM_IPC_DIR"))) {
+    g_params.ipcdir_len = zcats(g_params.ipcdir, sizeof(g_params.ipcdir), val);
+  } else if((val = getenv("XDG_RUNTIME_DIR"))) {
+    g_params.ipcdir_len = zcatf(g_params.ipcdir, sizeof(g_params.ipcdir), "%s/bam", val);
   } else {
     dprintf(2, "neither $BAM_IPC_DIR nor $XDG_RUNTIME_DIR is set!\n");
     exit(1);
   }
 
 #if CONFIG_DEVEL
-  char space[PATH_MAX];
   ssize_t r;
 
-  // exedir is the canonical path to directory containing the executing binary
-  r = xreadlinks("/proc/self/exe", space, sizeof(space));
-  r--;
-  while(space[r] != '/') {
-    r--;
+  if((val = getenv("BM_BAMD_PATH"))) {
+    zcats(g_params.bamd_path, sizeof(g_params.bamd_path), val);
+    if(faccessat(INT32_MAX, g_params.bamd_path, F_OK, AT_EACCESS) == 0) {
+      return;
+    }
   }
 
-  ixstrndup(&g_params.exedir, space, r);
+  /* check for the expected directory layout for bam devel builds and locate
+   * the bamd executable */
+  r = xreadlinks("/proc/self/exe", path, sizeof(path));
+  while(r > 0 && path[r] != '/') {
+    r--;
+  }
+  if(r > 21) {
+    if(memncmp(path + r - 20, 21, MMS("/bam-build/bam/devel/")) == 0) {
+      r = zcatw(g_params.bamd_path, sizeof(g_params.bamd_path), path, r - 20);
+      zcats(g_params.bamd_path + r, sizeof(g_params.bamd_path) - r, "/bam-build/bamd/devel/bamd");
+      if(faccessat(INT32_MAX, g_params.bamd_path, F_OK, AT_EACCESS) == 0) {
+        return;
+      }
+    }
+  }
+
+  dprintf(2, "bamd executable not found (set $BM_BAMD_PATH ?)\n");
+  exit(1);
 #endif
 }
 
 void params_teardown()
 {
-#if CONFIG_DEVEL
-  ifree(&g_params.exedir);
-#endif
 }
