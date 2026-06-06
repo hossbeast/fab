@@ -32,26 +32,13 @@ typedef union stats_vertex {
 
 extern descriptor_type descriptor_stats_vertex;
 
+//
+// invalidate
+//
+
 /* invalidate a vertex and its transitive consumers (upwards) */
 void vertex_invalidate(moria_vertex * restrict n, struct graph_invalidation_context * restrict)
   __attribute__((nonnull));
-
-void vertex_invalidate_visitor(
-    moria_vertex * restrict v
-  , void * arg
-  , enum moria_traversal_mode mode
-  , int distance
-  , moria_traverse_result * restrict result
-)
-  __attribute__((nonnull(1, 2)));
-
-void vertex_invalidate_visitor_first(
-    moria_vertex * restrict v
-  , void * arg
-  , enum moria_traversal_mode mode
-  , int distance, moria_traverse_result * restrict result
-)
-  __attribute__((nonnull(1, 2)));
 
 void vertex_invalidate_direct(moria_vertex * restrict n, struct graph_invalidation_context * restrict)
   __attribute__((nonnull));
@@ -63,6 +50,10 @@ bool vertex_mark_fresh(moria_vertex * restrict v)
 /* mark single vertex as invalid / out-of-date / stale */
 bool vertex_mark_stale(moria_vertex * restrict v)
   __attribute__((nonnull));
+
+//
+// attrs
+//
 
 void vertex_attrs_set(moria_vertex * restrict v, uint32_t attrs)
   __attribute__((nonnull));
@@ -131,9 +122,6 @@ static inline void vertex_shadow_set(moria_vertex * restrict v, bool b)
 }
 
 void vertex_state_set(moria_vertex * restrict v, vertex_state state)
-  __attribute__((nonnull));
-
-enum bam_vertex_state vertex_bam_vertex_state_get(const moria_vertex * restrict v)
   __attribute__((nonnull));
 
 static inline vertex_state vertex_state_get(const moria_vertex * restrict v)
@@ -276,33 +264,6 @@ size_t vertex_identity_cat(void * restrict dst, size_t dst_size, const moria_ver
 void vertex_identity_say(const moria_vertex * restrict vertex, struct narrator * restrict N)
   __attribute__((nonnull));
 
-void vertex_identity_describe(const moria_vertex * restrict v, struct bacon_writer * restrict writer)
-  __attribute__((nonnull));
-
-void vertex_identity_show(const moria_vertex * restrict v)
-  __attribute__((nonnull));
-
-void vertex_describe_edges(const moria_vertex * restrict v, struct bacon_writer * restrict writer)
-  __attribute__((nonnull));
-
-void vertex_edges_show(const moria_vertex * restrict v)
-  __attribute__((nonnull));
-
-void vertex_identity_edges_list(const moria_vertex * restrict v, struct bacon_writer * restrict builder_writer)
-  __attribute__((nonnull));
-
-void vertex_identity_edges_show(const moria_vertex * restrict v)
-  __attribute__((nonnull));
-
-void vertex_describe_identity_edges(const moria_vertex * restrict v, struct bacon_writer * restrict builder_writer)
-  __attribute__((nonnull));
-
-uint64_t vertex_compute_hash(moria_vertex * restrict v, uint64_t u64)
-  __attribute__((nonnull));
-
-void vertex_tell(const moria_vertex * restrict v, struct request_handler * restrict handler)
-  __attribute__((nonnull));
-
 //
 // describe
 //
@@ -331,17 +292,26 @@ void vertex_mappings(const moria_vertex * restrict v, struct bacon_writer * rest
   __attribute__((nonnull));
 
 //
-// ops
+// show
 //
 
 void vertex_show(const moria_vertex * restrict v)
   __attribute__((nonnull));
 
-void vertex_release(moria_vertex * restrict v)
+void vertex_identity_show(const moria_vertex * restrict v)
   __attribute__((nonnull));
 
-moria_vertex *vertex_follow(const moria_vertex * restrict v);
+void vertex_edges_show(const moria_vertex * restrict v)
+  __attribute__((nonnull));
 
+void vertex_identity_edges_show(const moria_vertex * restrict v)
+  __attribute__((nonnull));
+
+//
+// ops
+//
+
+void vertex_tell(const moria_vertex * restrict v, struct request_handler * restrict handler)
   __attribute__((nonnull));
 
 void vertex_unlink(moria_vertex * restrict v, struct graph_disintegrate_context * restrict ctx)
