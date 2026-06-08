@@ -129,30 +129,36 @@
 <cmd>"adhoc"                  { POPSTATE; PUSHSTATE(adhoc); return LEX(ADHOC); }
 <adhoc>[\x20-\x7E]+           { return LEX(STR); }
 
- /* namespace command */
+ /* namespace subcommands */
 <cmd>"namespace"              { POPSTATE; PUSHSTATE(namespace); return LEXA(); }
 <namespace>"fsname"           |
 <namespace>"fsnames"          { POPSTATE; return LEXA(); }
+ /* global argument options */
+<namespace>[-][-_a-zA-Z0-9]+  { return LEXA(); }
+ /* enums and unquoted strings */
 <namespace>[-+_a-zA-Z0-9./%]+ { return LEX(STR); }
 
- /* module command */
+ /* module subcommands */
 <cmd>"module"                 { POPSTATE; PUSHSTATE(module); return LEXA(); }
 <module>"envs"                |
 <module>"vars"                |
 <module>"rules"               |
 <module>"rulesets"            |
+<module>"rma"                 |
 <module>"rmas"                { POPSTATE; return LEXA(); }
+<module>[-][-_a-zA-Z0-9]+     { return LEXA(); }
 <module>[-+_a-zA-Z0-9./%]+    { return LEX(STR); }
 
- /* plugin command */
+ /* plugin subcommands */
 <cmd>"plugin"                 { POPSTATE; PUSHSTATE(plugin); return LEXA(); }
 <plugin>"stdin"               |
 <plugin>"stdout"              |
 <plugin>"stderr"              |
 <plugin>"auxout"              { POPSTATE; return LEXA(); }
+<plugin>[-][-_a-zA-Z0-9]+     { return LEXA(); }
 <plugin>[-+_a-zA-Z0-9./%]+    { return LEX(STR); }
 
- /* show command */
+ /* show subcommands */
 <cmd>"show"                   { POPSTATE; PUSHSTATE(show); return LEXA(); }
 <show>"stdin"                 |
 <show>"stdout"                |
@@ -162,6 +168,7 @@
 <show>"envs"                  |
 <show>"file"                  |
 <show>"cwd"                   { POPSTATE; return LEXA(); }
+<show>[-][-_a-zA-Z0-9]+       { return LEXA(); }
 <show>[-+_a-zA-Z0-9./%]+      { return LEX(STR); }
 
  /* enums and unquoted strings */

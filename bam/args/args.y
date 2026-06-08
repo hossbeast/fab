@@ -99,7 +99,7 @@
  NAMESPACES                     "namespaces"
  MODULES                        "modules"
  MODULE                         "module"
- REQUIRES                       "requires"
+ RECORDS                        "records"
  LS                             "ls"
  TREE                           "tree"
  USES                           "uses"
@@ -537,7 +537,6 @@ module-rmas-argument
   : global-argument
   ;
 
-
 module-rma-command
   : RMA { command_sub_set(&module_rma_command); } module-rma-arguments module-rma-subcommand
   ;
@@ -759,7 +758,7 @@ graph-type
   | DEPENDS
   | SPECIAL
   | USES
-  | REQUIRES
+  | RECORDS
   ;
 
 visit-type
@@ -879,11 +878,12 @@ plugins-argument
   ;
 
 plugin-command
-  : PLUGIN { command_set(&plugin_command); } global-arguments plugin-arguments
+  : PLUGIN { command_set(&plugin_command); } plugin-arguments
   ;
 
 plugin-arguments
-  : plugin-target global-arguments plugin-subcommand
+  : global-arguments
+  | plugin-target global-arguments plugin-subcommand
   ;
 
 plugin-subcommand
