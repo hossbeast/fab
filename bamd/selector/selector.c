@@ -146,11 +146,12 @@ static void selector_visitor(moria_vertex *v, void *arg, moria_traversal_mode mo
 
   /* crossing restrictions cannot be enforced in a postorder traversal */
   if(mode == MORIA_TRAVERSE_POST) {
-    goto end;
+    goto match;
   }
 
+  /* non-fstree vertices are not subject to module and fstree crossings */
   if(vertex_kind_get(v) != VERTEX_KIND_FSENT) {
-    goto end;
+    goto match;
   }
 
   if(!sel->traverse.cross_module) {
@@ -184,6 +185,7 @@ static void selector_visitor(moria_vertex *v, void *arg, moria_traversal_mode mo
     }
   }
 
+match:
   /* visit filters */
   if(sel->traverse.primary) {
     fse = containerof(v, typeof(*fse), vertex);
@@ -197,8 +199,8 @@ static void selector_visitor(moria_vertex *v, void *arg, moria_traversal_mode mo
     }
   }
 
-end:
   selection_add_vertex(ctx->selection, v, distance);
+
   if(mod && !ctx->mod) {
     ctx->mod = mod;
   }
