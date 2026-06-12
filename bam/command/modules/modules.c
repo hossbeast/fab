@@ -31,7 +31,7 @@ static void modules_usage(command * restrict cmd)
   );
 }
 
-static void module_command_identify(struct command * restrict cmd, bacon_writer * restrict builder_writer, const char * restrict s, uint16_t len)
+static void module_identify_by_path(struct command * restrict cmd, bacon_writer * restrict builder_writer, const char * restrict s, uint16_t len)
 {
   { LIST
     command_context(builder_writer);
@@ -61,7 +61,7 @@ static void module_command_identify(struct command * restrict cmd, bacon_writer 
 
 void module_command_identify_dot(struct command * restrict cmd, bacon_writer * restrict builder_writer)
 {
-  module_command_identify(cmd, builder_writer, MMS("."));
+  module_identify_by_path(cmd, builder_writer, MMS("."));
 }
 
 void module_command_identify_id(struct command * restrict cmd, bacon_writer * restrict builder_writer)
@@ -70,12 +70,12 @@ void module_command_identify_id(struct command * restrict cmd, bacon_writer * re
   size_t target_len;
 
   target_len = zcatf(target, sizeof(target), "//bm/modules/%.*s", cmd->target_len, cmd->target);
-  module_command_identify(cmd, builder_writer, target, target_len);
+  module_identify_by_path(cmd, builder_writer, target, target_len);
 }
 
 void module_command_identify_target(struct command * restrict cmd, bacon_writer * restrict builder_writer)
 {
-  module_command_identify(cmd, builder_writer, cmd->target, cmd->target_len);
+  module_identify_by_path(cmd, builder_writer, cmd->target, cmd->target_len);
 }
 
 static void module_command_describe(struct command * restrict cmd, bacon_writer * restrict builder_writer)
@@ -136,38 +136,50 @@ void module_command_connected(command * restrict cmd, bam_client * restrict clie
   }
 }
 
+bool module_identify_msg(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
+{
+  if(msg->type == BAMIPC_MSG_RESULT) {
+    if(msg->code == 0 && msg->len > 10) {  /* shorter results cannot contain an id */
+      cmd->module_id_len = command_identify_result_parse(cmd->module_id, sizeof(cmd->module_id), msg);
+    }
+    return false;
+  }
+  if(msg->type != BAMIPC_MSG_RESPONSE) {
+    return false;
+  }
+
+  /* identify by id complete, possibly in error ; also identify by path */
+  if(msg->id == cmd->identify_id_0) {
+    cmd->identify_id_1 = command_post(cmd, client, module_command_identify_target);
+    return false;
+  }
+
+  /* identify complete */
+  if(cmd->module_id_len == 0) {
+    command_notfound("module", cmd->target, cmd->target_len);
+    return false;
+  }
+
+  return true;
+}
+
 static void module_describe_process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
 {
-  if(msg->id == cmd->identify_id_0 && msg->type == BAMIPC_MSG_RESULT) {
-    if(msg->code == 0 && msg->len > 10) {
-      cmd->module_id_len = command_identify_result_parse(cmd->module_id, sizeof(cmd->module_id), msg);
-    }
-  } else if(msg->id == cmd->identify_id_1 && msg->type == BAMIPC_MSG_RESULT) {
-    if(msg->code == 0 && msg->len > 10) {
-      cmd->module_id_len = command_identify_result_parse(cmd->module_id, sizeof(cmd->module_id), msg);
-    }
-  /* lookup errors */
-  } else if(msg->id == cmd->identify_id_0 && msg->type == BAMIPC_MSG_EVENTS) {
-  } else if(msg->id == cmd->identify_id_1 && msg->type == BAMIPC_MSG_EVENTS) {
-  } else if(msg->id == cmd->identify_id_0 && msg->type == BAMIPC_MSG_RESPONSE) {
-    cmd->identify_id_1 = command_post(cmd, client, module_command_identify_target);
-  } else if(msg->id == cmd->identify_id_1 && msg->type == BAMIPC_MSG_RESPONSE) {
-    if(cmd->module_id_len == 0) {
-      /* lookup failure */
-      dprintf(2, "module not found for %.*s\n", (int)cmd->target_len, cmd->target);
-      g_params.waserror = true;
-      g_params.shutdown = true;
-    } else {
+  if(msg->id == cmd->identify_id_0 || msg->id == cmd->identify_id_1) {
+    /* identify : resolve the module target -> module id */
+    if(module_identify_msg(cmd, client, msg)) {
       cmd->module_describe_id = command_post(cmd, client, module_command_describe);
     }
-  } else if(msg->id == cmd->module_describe_id && msg->type == BAMIPC_MSG_RESULT) {
-    (void)!write(1, msg->text, msg->len);
-    cmd->any = true;
-  } else if(msg->id == cmd->module_describe_id && msg->type == BAMIPC_MSG_RESPONSE) {
-    g_params.shutdown = true;
-  } else {
-    RTA;
+    return;
   }
+
+  if(msg->id == cmd->module_describe_id) {
+    /* describe : print the module */
+    command_list_msg(cmd, msg);
+    return;
+  }
+
+  RTA;
 }
 
 static void module_describe_disconnected(command * restrict cmd)

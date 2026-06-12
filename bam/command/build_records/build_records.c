@@ -94,45 +94,30 @@ static void build_record_connected(command * restrict cmd, bam_client * restrict
 
 static void build_record_process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
 {
-  if(msg->id != cmd->identify_id_1 && msg->id != cmd->describe_id) {
-    RTA; // wtf
-  }
-  if(msg->code != 0) {
-    goto end;
-  }
-
-  if(msg->id == cmd->identify_id_1 && msg->type == BAMIPC_MSG_RESULT) {
-    if(msg->code == 0 && msg->len > 10) {
-      cmd->build_record_id_len = command_identify_result_parse(cmd->build_record_id, sizeof(cmd->build_record_id), msg);
+  if(msg->id == cmd->identify_id_1) {
+    /* identify : resolve build-record order -> id */
+    if(!command_identify_msg(msg, cmd->build_record_id, sizeof(cmd->build_record_id), &cmd->build_record_id_len)) {
+      return;
     }
-  } else if(msg->id == cmd->identify_id_1 && msg->type == BAMIPC_MSG_RESPONSE) {
     if(cmd->build_record_id_len == 0) {
-      /* lookup failure */
-      if(cmd->build_record_id_len) {
-        dprintf(2, "build_record not found : %.*s\n", (int)cmd->build_record_id_len, cmd->build_record_id);
-      } else if(cmd->build_record_order != UINT16_MAX) {
+      if(cmd->build_record_order != UINT16_MAX) {
         dprintf(2, "build_record not found : %05u\n", cmd->build_record_order);
       }
       g_params.waserror = true;
       g_params.shutdown = true;
-    } else {
-      cmd->describe_id = command_post(cmd, client, build_record_describe);
+      return;
     }
-  } else if(msg->id == cmd->describe_id && msg->type == BAMIPC_MSG_RESULT) {
-    if(cmd->any) {
-      (void)!write(1, "\n", 1);
-    }
-    (void)!write(1, msg->text, msg->len);
-    cmd->any = true;
-  } else if(msg->id == cmd->describe_id && msg->type == BAMIPC_MSG_RESPONSE) {
-    goto end;
-  } else {
-    RTA;
+    cmd->describe_id = command_post(cmd, client, build_record_describe);
+    return;
   }
-  return;
 
-end:
-  g_params.shutdown = true;
+  if(msg->id == cmd->describe_id) {
+    /* describe : print the build record */
+    command_describe_msg(cmd, msg);
+    return;
+  }
+
+  RTA;
 }
 
 static void build_record_disconnected(command * restrict cmd)

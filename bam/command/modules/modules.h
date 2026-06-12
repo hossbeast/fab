@@ -37,3 +37,12 @@ void module_command_identify_target(struct command * restrict cmd, struct bacon_
 
 void module_command_connected(struct command * restrict cmd, struct bam_client * restrict client)
   __attribute__((nonnull));
+
+/*
+ * process a message for the module identify phase posted by module_command_connected
+ * (identify_id_0 / identify_id_1). identify by id is tried first where the target looks
+ * like an id, falling back to identify by path. returns true once the module has been
+ * identified; on lookup failure, reports the failure and shuts down the command.
+ */
+bool module_identify_msg(struct command * restrict cmd, struct bam_client * restrict client, struct bamipc_message * restrict msg)
+  __attribute__((nonnull));

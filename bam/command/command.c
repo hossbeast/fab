@@ -9,6 +9,7 @@
 #include "narrator/fixed.h"
 #include "common/parseint.h"
 
+#include "params.h"
 #include "zcat.h"
 
 typeof(g_cmd) g_cmd = (typeof(*g_cmd)[]) {{ }};
@@ -127,6 +128,58 @@ size_t command_identify_result_parse(char *dst, size_t dst_size, bamipc_message 
   memcpy(dst, s, e - s);
 
   return e - s;
+}
+
+bool command_identify_msg(bamipc_message * restrict msg, char * restrict id, size_t id_size, uint16_t * restrict id_len)
+{
+  if(msg->type == BAMIPC_MSG_RESULT) {
+    if(msg->code == 0 && msg->len > 10) {  /* shorter results cannot contain an id */
+      *id_len = command_identify_result_parse(id, id_size, msg);
+    }
+    return false;
+  }
+
+  return msg->type == BAMIPC_MSG_RESPONSE;
+}
+
+void command_notfound(const char * restrict noun, const char * restrict name, uint16_t name_len)
+{
+  dprintf(2, "%s not found : %.*s\n", noun, (int)name_len, name);
+  g_params.waserror = true;
+  g_params.shutdown = true;
+}
+
+void command_describe_msg(struct command * restrict cmd, bamipc_message * restrict msg)
+{
+  if(msg->type == BAMIPC_MSG_RESULT) {
+    if(msg->code == 0) {
+      if(cmd->any) {
+        (void)!write(1, "\n", 1);
+      }
+      (void)!write(1, msg->text, msg->len);
+      cmd->any = true;
+    }
+    return;
+  }
+
+  if(msg->type == BAMIPC_MSG_RESPONSE) {
+    g_params.shutdown = true;
+  }
+}
+
+void command_list_msg(struct command * restrict cmd, bamipc_message * restrict msg)
+{
+  if(msg->type == BAMIPC_MSG_RESULT) {
+    if(msg->code == 0) {
+      (void)!write(1, msg->text, msg->len);
+      cmd->any = true;
+    }
+    return;
+  }
+
+  if(msg->type == BAMIPC_MSG_RESPONSE) {
+    g_params.shutdown = true;
+  }
 }
 
 void command_set(struct command * restrict cmd)

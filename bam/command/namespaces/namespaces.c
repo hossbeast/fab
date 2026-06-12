@@ -77,6 +77,12 @@ static void namespace_describe(struct command * restrict cmd, bacon_writer * res
   }
 }
 
+/*
+ * The namespace command runs in up to two phases. When invoked with a name rather than
+ * an id, the name is first resolved to an id (identify). The namespace is then looked
+ * up by id and printed (describe). Each request elicits zero or more RESULT messages
+ * carrying output, followed by exactly one RESPONSE message marking completion.
+ */
 static void connected(command * restrict cmd, bam_client * restrict client)
 {
   if(cmd->namespace_id_len == 0) {
@@ -89,45 +95,26 @@ static void connected(command * restrict cmd, bam_client * restrict client)
 
 static void process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
 {
-  if(msg->id != cmd->identify_id_1 && msg->id != cmd->describe_id) {
-    RTA; // wtf
-  }
-  if(msg->code != 0) {
-    goto end;
-  }
-
-  if(msg->id == cmd->identify_id_1 && msg->type == BAMIPC_MSG_RESULT) {
-    if(msg->code == 0 && msg->len > 10) {
-      cmd->namespace_id_len = command_identify_result_parse(cmd->namespace_id, sizeof(cmd->namespace_id), msg);
+  if(msg->id == cmd->identify_id_1) {
+    /* identify : resolve namespace name -> id */
+    if(!command_identify_msg(msg, cmd->namespace_id, sizeof(cmd->namespace_id), &cmd->namespace_id_len)) {
+      return;
     }
-  } else if(msg->id == cmd->identify_id_1 && msg->type == BAMIPC_MSG_RESPONSE) {
     if(cmd->namespace_id_len == 0) {
-      /* lookup failure */
-      if(cmd->namespace_id_len) {
-        dprintf(2, "namespace not found : %.*s\n", (int)cmd->namespace_id_len, cmd->namespace_id);
-      } else if(cmd->namespace_name_len) {
-        dprintf(2, "namespace not found : %.*s\n", (int)cmd->namespace_name_len, cmd->namespace_name);
-      }
-      g_params.waserror = true;
-      g_params.shutdown = true;
-    } else {
-      cmd->describe_id = command_post(cmd, client, namespace_describe);
+      command_notfound("namespace", cmd->namespace_name, cmd->namespace_name_len);
+      return;
     }
-  } else if(msg->id == cmd->describe_id && msg->type == BAMIPC_MSG_RESULT) {
-    if(cmd->any) {
-      (void)!write(1, "\n", 1);
-    }
-    (void)!write(1, msg->text, msg->len);
-    cmd->any = true;
-  } else if(msg->id == cmd->describe_id && msg->type == BAMIPC_MSG_RESPONSE) {
-    goto end;
-  } else {
-    RTA;
+    cmd->describe_id = command_post(cmd, client, namespace_describe);
+    return;
   }
-  return;
 
-end:
-  g_params.shutdown = true;
+  if(msg->id == cmd->describe_id) {
+    /* describe : print the namespace */
+    command_describe_msg(cmd, msg);
+    return;
+  }
+
+  RTA;
 }
 
 static void disconnected(command * restrict cmd)
@@ -144,46 +131,37 @@ static void disconnected(command * restrict cmd)
 static void list_build(command * restrict cmd, bacon_writer * restrict builder_writer)
 {
   { LIST
-    { MAPPING
-      STRING("select")
+    { MAPPING STRING("select")
       { LIST
-        { MAPPING
-          STRING("path")
+        { MAPPING STRING("path")
           { SET
             { MAPPING STRING("pattern")
               STRING("//bm/namespaces")
             }
           }
         }
-        /* listing of namespace directories */
-        { MAPPING
-          STRING("traverse")
+        /* downwards to the per-namespace shadow directories */
+        { MAPPING STRING("traverse")
           { SET
-            { MAPPING
-              STRING("nofollow")
+            { MAPPING STRING("nofollow")
               BOOL(false) // follow links
             }
-            { MAPPING
-              STRING("direction")
+            { MAPPING STRING("direction")
               STRING("down")
             }
-            { MAPPING
-              STRING("graph")
+            { MAPPING STRING("graph")
               STRING("fs")
             }
-            { MAPPING
-              STRING("min-distance")
+            { MAPPING STRING("min-distance")
               UINT(1)
             }
-            { MAPPING
-              STRING("max-distance")
+            { MAPPING STRING("max-distance")
               UINT(1)
             }
           }
         }
-        /* upwards to the namespace objects */
-        { MAPPING
-          STRING("traverse")
+        /* upwards to the namespace objects themselves */
+        { MAPPING STRING("traverse")
           { SET
             { MAPPING STRING("nofollow")
               BOOL(false)

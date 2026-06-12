@@ -80,7 +80,7 @@ static void process(command * restrict cmd, bam_client * restrict client, bamipc
     case BAMIPC_EVENT_FORMULA_STDOUT_BIN:
     case BAMIPC_EVENT_FORMULA_STDERR_BIN:
     case BAMIPC_EVENT_FORMULA_AUXOUT_BIN:
-      /* these events carry a build_slot object */
+      /* these events carry a build_slot object, contents not shown here */
       printf("0x%-16"PRIx64" %s\n", msg->id, attrs32_name_byvalue(&bamipc_event_type_attrs, msg->evtype));
       break;
     default:

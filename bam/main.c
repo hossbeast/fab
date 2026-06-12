@@ -331,7 +331,7 @@ static void xmain()
     if(r == BAMIPC_ETIMEDOUT) {
       if(client->shm->server_exit) {
         /* normally the server will send a response message with nonzero code on error */
-        dprintf(2, "[%5"PRId64"] bamd %"PRId64"/%"PRId64" exited\n", (int64_t)getpid(), (int64_t)client->shm->server_pid, (int64_t)client->shm->server_tid);
+        dprintf(2, "[%5"PRId64"] bamd %"PRId64"/%"PRId64" channel closed\n", (int64_t)getpid(), (int64_t)client->shm->server_pid, (int64_t)client->shm->server_tid);
         break;
       }
       /* check for unresponsive peer */

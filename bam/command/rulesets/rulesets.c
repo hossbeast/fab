@@ -38,6 +38,13 @@ static void rulesets_usage(command * restrict cmd)
 // module rulesets
 //
 
+static void module_ruleset_usage(command * restrict cmd)
+{
+  printf(
+"module ruleset options\n"
+  );
+}
+
 static void module_rulesets_usage(command * restrict cmd)
 {
   printf(
@@ -47,42 +54,193 @@ static void module_rulesets_usage(command * restrict cmd)
 
 static void module_rulesets_process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
 {
-  if(msg->id == cmd->identify_id_0 && msg->type == BAMIPC_MSG_RESULT) {
-    if(msg->code == 0 && msg->len > 10) {
-      cmd->module_id_len = command_identify_result_parse(cmd->module_id, sizeof(cmd->module_id), msg);
-    }
-  } else if(msg->id == cmd->identify_id_1 && msg->type == BAMIPC_MSG_RESULT) {
-    if(msg->code == 0 && msg->len > 10) {
-      cmd->module_id_len = command_identify_result_parse(cmd->module_id, sizeof(cmd->module_id), msg);
-    }
-  } else if(msg->id == cmd->identify_id_0 && msg->type == BAMIPC_MSG_RESPONSE) {
-    cmd->identify_id_1 = command_post(cmd, client, module_command_identify_target);
-  } else if(msg->id == cmd->identify_id_1 && msg->type == BAMIPC_MSG_RESPONSE) {
-    if(cmd->module_id_len == 0) {
-      /* lookup failure */
-      dprintf(2, "module not found %.*s\n", (int)cmd->target_len, cmd->target);
-      g_params.waserror = true;
-      g_params.shutdown = true;
-    } else {
+  if(msg->id == cmd->identify_id_0 || msg->id == cmd->identify_id_1) {
+    /* identify : resolve the module target -> module id */
+    if(module_identify_msg(cmd, client, msg)) {
       snprintf(cmd->path, sizeof(cmd->path), "//bm/modules/%.*s/rulesets", cmd->module_id_len, cmd->module_id);
       cmd->list_id = command_post(cmd, client, special_list_build);
     }
-  } else if(msg->id == cmd->list_id && msg->type == BAMIPC_MSG_RESULT) {
-    (void)!write(1, msg->text, msg->len);
-    cmd->any = true;
-  } else if(msg->id == cmd->list_id && msg->type == BAMIPC_MSG_RESPONSE) {
-    g_params.shutdown = true;
-  } else {
-    RTA;
+    return;
+  }
+
+  if(msg->id == cmd->list_id) {
+    /* list : print the module rulesets */
+    command_list_msg(cmd, msg);
+    return;
+  }
+
+  RTA;
+}
+
+static void ruleset_identify_by_path(struct command * restrict cmd, bacon_writer * restrict builder_writer)
+{
+  { LIST
+
+    { MAPPING STRING("select")
+      { LIST
+        { MAPPING STRING("path")
+          { SET
+            { MAPPING STRING("pattern")
+              bacon_writer_push_bytes(builder_writer);
+              narrator_sayw(builder_writer->N, cmd->ruleset_path, cmd->ruleset_path_len);
+              bacon_writer_pop_bytes(builder_writer);
+            }
+          }
+        }
+        { MAPPING STRING("traverse")
+          { SET
+            { MAPPING STRING("direction")
+              STRING("up")
+            }
+            { MAPPING STRING("graph")
+              STRING("special")
+            }
+            { MAPPING STRING("visit")
+              STRING("ruleset")
+            }
+            { MAPPING STRING("min-distance")
+              UINT(1)
+            }
+            { MAPPING STRING("max-distance")
+              UINT(1)
+            }
+          }
+        }
+      }
+    }
+
+    STRING("identify")
+  }
+}
+
+static void module_ruleset_describe(struct command * restrict cmd, bacon_writer * restrict builder_writer)
+{
+  { LIST
+    { MAPPING STRING("select")
+      { LIST
+        { MAPPING STRING("path")
+          { SET
+            { MAPPING STRING("pattern")
+              LOADF("//bm/modules/%.*s/rulesets/%.*s", cmd->module_id_len, cmd->module_id, cmd->ruleset_id_len, cmd->ruleset_id)
+            }
+            /* above selector selects shadow link to the ruleset */
+            { MAPPING STRING("nofollow")
+              BOOL(false)
+            }
+          }
+        }
+      }
+    }
+    STRING("describe")
+  }
+}
+
+static void ruleset_describe(struct command * restrict cmd, bacon_writer * restrict builder_writer)
+{
+  { LIST
+    { MAPPING STRING("select")
+      { LIST
+        { MAPPING STRING("path")
+          { SET
+            { MAPPING STRING("pattern")
+              LOADF("//bm/rulesets/%.*s", cmd->ruleset_id_len, cmd->ruleset_id)
+            }
+            /* above selector selects shadow link to the ruleset */
+            { MAPPING STRING("nofollow")
+              BOOL(false)
+            }
+          }
+        }
+      }
+    }
+    STRING("describe")
+  }
+}
+
+static void ruleset_connected(command * restrict cmd, bam_client * restrict client)
+{
+  if(cmd->ruleset_id_len == 0) {
+    cmd->identify_id_1 = command_post(cmd, client, ruleset_identify_by_path);
+    return;
+  }
+
+  cmd->describe_id = command_post(cmd, client, ruleset_describe);
+}
+
+static void ruleset_process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
+{
+  if(msg->id == cmd->identify_id_1) {
+    /* identify : resolve ruleset path -> id */
+    if(!command_identify_msg(msg, cmd->ruleset_id, sizeof(cmd->ruleset_id), &cmd->ruleset_id_len)) {
+      return;
+    }
+    if(cmd->ruleset_id_len == 0) {
+      command_notfound("ruleset", cmd->ruleset_path, cmd->ruleset_path_len);
+      return;
+    }
+    cmd->describe_id = command_post(cmd, client, ruleset_describe);
+    return;
+  }
+
+  if(msg->id == cmd->describe_id) {
+    /* describe : print the ruleset */
+    command_describe_msg(cmd, msg);
+    return;
+  }
+
+  RTA;
+}
+
+static void module_ruleset_process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
+{
+  if(msg->id == cmd->identify_id_0 || msg->id == cmd->identify_id_1) {
+    /* identify : resolve the module target -> module id */
+    if(!module_identify_msg(cmd, client, msg)) {
+      return;
+    }
+    if(cmd->ruleset_id_len == 0) {
+      cmd->identify_id_2 = command_post(cmd, client, ruleset_identify_by_path);
+    } else {
+      cmd->describe_id = command_post(cmd, client, module_ruleset_describe);
+    }
+    return;
+  }
+
+  if(msg->id == cmd->identify_id_2) {
+    /* identify : resolve ruleset path -> id */
+    if(!command_identify_msg(msg, cmd->ruleset_id, sizeof(cmd->ruleset_id), &cmd->ruleset_id_len)) {
+      return;
+    }
+    if(cmd->ruleset_id_len == 0) {
+      command_notfound("ruleset", cmd->ruleset_path, cmd->ruleset_path_len);
+      return;
+    }
+    cmd->describe_id = command_post(cmd, client, module_ruleset_describe);
+    return;
+  }
+
+  if(msg->id == cmd->describe_id) {
+    /* describe : print the ruleset */
+    command_describe_msg(cmd, msg);
+    return;
+  }
+
+  RTA;
+}
+
+static void disconnected(command * restrict cmd)
+{
+  if(cmd->any) {
+    printf("\n");
   }
 }
 
 typeof(ruleset_command) ruleset_command = {
     name : "ruleset"
   , usage : ruleset_usage
-  , connected : special_describe_connected
-  , process : special_describe_process
-  , disconnected : special_describe_disconnected
+  , connected : ruleset_connected
+  , process : ruleset_process
+  , disconnected : disconnected
   , prefix : "//bm/rulesets"
   , visit : "ruleset"
 };
@@ -92,9 +250,19 @@ typeof(rulesets_command) rulesets_command = {
   , usage : rulesets_usage
   , connected : special_list_connected
   , process : special_list_process
-  , disconnected : special_list_disconnected
+  , disconnected : disconnected
   , path : "//bm/rulesets"
   , visit : "ruleset"
+};
+
+/* by module */
+
+typeof(module_ruleset_command) module_ruleset_command = {
+    name : "module ruleset"
+  , usage : module_ruleset_usage
+  , connected : module_command_connected
+  , process : module_ruleset_process
+  , disconnected : disconnected
 };
 
 typeof(module_rulesets_command) module_rulesets_command = {
@@ -102,5 +270,5 @@ typeof(module_rulesets_command) module_rulesets_command = {
   , usage : module_rulesets_usage
   , connected : module_command_connected
   , process : module_rulesets_process
-  , disconnected : special_list_disconnected
+  , disconnected : disconnected
 };

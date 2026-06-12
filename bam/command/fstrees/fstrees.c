@@ -4,6 +4,7 @@
 #include "bam/client.h"
 #include "bam/ipc.h"
 #include "bacon/builder.h"
+#include "narrator.h"
 
 #include "fstrees.h"
 #include "params.h"
@@ -34,7 +35,9 @@ static void fstree_identify(struct command * restrict cmd, bacon_writer * restri
               if(cmd->fstree_id_len) {
                 LOADF("//bm/fstrees/%.*s", cmd->fstree_id_len, cmd->fstree_id)
               } else if(cmd->target_len) {
-                BYTES(cmd->target, cmd->target_len)
+                bacon_writer_push_bytes(builder_writer);
+                narrator_sayw(builder_writer->N, cmd->target, cmd->target_len);
+                bacon_writer_pop_bytes(builder_writer);
               } else {
                 STRING(".")
               }
@@ -87,29 +90,26 @@ static void describe_connected(command * restrict cmd, bam_client * restrict cli
 
 static void describe_process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
 {
-  if(msg->id != cmd->identify_id && msg->id != cmd->describe_id) {
-    RTA; // wtf
-  }
-  if(msg->code != 0) {
-    goto end;
-  }
-
-  if(msg->id == cmd->identify_id && msg->type == BAMIPC_MSG_RESULT) {
-    cmd->fstree_id_len = command_identify_result_parse(cmd->fstree_id, sizeof(cmd->fstree_id), msg);
+  if(msg->id == cmd->identify_id) {
+    /* identify : resolve the target -> fstree id */
+    if(!command_identify_msg(msg, cmd->fstree_id, sizeof(cmd->fstree_id), &cmd->fstree_id_len)) {
+      return;
+    }
+    if(cmd->fstree_id_len == 0) {
+      command_notfound("fstree", cmd->target, cmd->target_len);
+      return;
+    }
     cmd->describe_id = command_post(cmd, client, fstree_describe);
-  } else if(msg->id == cmd->identify_id && msg->type == BAMIPC_MSG_RESPONSE) {
-  } else if(msg->id == cmd->describe_id && msg->type == BAMIPC_MSG_RESULT) {
-    (void)!write(1, msg->text, msg->len);
-    cmd->any = true;
-  } else if(msg->id == cmd->describe_id && msg->type == BAMIPC_MSG_RESPONSE) {
-    goto end;
-  } else {
-    RTA;
+    return;
   }
-  return;
 
-end:
-  g_params.shutdown = true;
+  if(msg->id == cmd->describe_id) {
+    /* describe : print the fstree */
+    command_list_msg(cmd, msg);
+    return;
+  }
+
+  RTA;
 }
 
 static void describe_disconnected(command * restrict cmd)

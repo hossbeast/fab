@@ -67,45 +67,13 @@ static void fsname_describe(struct command * restrict cmd, bacon_writer * restri
 
 static void fsname_process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
 {
-  if(msg->id != cmd->identify_id_1 && msg->id != cmd->describe_id) {
-    RTA; // wtf
-  }
-  if(msg->code != 0) {
-    goto end;
+  if(msg->id == cmd->describe_id) {
+    /* describe : print the fsname */
+    command_describe_msg(cmd, msg);
+    return;
   }
 
-  if(msg->id == cmd->identify_id_1 && msg->type == BAMIPC_MSG_RESULT) {
-    if(msg->code == 0 && msg->len > 10) {
-      cmd->fsname_id_len = command_identify_result_parse(cmd->fsname_id, sizeof(cmd->fsname_id), msg);
-    }
-  } else if(msg->id == cmd->identify_id_1 && msg->type == BAMIPC_MSG_RESPONSE) {
-    if(cmd->fsname_id_len == 0) {
-      /* lookup failure */
-      if(cmd->fsname_id_len) {
-        dprintf(2, "fsname not found : %.*s\n", (int)cmd->fsname_id_len, cmd->fsname_id);
-      } else if(cmd->fsname_name_len) {
-        dprintf(2, "fsname not found : %.*s\n", (int)cmd->fsname_name_len, cmd->fsname_name);
-      }
-      g_params.waserror = true;
-      g_params.shutdown = true;
-    } else {
-      cmd->describe_id = command_post(cmd, client, fsname_describe);
-    }
-  } else if(msg->id == cmd->describe_id && msg->type == BAMIPC_MSG_RESULT) {
-    if(cmd->any) {
-      (void)!write(1, "\n", 1);
-    }
-    (void)!write(1, msg->text, msg->len);
-    cmd->any = true;
-  } else if(msg->id == cmd->describe_id && msg->type == BAMIPC_MSG_RESPONSE) {
-    goto end;
-  } else {
-    RTA;
-  }
-  return;
-
-end:
-  g_params.shutdown = true;
+  RTA;
 }
 
 static void fsname_connected(command * restrict cmd, bam_client * restrict client)
@@ -147,7 +115,7 @@ static void namespace_fsname_connected(command * restrict cmd, bam_client * rest
 {
   if(cmd->namespace_id_len == 0) {
     cmd->identify_id_0 = command_post(cmd, client, namespace_identify_by_name);
-  } if(cmd->fsname_id_len == 0) {
+  } else if(cmd->fsname_id_len == 0) {
     cmd->identify_id_1 = command_post(cmd, client, namespace_fsname_identify_by_name);
   } else {
     cmd->list_id = command_post(cmd, client, fsname_describe);
@@ -156,55 +124,41 @@ static void namespace_fsname_connected(command * restrict cmd, bam_client * rest
 
 static void namespace_fsname_process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
 {
-  if(msg->id == cmd->identify_id_0 && msg->type == BAMIPC_MSG_RESULT) {
-    if(msg->code == 0 && msg->len > 10) {
-      cmd->namespace_id_len = command_identify_result_parse(cmd->namespace_id, sizeof(cmd->namespace_id), msg);
+  if(msg->id == cmd->identify_id_0) {
+    /* identify : resolve namespace name -> id */
+    if(!command_identify_msg(msg, cmd->namespace_id, sizeof(cmd->namespace_id), &cmd->namespace_id_len)) {
+      return;
     }
-  } else if(msg->id == cmd->identify_id_1 && msg->type == BAMIPC_MSG_RESULT) {
-    if(msg->code == 0 && msg->len > 10) {
-      cmd->fsname_id_len = command_identify_result_parse(cmd->fsname_id, sizeof(cmd->fsname_id), msg);
-    }
-  } else if(msg->id == cmd->identify_id_0 && msg->type == BAMIPC_MSG_RESPONSE) {
     if(cmd->namespace_id_len == 0) {
-      /* lookup failure */
-      if(cmd->namespace_id_len) {
-        dprintf(2, "namespace not found : %.*s\n", (int)cmd->namespace_id_len, cmd->namespace_id);
-      } else if(cmd->namespace_name_len) {
-        dprintf(2, "namespace not found : %.*s\n", (int)cmd->namespace_name_len, cmd->namespace_name);
-      }
-      g_params.waserror = true;
-      g_params.shutdown = true;
+      command_notfound("namespace", cmd->namespace_name, cmd->namespace_name_len);
     } else if(cmd->fsname_id_len == 0) {
       cmd->identify_id_1 = command_post(cmd, client, namespace_fsname_identify_by_name);
     } else {
       cmd->list_id = command_post(cmd, client, fsname_describe);
     }
-  } else if(msg->id == cmd->identify_id_1 && msg->type == BAMIPC_MSG_RESPONSE) {
-    if(cmd->fsname_id_len == 0) {
-      /* lookup failure */
-      if(cmd->fsname_id_len) {
-        dprintf(2, "fsname not found : %.*s\n", (int)cmd->fsname_id_len, cmd->fsname_id);
-      } else if(cmd->fsname_name_len) {
-        dprintf(2, "fsname not found : %.*s\n", (int)cmd->fsname_name_len, cmd->fsname_name);
-      }
-      g_params.waserror = true;
-      g_params.shutdown = true;
-    } else {
-      cmd->list_id = command_post(cmd, client, fsname_describe);
-    }
-  } else if(msg->id == cmd->list_id && msg->type == BAMIPC_MSG_RESULT) {
-    if(msg->code == 0) {
-      if(cmd->any) {
-        (void)!write(1, "\n", 1);
-      }
-      (void)!write(1, msg->text, msg->len);
-      cmd->any = true;
-    }
-  } else if(msg->id == cmd->list_id && msg->type == BAMIPC_MSG_RESPONSE) {
-    g_params.shutdown = true;
-  } else {
-    RTA;
+    return;
   }
+
+  if(msg->id == cmd->identify_id_1) {
+    /* identify : resolve fsname name -> id */
+    if(!command_identify_msg(msg, cmd->fsname_id, sizeof(cmd->fsname_id), &cmd->fsname_id_len)) {
+      return;
+    }
+    if(cmd->fsname_id_len == 0) {
+      command_notfound("fsname", cmd->fsname_name, cmd->fsname_name_len);
+      return;
+    }
+    cmd->list_id = command_post(cmd, client, fsname_describe);
+    return;
+  }
+
+  if(msg->id == cmd->list_id) {
+    /* describe : print the fsname */
+    command_describe_msg(cmd, msg);
+    return;
+  }
+
+  RTA;
 }
 
 static void namespace_fsnames_connected(command * restrict cmd, bam_client * restrict client)
@@ -219,31 +173,27 @@ static void namespace_fsnames_connected(command * restrict cmd, bam_client * res
 
 static void namespace_fsnames_process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
 {
-  if(msg->id == cmd->identify_id && msg->type == BAMIPC_MSG_RESULT) {
-    if(msg->code == 0 && msg->len > 10) {
-      cmd->namespace_id_len = command_identify_result_parse(cmd->namespace_id, sizeof(cmd->namespace_id), msg);
+  if(msg->id == cmd->identify_id) {
+    /* identify : resolve namespace name -> id */
+    if(!command_identify_msg(msg, cmd->namespace_id, sizeof(cmd->namespace_id), &cmd->namespace_id_len)) {
+      return;
     }
-  } else if(msg->id == cmd->identify_id && msg->type == BAMIPC_MSG_RESPONSE) {
     if(cmd->namespace_id_len == 0) {
-      /* lookup failure */
-      dprintf(2, "namespace not found %.*s\n", (int)cmd->target_len, cmd->target);
-      g_params.waserror = true;
-      g_params.shutdown = true;
-    } else {
-      snprintf(cmd->path, sizeof(cmd->path), "//bm/namespaces/%.*s/fsnames", cmd->namespace_id_len, cmd->namespace_id);
-      cmd->list_id = command_post(cmd, client, special_list_build);
+      command_notfound("namespace", cmd->namespace_name, cmd->namespace_name_len);
+      return;
     }
-  } else if(msg->id == cmd->list_id && msg->type == BAMIPC_MSG_RESULT) {
-    if(cmd->any) {
-      (void)!write(1, "\n", 1);
-    }
-    (void)!write(1, msg->text, msg->len);
-    cmd->any = true;
-  } else if(msg->id == cmd->list_id && msg->type == BAMIPC_MSG_RESPONSE) {
-    g_params.shutdown = true;
-  } else {
-    RTA;
+    snprintf(cmd->path, sizeof(cmd->path), "//bm/namespaces/%.*s/fsnames", cmd->namespace_id_len, cmd->namespace_id);
+    cmd->list_id = command_post(cmd, client, special_list_build);
+    return;
   }
+
+  if(msg->id == cmd->list_id) {
+    /* list : print the namespace fsnames */
+    command_describe_msg(cmd, msg);
+    return;
+  }
+
+  RTA;
 }
 
 typeof(namespace_fsname_command) fsname_command = {

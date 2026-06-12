@@ -268,30 +268,40 @@ static void rma_run_process(command * restrict cmd, bam_client * restrict client
     if(msg->evtype == BAMIPC_EVENT_RMA_END) {
       g_params.shutdown = true;
     }
-  } else if(msg->id == eventsubid && msg->type == BAMIPC_MSG_RESULT) {
-    /* eventsub */
-  } else if(msg->id == cmd->identify_id_1 && msg->type == BAMIPC_MSG_RESULT) {
-    if(msg->code == 0 && msg->len > 10) {
-      cmd->rma_id_len = command_identify_result_parse(cmd->rma_id, sizeof(cmd->rma_id), msg);
-    }
-  } else if(msg->id == cmd->identify_id_1 && msg->type == BAMIPC_MSG_RESPONSE) {
-    if(cmd->rma_id_len == 0) {
-      /* lookup failure */
-      dprintf(2, "rma not found : %.*s\n", (int)cmd->rma_name_len, cmd->rma_name);
-      g_params.waserror = true;
-      g_params.shutdown = true;
-    } else {
-      cmd->run_id = command_post(cmd, client, rma_run);
-    }
-  } else if(msg->id == cmd->run_id) {
-    if(cmd->any) {
-      (void)!write(1, "\n", 1);
-    }
-    (void)!write(1, msg->text, msg->len);
-    cmd->any = true;
-  } else {
-    RTA;
+    return;
   }
+
+  if(msg->id == eventsubid) {
+    /* eventsub ack */
+    return;
+  }
+
+  if(msg->id == cmd->identify_id_1) {
+    /* identify : resolve rma name -> id */
+    if(!command_identify_msg(msg, cmd->rma_id, sizeof(cmd->rma_id), &cmd->rma_id_len)) {
+      return;
+    }
+    if(cmd->rma_id_len == 0) {
+      command_notfound("rma", cmd->rma_name, cmd->rma_name_len);
+      return;
+    }
+    cmd->run_id = command_post(cmd, client, rma_run);
+    return;
+  }
+
+  if(msg->id == cmd->run_id) {
+    /* run output ; the command ends with the rma-end event */
+    if(msg->type == BAMIPC_MSG_RESULT) {
+      if(cmd->any) {
+        (void)!write(1, "\n", 1);
+      }
+      (void)!write(1, msg->text, msg->len);
+      cmd->any = true;
+    }
+    return;
+  }
+
+  RTA;
 }
 
 static void rma_connected(command * restrict cmd, bam_client * restrict client)
@@ -306,48 +316,29 @@ static void rma_connected(command * restrict cmd, bam_client * restrict client)
 
 static void rma_process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
 {
-  if(msg->id != cmd->identify_id_1 && msg->id != cmd->describe_id) {
-    RTA; // wtf
-  }
-  if(msg->code != 0) {
-    goto end;
-  }
-
-  if(msg->id == cmd->identify_id_1 && msg->type == BAMIPC_MSG_RESULT) {
-    if(msg->code == 0 && msg->len > 10) {
-      cmd->rma_id_len = command_identify_result_parse(cmd->rma_id, sizeof(cmd->rma_id), msg);
+  if(msg->id == cmd->identify_id_1) {
+    /* identify : resolve rma name -> id */
+    if(!command_identify_msg(msg, cmd->rma_id, sizeof(cmd->rma_id), &cmd->rma_id_len)) {
+      return;
     }
-  } else if(msg->id == cmd->identify_id_1 && msg->type == BAMIPC_MSG_RESPONSE) {
     if(cmd->rma_id_len == 0) {
-      /* lookup failure */
-      if(cmd->rma_id_len) {
-        dprintf(2, "rma not found : %.*s\n", (int)cmd->rma_id_len, cmd->rma_id);
-      } else if(cmd->rma_name_len) {
-        dprintf(2, "rma not found : %.*s\n", (int)cmd->rma_name_len, cmd->rma_name);
-      }
-      g_params.waserror = true;
-      g_params.shutdown = true;
-    } else {
-      cmd->describe_id = command_post(cmd, client, rma_describe);
+      command_notfound("rma", cmd->rma_name, cmd->rma_name_len);
+      return;
     }
-  } else if(msg->id == cmd->describe_id && msg->type == BAMIPC_MSG_RESULT) {
-    if(cmd->any) {
-      (void)!write(1, "\n", 1);
-    }
-    (void)!write(1, msg->text, msg->len);
-    cmd->any = true;
-  } else if(msg->id == cmd->describe_id && msg->type == BAMIPC_MSG_RESPONSE) {
-    goto end;
-  } else {
-    RTA;
+    cmd->describe_id = command_post(cmd, client, rma_describe);
+    return;
   }
-  return;
 
-end:
-  g_params.shutdown = true;
+  if(msg->id == cmd->describe_id) {
+    /* describe : print the rma */
+    command_describe_msg(cmd, msg);
+    return;
+  }
+
+  RTA;
 }
 
-static void rma_disconnected(command * restrict cmd)
+static void disconnected(command * restrict cmd)
 {
   if(cmd->any) {
     printf("\n");
@@ -382,50 +373,39 @@ static void rmas_usage(command * restrict cmd)
 
 static void module_rma_process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
 {
-  if(msg->code != 0) {
-    g_params.shutdown = true;
+  if(msg->id == cmd->identify_id_0 || msg->id == cmd->identify_id_1) {
+    /* identify : resolve the module target -> module id */
+    if(!module_identify_msg(cmd, client, msg)) {
+      return;
+    }
+    if(cmd->rma_id_len == 0) {
+      cmd->identify_id_2 = command_post(cmd, client, module_rma_identify_by_name);
+    } else {
+      cmd->describe_id = command_post(cmd, client, rma_describe);
+    }
     return;
   }
 
-  if(msg->id == cmd->identify_id_0 && msg->type == BAMIPC_MSG_RESULT) {
-    if(msg->code == 0 && msg->len > 10) {
-      cmd->module_id_len = command_identify_result_parse(cmd->module_id, sizeof(cmd->module_id), msg);
+  if(msg->id == cmd->identify_id_2) {
+    /* identify : resolve rma name -> id */
+    if(!command_identify_msg(msg, cmd->rma_id, sizeof(cmd->rma_id), &cmd->rma_id_len)) {
+      return;
     }
-  } else if(msg->id == cmd->identify_id_0 && msg->type == BAMIPC_MSG_RESPONSE) {
-    if(cmd->module_id_len == 0) {
-      /* lookup failure */
-      dprintf(2, "module not found : %.*s\n", (int)cmd->target_len, cmd->target);
-      g_params.waserror = true;
-      g_params.shutdown = true;
-    } else if(cmd->rma_id_len == 0) {
-      cmd->identify_id_1 = command_post(cmd, client, module_rma_identify_by_name);
-    } else {
-      cmd->describe_id = command_post(cmd, client, rma_describe);
-    }
-  } else if(msg->id == cmd->identify_id_1 && msg->type == BAMIPC_MSG_RESULT) {
-    if(msg->code == 0 && msg->len > 10) {
-      cmd->rma_id_len = command_identify_result_parse(cmd->rma_id, sizeof(cmd->rma_id), msg);
-    }
-  } else if(msg->id == cmd->identify_id_1 && msg->type == BAMIPC_MSG_RESPONSE) {
     if(cmd->rma_id_len == 0) {
-      /* lookup failure */
-      dprintf(2, "rma not found : %.*s\n", (int)cmd->rma_name_len, cmd->rma_name);
-      g_params.waserror = true;
-      g_params.shutdown = true;
-    } else {
-      cmd->describe_id = command_post(cmd, client, rma_describe);
+      command_notfound("rma", cmd->rma_name, cmd->rma_name_len);
+      return;
     }
-  } else if(msg->id == cmd->describe_id && msg->type == BAMIPC_MSG_RESULT) {
-    if(cmd->any) {
-      (void)!write(1, "\n", 1);
-    }
-    (void)!write(1, msg->text, msg->len);
-    cmd->any = true;
-  } else if(msg->id == cmd->describe_id && msg->type == BAMIPC_MSG_RESPONSE) {
-    g_params.shutdown = true;
-  } else {
-    RTA;
+    cmd->describe_id = command_post(cmd, client, rma_describe);
+    return;
   }
+
+  if(msg->id == cmd->describe_id) {
+    /* describe : print the rma */
+    command_describe_msg(cmd, msg);
+    return;
+  }
+
+  RTA;
 }
 
 static void module_rma_usage(command * restrict cmd)
@@ -460,47 +440,53 @@ static void module_rma_run_process(command * restrict cmd, bam_client * restrict
     if(msg->evtype == BAMIPC_EVENT_RMA_END) {
       g_params.shutdown = true;
     }
-  } else if(msg->id == cmd->identify_id_0 && msg->type == BAMIPC_MSG_RESULT) {
-    if(msg->code == 0 && msg->len > 10) {
-      cmd->module_id_len = command_identify_result_parse(cmd->module_id, sizeof(cmd->module_id), msg);
-    }
-  } else if(msg->id == cmd->identify_id_0 && msg->type == BAMIPC_MSG_RESPONSE) {
-    if(cmd->module_id_len == 0) {
-      /* lookup failure */
-      dprintf(2, "module not found : %.*s\n", (int)cmd->target_len, cmd->target);
-      g_params.waserror = true;
-      g_params.shutdown = true;
-    } else if(cmd->rma_id_len == 0) {
-      cmd->identify_id_1 = command_post(cmd, client, module_rma_identify_by_name);
-    } else {
-      cmd->run_id = command_post(cmd, client, rma_run);
-    }
-  } else if(msg->id == eventsubid && msg->type == BAMIPC_MSG_RESULT) {
-    /* eventsub */
-  } else if(msg->id == cmd->identify_id_1 && msg->type == BAMIPC_MSG_RESULT) {
-    if(msg->code == 0 && msg->len > 10) {
-      cmd->rma_id_len = command_identify_result_parse(cmd->rma_id, sizeof(cmd->rma_id), msg);
-    }
-  } else if(msg->id == cmd->identify_id_1 && msg->type == BAMIPC_MSG_RESPONSE) {
-    if(cmd->rma_id_len == 0) {
-      /* lookup failure */
-      dprintf(2, "rma not found : %.*s\n", (int)cmd->rma_name_len, cmd->rma_name);
-      g_params.waserror = true;
-      g_params.shutdown = true;
-    } else {
-      cmd->run_id = command_post(cmd, client, rma_run);
-    }
-  } else if(msg->id == cmd->run_id && msg->type == BAMIPC_MSG_RESULT) {
-    if(cmd->any) {
-      (void)!write(1, "\n", 1);
-    }
-    (void)!write(1, msg->text, msg->len);
-    cmd->any = true;
-  } else if(msg->id == cmd->run_id && msg->type == BAMIPC_MSG_RESPONSE) {
-    /* end with rma-end event */
-  } else {
-    RTA;
+    return;
   }
+
+  if(msg->id == eventsubid) {
+    /* eventsub ack */
+    return;
+  }
+
+  if(msg->id == cmd->identify_id_0 || msg->id == cmd->identify_id_1) {
+    /* identify : resolve the module target -> module id */
+    if(!module_identify_msg(cmd, client, msg)) {
+      return;
+    }
+    if(cmd->rma_id_len == 0) {
+      cmd->identify_id_2 = command_post(cmd, client, module_rma_identify_by_name);
+    } else {
+      cmd->run_id = command_post(cmd, client, rma_run);
+    }
+    return;
+  }
+
+  if(msg->id == cmd->identify_id_2) {
+    /* identify : resolve rma name -> id */
+    if(!command_identify_msg(msg, cmd->rma_id, sizeof(cmd->rma_id), &cmd->rma_id_len)) {
+      return;
+    }
+    if(cmd->rma_id_len == 0) {
+      command_notfound("rma", cmd->rma_name, cmd->rma_name_len);
+      return;
+    }
+    cmd->run_id = command_post(cmd, client, rma_run);
+    return;
+  }
+
+  if(msg->id == cmd->run_id) {
+    /* run output ; the command ends with the rma-end event */
+    if(msg->type == BAMIPC_MSG_RESULT) {
+      if(cmd->any) {
+        (void)!write(1, "\n", 1);
+      }
+      (void)!write(1, msg->text, msg->len);
+      cmd->any = true;
+    }
+    return;
+  }
+
+  RTA;
 }
 
 static void module_rma_run_usage(command * restrict cmd)
@@ -523,34 +509,22 @@ static void module_rmas_usage(command * restrict cmd)
 
 static void module_rmas_process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
 {
-  if(msg->id == cmd->identify_id_0 && msg->type == BAMIPC_MSG_RESULT) {
-    if(msg->code == 0 && msg->len > 10) {
-      cmd->module_id_len = command_identify_result_parse(cmd->module_id, sizeof(cmd->module_id), msg);
-    }
-  } else if(msg->id == cmd->identify_id_1 && msg->type == BAMIPC_MSG_RESULT) {
-    if(msg->code == 0 && msg->len > 10) {
-      cmd->module_id_len = command_identify_result_parse(cmd->module_id, sizeof(cmd->module_id), msg);
-    }
-  } else if(msg->id == cmd->identify_id_0 && msg->type == BAMIPC_MSG_RESPONSE) {
-    cmd->identify_id_1 = command_post(cmd, client, module_command_identify_target);
-  } else if(msg->id == cmd->identify_id_1 && msg->type == BAMIPC_MSG_RESPONSE) {
-    if(cmd->module_id_len == 0) {
-      /* lookup failure */
-      dprintf(2, "module not found %.*s\n", (int)cmd->target_len, cmd->target);
-      g_params.waserror = true;
-      g_params.shutdown = true;
-    } else {
+  if(msg->id == cmd->identify_id_0 || msg->id == cmd->identify_id_1) {
+    /* identify : resolve the module target -> module id */
+    if(module_identify_msg(cmd, client, msg)) {
       snprintf(cmd->path, sizeof(cmd->path), "//bm/modules/%.*s/rmas", cmd->module_id_len, cmd->module_id);
       cmd->list_id = command_post(cmd, client, special_list_build);
     }
-  } else if(msg->id == cmd->list_id && msg->type == BAMIPC_MSG_RESULT) {
-    (void)!write(1, msg->text, msg->len);
-    cmd->any = true;
-  } else if(msg->id == cmd->list_id && msg->type == BAMIPC_MSG_RESPONSE) {
-    g_params.shutdown = true;
-  } else {
-    RTA;
+    return;
   }
+
+  if(msg->id == cmd->list_id) {
+    /* list : print the module rmas */
+    command_list_msg(cmd, msg);
+    return;
+  }
+
+  RTA;
 }
 
 //
@@ -562,7 +536,7 @@ typeof(rma_command) rma_command = {
   , usage : rma_usage
   , connected : rma_connected
   , process : rma_process
-  , disconnected : rma_disconnected
+  , disconnected : disconnected
 };
 
 typeof(rma_run_command) rma_run_command = {
@@ -570,7 +544,7 @@ typeof(rma_run_command) rma_run_command = {
   , usage : rma_run_usage
   , connected : rma_run_connected
   , process : rma_run_process
-  , disconnected : rma_disconnected
+  , disconnected : disconnected
 };
 
 typeof(rmas_command) rmas_command = {
@@ -578,7 +552,7 @@ typeof(rmas_command) rmas_command = {
   , usage : rmas_usage
   , connected : special_list_connected
   , process : special_list_process
-  , disconnected : special_list_disconnected
+  , disconnected : disconnected
   , path : "//bm/rmas"
   , visit : "rma"
 };
@@ -590,7 +564,7 @@ typeof(rma_command) module_rma_command = {
   , usage : module_rma_usage
   , connected : module_command_connected    // first, identify the module
   , process : module_rma_process
-  , disconnected : rma_disconnected
+  , disconnected : disconnected
 };
 
 typeof(module_rma_run_command) module_rma_run_command = {
@@ -598,7 +572,7 @@ typeof(module_rma_run_command) module_rma_run_command = {
   , usage : module_rma_run_usage
   , connected : module_rma_run_connected    // first, identify the module
   , process : module_rma_run_process
-  , disconnected : rma_disconnected
+  , disconnected : disconnected
 };
 
 typeof(module_rmas_command) module_rmas_command = {
@@ -606,5 +580,5 @@ typeof(module_rmas_command) module_rmas_command = {
   , usage : module_rmas_usage
   , connected : module_command_connected    // first, identify the module
   , process : module_rmas_process
-  , disconnected : special_list_disconnected
+  , disconnected : disconnected
 };
