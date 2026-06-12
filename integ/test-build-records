@@ -1,0 +1,151 @@
+#!/usr/bin/env perl
+
+#
+# inspect build records
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+our $bam_bamd_id;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use integ;
+use bam::bam;
+
+# build out the fstree under /tmp
+init();
+setup(<<'TREE');
+|-- cores.c <<
+foo
+>>
+|-- module.bam%devel <<
+rule cores.c -> cores.o : ./cp.bam+(.)
+rule cores.o -> cores : ./cp.bam+(.)
+rule cores -> //targets
+>>
+|-- cp.bam << 0777
+#!/usr/bin/env perl
+open A, "<", $ENV{bm_source0} or die $!;
+open B, ">", $ENV{bm_target0} or die $!;
+while(<A>)
+{
+  print B "$_";
+}
+print STDOUT "hello world!";
+>>
+|-- system-config <<
+build : {
+  retention : {
+    max-entries : 1
+  }
+}
+>>
+TREE
+
+my $build0_id;
+my $res;
+
+$build0_id = bam::identity($bam_bamd_id, undef, "build-record", sprintf("%010u", 0));
+print("build0_id $build0_id\n");
+
+assert {
+  stats("cores.c", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert {
+  stats("cores.o", {
+    type => 'file'
+  , state => 'uncreated'
+  , stale => 0
+  , fresh => 0
+})};
+assert {
+  stats("cores", {
+    type => 'file'
+  , state => 'uncreated'
+  , stale => 0
+  , fresh => 0
+})};
+
+$res = bam_tree([$bam_basedir, "--hidden"]);
+print "$$res{out}\n";
+build();
+
+assert { eexists ("//bm/build-records/$build0_id") };
+assert { ls("//bm/build-records-by/order/00000", "00000 -> //bm/build-records/$build0_id") };
+assert { enoent ("//bm/build-records-by/order/00001") };
+
+# intermediate and final file were created
+assert_file("$bam_basedir/cores.o", "foo");
+assert_file("$bam_basedir/cores", "foo");
+
+assert {
+  stats("cores.c", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert {
+  stats("cores.o", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert {
+  stats("cores", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+
+# one record for the build, one record for each formula exec
+assert {
+  stats(undef, {
+    build_records => 1
+  , formula_records => 2
+})};
+
+# check that all of these are addressable
+$res = bam_tree(["//bm/build-records"]);
+$res = bam_tree(["//bm/formula-records"]);
+$res = bam(["build-record", "$build0_id"]);
+$res = bam(["blame", "cores"]);
+$res = bam(["blame", "cores", "stdin"]);
+$res = bam(["blame", "cores", "stderr"]);
+$res = bam(["blame", "cores", "auxout"]);
+$res = bam(["blame", "cores", "envs"]);
+
+# assert on specific record details
+$res = bam(["blame", "cores", "stdout"]);
+assert { $$res{out} =~ m|hello world| };
+
+$res = bam(["blame", "cores", "args"]);
+assert { $$res{out} =~ m|cp.bam| };
+
+$res = bam(["blame", "cores", "file"]);
+assert { $$res{out} =~ m|$bam_basedir/cp.bam| };
+
+$res = bam(["blame", "cores", "cwd"]);
+assert { $$res{out} =~ m|$bam_basedir| };
+
+teardown();

@@ -6,7 +6,7 @@
 #include "bacon/builder.h"
 #include "narrator/fixed.h"
 
-#include "show.h"
+#include "blame.h"
 #include "args.h"
 #include "command.h"
 #include "params.h"
@@ -19,14 +19,20 @@
 static void usage(command * restrict cmd)
 {
   printf(
-"show positional args\n"
-" <path>                target to show\n"
+"bam blame - show the most recent record of updating a file\n"
 "\n"
-"show options\n"
-" stdin                 show stdin from the record\n"
-" stdout                show stdout from the record\n"
-" stderr                show stderr from the record\n"
-" auxout                show auxout from the record\n"
+"usage: bam blame <path> [detail]\n"
+" <path>                path of target to show\n"
+"\n"
+"record detail\n"
+" stdin                 show stdin\n"
+" stdout                show stdout\n"
+" stderr                show stderr\n"
+" auxout                show auxout (by convention, the command)\n"
+" args                  show program arguments\n"
+" envs                  show program environment\n"
+" file                  show file that was executed\n"
+" cwd                   show working directory\n"
   );
 }
 
@@ -107,7 +113,7 @@ static void record_identify(struct command * restrict cmd, bacon_writer * restri
 
 static void record_tell(struct command * restrict cmd, bacon_writer * restrict builder_writer)
 {
-  if(cmd->show_detail) {
+  if(cmd->blame_detail) {
     { LIST
       { MAPPING
         STRING("select")
@@ -117,7 +123,7 @@ static void record_tell(struct command * restrict cmd, bacon_writer * restrict b
             { SET
               { MAPPING
                 STRING("pattern")
-                LOADF("//bm/formula-records/%.*s/%.*s", cmd->id_len, cmd->id, (int)cmd->show_detail_len, cmd->show_detail);
+                LOADF("//bm/formula-records/%.*s/%.*s", cmd->id_len, cmd->id, (int)cmd->blame_detail_len, cmd->blame_detail);
               }
             }
           }
@@ -162,12 +168,12 @@ static void record_tell(struct command * restrict cmd, bacon_writer * restrict b
     }
   }
 }
-void command_show_connected(command * restrict cmd, bam_client * restrict client)
+void command_blame_connected(command * restrict cmd, bam_client * restrict client)
 {
   cmd->identify_id_0 = command_post(cmd, client, record_identify);
 }
 
-void command_show_process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
+void command_blame_process(command * restrict cmd, bam_client * restrict client, bamipc_message * restrict msg)
 {
   if(msg->id == cmd->identify_id_0 && msg->type == BAMIPC_MSG_RESULT) {
     if(msg->code == 0 && msg->len > 10) {
@@ -191,7 +197,7 @@ void command_show_process(command * restrict cmd, bam_client * restrict client, 
   }
 }
 
-void command_show_disconnected(command * restrict cmd)
+void command_blame_disconnected(command * restrict cmd)
 {
   if(cmd->any) {
     (void)!write(1, "\n", 1);
@@ -202,12 +208,12 @@ void command_show_disconnected(command * restrict cmd)
 // public
 //
 
-typeof(show_command) show_command = {
+typeof(blame_command) blame_command = {
     usage : usage
-  , name : "show"
-  , connected : command_show_connected
-  , process : command_show_process
-  , disconnected : command_show_disconnected
+  , name : "blame"
+  , connected : command_blame_connected
+  , process : command_blame_process
+  , disconnected : command_blame_disconnected
 
   /* defaults */
   , hidden : true

@@ -19,7 +19,7 @@
   #include "build.h"
   #include "plan.h"
   #include "describe.h"
-  #include "show.h"
+  #include "blame.h"
   #include "fstrees.h"
   #include "namespaces.h"
   #include "events.h"
@@ -110,7 +110,7 @@
  EVENTS                         "events"
  STATS                          "stats"
  DESCRIBE                       "describe"
- SHOW                           "show"
+ BLAME                          "blame"
  INFO                           "info"
  CONFIG                         "config"
  CONFIGSET                      "configset"
@@ -395,7 +395,7 @@ command
   | rules-command
   | RULESET        { command_set(&ruleset_command); }        ruleset-arguments
   | RULESETS       { command_set(&rulesets_command); }       rulesets-arguments
-  | SHOW           { command_set(&show_command); }           show-arguments
+  | BLAME          { command_set(&blame_command); }          blame-arguments
   | STATS          { command_set(&stats_command); }          stats-arguments
   | TOUCH          { command_set(&touch_command); }          touch-arguments
   | tree-command
@@ -1178,18 +1178,26 @@ stats-argument
   {
     CMD->hidden = false;
   }
+  | lfollow
+  {
+    CMD->nofollow = false;
+  }
+  | lno_follow
+  {
+    CMD->nofollow = true;
+  }
   ;
 
 adhoc-arguments
   : STR { adhoc_args.request = @1.s; adhoc_args.request_len = @1.l; }
   ;
 
-show-arguments
-  : global-arguments word global-arguments show-detail global-arguments
+blame-arguments
+  : global-arguments word global-arguments blame-detail global-arguments
   {
     CMD->target = @2.s; CMD->target_len = @2.l;
-    CMD->show_detail = @4.s;
-    CMD->show_detail_len = @4.l;
+    CMD->blame_detail = @4.s;
+    CMD->blame_detail_len = @4.l;
   }
   | global-arguments word global-arguments
   {
@@ -1197,7 +1205,7 @@ show-arguments
   }
   ;
 
-show-detail
+blame-detail
   : STDIN
   | STDOUT
   | STDERR

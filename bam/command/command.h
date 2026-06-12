@@ -91,8 +91,8 @@ typedef struct command {
   const char *fsname_name;
   uint16_t fsname_name_len;
 
-  const char *show_detail;
-  uint16_t show_detail_len;
+  const char *blame_detail;
+  uint16_t blame_detail_len;
 
   /* runtime state */
 

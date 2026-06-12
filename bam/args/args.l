@@ -23,7 +23,7 @@
 %x module
 %x namespace
 %x plugin
-%x show
+%x blame
 
 %%
  /* jump into the cmd state (recognizes command names) and prepare to
@@ -114,7 +114,7 @@
 <main>"rules"                 |
 <main>"ruleset"               |
 <main>"rulesets"              |
-<main>"show"                  |
+<main>"blame"                 |
 <main>"stats"                 |
 <main>"stderr"                |
 <main>"stdin"                 |
@@ -158,18 +158,18 @@
 <plugin>[-][-_a-zA-Z0-9]+     { return LEXA(); }
 <plugin>[-+_a-zA-Z0-9./%]+    { return LEX(STR); }
 
- /* show subcommands */
-<cmd>"show"                   { POPSTATE; PUSHSTATE(show); return LEXA(); }
-<show>"stdin"                 |
-<show>"stdout"                |
-<show>"stderr"                |
-<show>"auxout"                |
-<show>"args"                  |
-<show>"envs"                  |
-<show>"file"                  |
-<show>"cwd"                   { POPSTATE; return LEXA(); }
-<show>[-][-_a-zA-Z0-9]+       { return LEXA(); }
-<show>[-+_a-zA-Z0-9./%]+      { return LEX(STR); }
+ /* blame subcommands */
+<cmd>"blame"                  { POPSTATE; PUSHSTATE(blame); return LEXA(); }
+<blame>"stdin"                |
+<blame>"stdout"               |
+<blame>"stderr"               |
+<blame>"auxout"               |
+<blame>"args"                 |
+<blame>"envs"                 |
+<blame>"file"                 |
+<blame>"cwd"                  { POPSTATE; return LEXA(); }
+<blame>[-][-_a-zA-Z0-9]+      { return LEXA(); }
+<blame>[-+_a-zA-Z0-9./%]+     { return LEX(STR); }
 
  /* enums and unquoted strings */
 <main>[-+_a-zA-Z0-9./%]+      { return LEXA(); }
