@@ -56,6 +56,7 @@ static void parse_request(request_handler * restrict handler, bamipc_message * r
   narrator_fixed fixed;
 
   if((request_parser_parse(handler->request_parser, msg->text, msg->len, "request", req)) == 0) {
+    req->msgid = msg->id;
     return;
   }
 
@@ -77,7 +78,7 @@ static void parse_request(request_handler * restrict handler, bamipc_message * r
   request_handler_post(handler, msg);
 }
 
-static void request_in_progress_error(request_handler * restrict handler, uint64_t msgid)
+static void request_in_progress_error(request_handler * restrict handler, uint64_t prev_msgid, uint64_t msgid)
 {
   bamipc_message *msg;
   narrator_fixed fixed;
@@ -88,10 +89,16 @@ static void request_in_progress_error(request_handler * restrict handler, uint64
   bacon_writer_init(&writer);
   builder_writer = bacon_writer_open(&writer, &fixed.base);
 
-  { MAPPING STRING("request processing error")
+  { MAPPING STRING("client error")
     { SET
-      { MAPPING STRING("error")
-        LOADF("request %"PRIu64" still in progress", handler->request_msgid);
+      { MAPPING STRING("message")
+        LOADF("request received before previous request completed")
+      }
+      { MAPPING STRING("previous")
+        UINT(prev_msgid)
+      }
+      { MAPPING STRING("request")
+        UINT(msgid)
       }
     }
   }
@@ -229,28 +236,39 @@ static void channel_thread_fn(request_handler * restrict handler)
           break;
       }
 
-      /* request-bearing message ; reset the timeout thread */
-      timeout_thread_refresh_on_request();
-
       RUNTIME_ASSERT(msg->type == BAMIPC_MSG_REQUEST);
 
       if(cmd) {
-        request_in_progress_error(handler, msg->id);
-        channel_release(channel, msg);
-        msg = 0;
-      } else {
-        request_destroy(&req);
-        parse_request(handler, msg, &req);
-        handler->request_msgid = msg->id;
-        channel_release(channel, msg);
+        /* received a new message with a new request while still processing
+         * commands from the request in the previously received message
+         *
+         * this is a client error - the protocol is that the client should wait
+         * to receive the response to the previous request
+         *
+         * the exception to that rule is that either peer may issue a ping/pong
+         * message to check for liveness, at any time
+         */
+        request_in_progress_error(handler, req.msgid, msg->id);
 
-        /* prepare to process the request */
-        request_handler_reset(handler);
-        built = false;
-        if((cmd = llist_first(&req.commands, typeof(*cmd), lln)) == 0) {
-          channel_response(channel, handler->request_msgid, !handler->request_error);
-          msg = 0;
-        }
+        dprintf(2, "request processing error - closing channel\n");
+        vertex_show(&channel->client->vertex);
+        break;
+      }
+
+      /* request-bearing message ; reset the timeout thread */
+      timeout_thread_refresh_on_request();
+
+      request_destroy(&req);
+      parse_request(handler, msg, &req);
+      handler->request_msgid = msg->id;
+      channel_release(channel, msg);
+
+      /* prepare to process the request */
+      request_handler_reset(handler);
+      built = false;
+      if((cmd = llist_first(&req.commands, typeof(*cmd), lln)) == 0) {
+        channel_response(channel, handler->request_msgid, !handler->request_error);
+        msg = 0;
       }
     } else if(r == BAMIPC_ETIMEDOUT && !cmd) {
       if(ping_id) {

@@ -11,6 +11,9 @@ struct bacon_writer;
 
 typedef struct request {
   llist commands;           // struct command
+
+  /* metadata about the message this was parsed from */
+  uint64_t msgid;
 } request;
 
 void request_init(request * restrict req)
