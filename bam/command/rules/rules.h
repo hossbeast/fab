@@ -10,4 +10,5 @@ extern command rule_command;
 extern command rules_command;
 
 /* module rules subcommand */
+extern command module_rule_command;
 extern command module_rules_command;

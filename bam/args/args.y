@@ -442,7 +442,11 @@ module-subcommand
   : module-envs-command
   | module-vars-command
   | module-rules-command
+  | module-rule-command
   | module-rulesets-command
+  | module-ruleset-command
+  | module-varsets-command
+  | module-varset-command
   | module-rmas-command
   | module-rma-command
   ;
@@ -501,6 +505,64 @@ module-rulesets-argument
   : global-argument
   ;
 
+module-ruleset-command
+  : RULESET { command_sub_set(&module_ruleset_command); } module-ruleset-arguments
+  ;
+
+module-ruleset-arguments
+  : module-ruleset-argument-list
+  | %empty
+  ;
+
+module-ruleset-argument-list
+  : module-ruleset-argument-list module-ruleset-argument
+  | module-ruleset-argument
+  ;
+
+module-ruleset-argument
+  : global-argument
+  | BECH32 { CMD->ruleset_id_len = zcatw(CMD->ruleset_id, sizeof(CMD->ruleset_id), @1.s, @1.l); }
+  | word { CMD->ruleset_path = @1.s; CMD->ruleset_path_len = @1.l; }
+  ;
+
+module-varsets-command
+  : VARSETS { command_sub_set(&module_varsets_command); } module-varsets-arguments
+  ;
+
+module-varsets-arguments
+  : module-varsets-argument-list
+  | %empty
+  ;
+
+module-varsets-argument-list
+  : module-varsets-argument-list module-varsets-argument
+  | module-varsets-argument
+  ;
+
+module-varsets-argument
+  : global-argument
+  ;
+
+module-varset-command
+  : VARSET { command_sub_set(&module_varset_command); } module-varset-arguments
+  ;
+
+module-varset-arguments
+  : module-varset-argument-list
+  | %empty
+  ;
+
+module-varset-argument-list
+  : module-varset-argument-list module-varset-argument
+  | module-varset-argument
+  ;
+
+module-varset-argument
+  : global-argument
+  | BECH32 { CMD->varset_id_len = zcatw(CMD->varset_id, sizeof(CMD->varset_id), @1.s, @1.l); }
+  | word { CMD->varset_path = @1.s; CMD->varset_path_len = @1.l; }
+  ;
+
 module-rules-command
   : RULES { command_sub_set(&module_rules_command); } module-rules-arguments
   ;
@@ -517,6 +579,26 @@ module-rules-argument-list
 
 module-rules-argument
   : global-argument
+  ;
+
+module-rule-command
+  : RULE { command_sub_set(&module_rule_command); } module-rule-arguments
+  ;
+
+module-rule-arguments
+  : module-rule-argument-list
+  | %empty
+  ;
+
+module-rule-argument-list
+  : module-rule-argument-list module-rule-argument
+  | module-rule-argument
+  ;
+
+module-rule-argument
+  : global-argument
+  | BECH32 { CMD->rule_id_len = zcatw(CMD->rule_id, sizeof(CMD->rule_id), @1.s, @1.l); }
+  | word { CMD->rule_name = @1.s; CMD->rule_name_len = @1.l; }
   ;
 
 module-rmas-command
@@ -1054,8 +1136,8 @@ ruleset-argument-list
 
 ruleset-argument
   : global-argument
-  | BECH32 { CMD->id_len = zcatw(CMD->id, sizeof(CMD->id), @1.s, @1.l); }
-  | word { CMD->special_target = @1.s; CMD->special_target_len = @1.l; }
+  | BECH32 { CMD->ruleset_id_len = zcatw(CMD->ruleset_id, sizeof(CMD->ruleset_id), @1.s, @1.l); }
+  | word { CMD->ruleset_path = @1.s; CMD->ruleset_path_len = @1.l; }
   ;
 
 formulas-arguments

@@ -8,3 +8,5 @@
 
 extern struct command varset_command;
 extern struct command varsets_command;
+extern struct command module_varset_command;
+extern struct command module_varsets_command;

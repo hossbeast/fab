@@ -1,0 +1,112 @@
+#!/usr/bin/env perl
+
+#
+# Exercise varsets list and describe from bam cli
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use bam::bam;
+use integ;
+
+# build out the fstree under /tmp
+init();
+setup(<<TREE);
+|-- module.bam%devel <<
+varsets myvar%devel
+>>
+|-- myvar%devel <<
+a : 42
+>>
+TREE
+
+my $mod_id = bam::identity('module', "$bam_basedir");
+my $varset_id = bam::identity('varset', "$bam_basedir/myvar%devel");
+my $result;
+my $ref;
+my $res;
+my $nls;
+
+# before
+assert {
+  stats(undef, {
+    modules => 1
+  , system_state_ready => 1
+  , varsets => 1
+})};
+assert {
+  stats(".", "-S", {
+    type => 'module'
+  , state => "fresh"
+  , reloaded => 1
+})};
+assert {
+  stats("./module.bam%devel", "-S", {
+    type => 'ruleset'
+  , state => "fresh"
+  , parse_err => 0
+  , parse_ok => 1
+})};
+assert {
+  stats("myvar%devel", "-S", {
+    type => 'varset'
+  , state => "fresh"
+  , parse_err => 0
+  , parse_ok => 1
+})};
+
+$result = bam_ls(["//bm/modules/$mod_id/varsets/$varset_id", "--no-follow"]);
+$ref = $$result{out};
+assert { $ref eq "$varset_id -> //bm/varsets/$varset_id" };
+
+$res = bam_varsets();
+print("$res\n");
+assert { $res =~ /varset id : $varset_id/ };
+$nls = ($res =~ tr/\n//);
+assert { $nls <= 1 };
+
+# list varsets
+$result = bam_varsets();
+assert { index($result, $varset_id) > -1 };
+assert { index($result, "$bam_basedir/myvar%devel") > -1 };
+
+# describe varset by id
+$result = bam_varset($varset_id);
+assert { index($result, $varset_id) > -1 };
+assert { index($result, "$bam_basedir/myvar%devel") > -1 };
+
+# describe varset by path
+$result = bam_varset("myvar%devel");
+assert { index($result, $varset_id) > -1 };
+assert { index($result, "$bam_basedir/myvar%devel") > -1 };
+
+# list module varsets
+$res = bam_module_varsets();
+$nls = ($res =~ tr/\n//);
+assert { $res =~ /varset id : $varset_id/ };
+assert { $nls <= 1 };
+
+# describe module varset by id
+$result = bam_module_varset($varset_id);
+assert { index($result, $varset_id) > -1 };
+assert { index($result, "$bam_basedir/myvar%devel") > -1 };
+
+# describe module varset by path
+$result = bam_module_varset("myvar%devel");
+assert { index($result, $varset_id) > -1 };
+assert { index($result, "$bam_basedir/myvar%devel") > -1 };
+
+teardown();

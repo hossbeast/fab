@@ -6,6 +6,7 @@
 #include "bam/ipc.h"
 #include "bam/client.h"
 #include "bacon/builder.h"
+#include "narrator.h"
 
 #include "modules.h"
 #include "params.h"
@@ -41,7 +42,9 @@ static void module_command_identify(struct command * restrict cmd, bacon_writer 
           STRING("path")
           { SET
             { MAPPING STRING("pattern")
-              BYTES(s, len)
+              bacon_writer_push_bytes(builder_writer);
+              narrator_sayw(builder_writer->N, s, len);
+              bacon_writer_pop_bytes(builder_writer);
             }
             { MAPPING STRING("expect")
               STRING("any")

@@ -77,6 +77,16 @@ typedef struct command {
   const char *rma_name;
   uint16_t rma_name_len;
 
+  char ruleset_id[40];
+  uint16_t ruleset_id_len;
+  const char *ruleset_path;
+  uint16_t ruleset_path_len;
+
+  char varset_id[40];
+  uint16_t varset_id_len;
+  const char *varset_path;
+  uint16_t varset_path_len;
+
   char namespace_id[40];
   uint16_t namespace_id_len;
   const char *namespace_name;
@@ -124,6 +134,33 @@ void command_context(struct bacon_writer * restrict builder_writer)
 size_t command_identify_result_parse(char *dst, size_t dst_size, struct bamipc_message * restrict msg)
   __attribute__((nonnull))
   __attribute__((warn_unused_result));
+
+/*
+ * process a message for an in-flight identify request. an id carried on a RESULT
+ * message is parsed into id/id_len. returns true once the RESPONSE message arrives,
+ * i.e. the identify is complete and the id, if any was found, is in hand.
+ */
+bool command_identify_msg(struct bamipc_message * restrict msg, char * restrict id, size_t id_size, uint16_t * restrict id_len)
+  __attribute__((nonnull));
+
+/*
+ * report a failed lookup to stderr and shut down the command with an error
+ */
+void command_notfound(const char * restrict noun, const char * restrict name, uint16_t name_len)
+  __attribute__((nonnull(1)));
+
+/*
+ * process a message for an in-flight request whose results are printed to stdout,
+ * separated by blank lines. shuts down the command when the RESPONSE message arrives.
+ */
+void command_describe_msg(struct command * restrict cmd, struct bamipc_message * restrict msg)
+  __attribute__((nonnull));
+
+/*
+ * like command_describe_msg, without the separator
+ */
+void command_list_msg(struct command * restrict cmd, struct bamipc_message * restrict msg)
+  __attribute__((nonnull));
 
 void command_set(struct command * restrict cmd)
   __attribute__((nonnull));

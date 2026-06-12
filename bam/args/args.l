@@ -143,8 +143,12 @@
 <cmd>"module"                 { POPSTATE; PUSHSTATE(module); return LEXA(); }
 <module>"envs"                |
 <module>"vars"                |
+<module>"rule"                |
 <module>"rules"               |
+<module>"ruleset"             |
 <module>"rulesets"            |
+<module>"varset"              |
+<module>"varsets"             |
 <module>"rma"                 |
 <module>"rmas"                { POPSTATE; return LEXA(); }
 <module>[-][-_a-zA-Z0-9]+     { return LEXA(); }

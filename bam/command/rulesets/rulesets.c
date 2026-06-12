@@ -5,6 +5,8 @@
 
 #include "bam/ipc.h"
 #include "bam/client.h"
+#include "bacon/builder.h"
+#include "narrator.h"
 
 #include "rulesets.h"
 #include "params.h"

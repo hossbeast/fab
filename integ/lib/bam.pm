@@ -416,4 +416,29 @@ sub bam_config
   );
 }
 
+sub bam_module_varsets
+{
+  my $res = run({ @_, cwd => $bam_dir }
+    , $bam_bampath
+    , "--no-launch"
+    , "module"
+    , "varsets"
+  );
+
+  return $$res{out};
+}
+
+sub bam_module_varset
+{
+  my $res = run({ cwd => $bam_dir }
+    , $bam_bampath
+    , "--no-launch"
+    , "module"
+    , "varset"
+    , @_
+  );
+
+  return $$res{out};
+}
+
 1
