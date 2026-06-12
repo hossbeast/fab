@@ -76,6 +76,7 @@
   */
 
  /* command names stop being distinct tokens after the first appearance */
+<main>"adhoc"                 |
 <main>"args"                  |
 <main>"autobuild"             |
 <main>"auxout"                |
@@ -125,8 +126,8 @@
 <main>"varset"                |
 <main>"varsets"               { POPSTATE; return LEX(STR); }
 
- /* adhoc command */
-<cmd>"adhoc"                  { POPSTATE; PUSHSTATE(adhoc); return LEX(ADHOC); }
+ /* end of options parsing */
+<main,cmd>"--"                { POPSTATE; PUSHSTATE(adhoc); }
 <adhoc>[\x20-\x7E]+           { return LEX(STR); }
 
  /* namespace subcommands */

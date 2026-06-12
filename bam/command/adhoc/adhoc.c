@@ -24,6 +24,7 @@ static void connected(command * restrict cmd, bam_client * restrict client)
 {
   bamipc_message * msg;
   size_t z;
+  int x;
 
   /* send the request */
   msg = client_tx(client);
@@ -31,7 +32,9 @@ static void connected(command * restrict cmd, bam_client * restrict client)
   requestid = msg->id = ++client->msgid;
 
   z = 0;
-  z += zcatw(msg->text + z, msg->size - z, adhoc_args.request, adhoc_args.request_len);
+  for(x = 0; x < adhoc_args.args_len; x++) {
+    z += zcatw(msg->text + z, msg->size - z, adhoc_args.args[x], adhoc_args.args_lens[x]);
+  }
   z += zcatw(msg->text + z, msg->size - z, (char[]) { 0x00, 0x00 }, 2);
   msg->len = z;
 

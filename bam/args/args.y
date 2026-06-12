@@ -1189,7 +1189,13 @@ stats-argument
   ;
 
 adhoc-arguments
-  : STR { adhoc_args.request = @1.s; adhoc_args.request_len = @1.l; }
+  : adhoc-arguments adhoc-argument
+  | adhoc-argument
+  ;
+
+adhoc-argument
+  : global-argument
+  | STR { adhoc_args.args[adhoc_args.args_len] = @1.s; adhoc_args.args_lens[adhoc_args.args_len++] = @1.l; }
   ;
 
 blame-arguments

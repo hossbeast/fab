@@ -85,8 +85,35 @@ assert { stats("cores", {
   , fresh => 1
 })};
 
-# generation based invalidation of all primary files
-bam_invalidate_primary();
+# invalidate all primary files
+$result = run({ cwd => $bam_dir }
+  , $bam_bampath
+  , "--no-launch"
+  , "adhoc"
+  , "--"
+  , "select : [ path : { pattern : / } traverse : { graph : fs visit : primary } ] invalidate"
+);
+print("$$result{out}\n");
+
+assert { stats("cores.c", {
+    type => 'file'
+  , state => 'stale'    # primary file invalidated
+  , stale => 1
+  , fresh => 1
+})};
+assert { stats("cores.o", {
+    type => 'file'
+  , state => 'stale'    # propagated
+  , stale => 1
+  , fresh => 1
+})};
+assert { stats("cores", {
+    type => 'file'
+  , state => 'stale'    # propagated
+  , stale => 1
+  , fresh => 1
+})};
+
 reconcile();
 
 assert { stats("cores.c", {

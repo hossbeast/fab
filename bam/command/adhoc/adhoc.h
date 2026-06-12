@@ -7,8 +7,9 @@
 #include "args.h"
 
 extern struct adhoc_args {
-  const char *request;
-  uint16_t request_len;
+  const char *args[256];
+  uint16_t args_lens[256];
+  uint16_t args_len;
 } adhoc_args;
 
 extern struct command adhoc_command;
