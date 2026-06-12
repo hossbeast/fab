@@ -15,7 +15,9 @@ static uint64_t eventsubid;
 static void usage(command * restrict cmd)
 {
   printf(
-"reconcile options (none)\n"
+"bam reconcile - reload everything\n"
+"\n"
+"usage: bam reconcile\n"
   );
 }
 

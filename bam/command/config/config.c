@@ -20,7 +20,9 @@ static uint16_t texts_len;
 static void usage(command * restrict cmd)
 {
   printf(
-"config options (none)\n"
+"bam config - show the effective configuration\n"
+"\n"
+"usage: bam config\n"
   );
 }
 

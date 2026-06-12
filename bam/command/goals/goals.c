@@ -20,7 +20,9 @@ static uint64_t requestid;
 static void usage(command * restrict cmd)
 {
   printf(
-"goals options (none)\n"
+"bam goals - show the goals\n"
+"\n"
+"usage: bam goals\n"
   );
 }
 
@@ -79,18 +81,13 @@ static void process(command * restrict cmd, bam_client * restrict client, bamipc
   (void)!write(1, "\n", 1);
 }
 
-static void attached(command * restrict cmd, bam_client * restrict client) {}
-static void disconnected(command * restrict cmd) {}
-
 //
 // public
 //
 
 struct command goals_command = {
     name : "goals"
-  , attached : attached
   , usage : usage
   , connected : connected
   , process : process
-  , disconnected : disconnected
 };

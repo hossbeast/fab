@@ -15,7 +15,9 @@
 static void usage(command * restrict cmd)
 {
   printf(
-"kill options (none)\n"
+"bam kill - kill the bamd instance if any\n"
+"\n"
+"usage: bam kill\n"
   );
 }
 

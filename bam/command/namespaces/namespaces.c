@@ -15,7 +15,23 @@
 static void namespace_usage(command * restrict cmd)
 {
   printf(
-"namespace options (none)\n"
+"bam namespace - show a namespace\n"
+"\n"
+"usage: bam namespace (<id>|<name>) [subcommand]\n"
+" <id>                         namespace id\n"
+" <name>                       namespace name\n"
+"namespace subcommands\n"
+" fsname                       show a namespace fsname\n"
+" fsnames                      list namespace fsnames\n"
+  );
+}
+
+static void namespaces_usage(command * restrict cmd)
+{
+  printf(
+"bam namespaces - list namespaces\n"
+"\n"
+"usage: bam namespaces\n"
   );
 }
 
@@ -189,14 +205,6 @@ static void list_build(command * restrict cmd, bacon_writer * restrict builder_w
 static void list_connected(command * restrict cmd, bam_client * restrict client)
 {
   cmd->list_id = command_post(cmd, client, list_build);
-}
-
-static void namespaces_usage(command * restrict cmd)
-{
-  printf(
-"\n"
-"namespaces options (none)\n"
-  );
 }
 
 typeof(namespace_command) namespace_command = {

@@ -15,12 +15,19 @@
 static void module_usage(command * restrict cmd)
 {
   printf(
+"bam module - show metadata about a module\n"
+"\n"
+"usage: bam module [<id>|<path>] [subcommand]\n"
+" <id>                         module id\n"
+" <path>                       path to file or directory owned by the module\n"
+"\n"
 "module subcommands\n"
-" envs                    show effective module envs\n"
-" vars                    show effective module vars\n"
-" rule(s)                 list module rules\n"
-" ruleset(s)              list module rulesets\n"
-" rma(s)                  list module rmas\n"
+" envs                         show effective module envs\n"
+" vars                         show effective module vars\n"
+" rule(s)                      list or show the modules rules\n"
+" ruleset(s)                   list or show the modules rulesets\n"
+" varset(s)                    list or show the modules varsets\n"
+" rma(s)                       list or show the modules rmas\n"
   );
 }
 

@@ -24,7 +24,11 @@ static uint16_t texts_len;
 static void usage(command * restrict cmd)
 {
   printf(
-"module envs options (none)\n"
+"bam module envs - show the modules envs\n"
+"\n"
+"usage: bam module [<id>|<path>] envs\n"
+" <id>                         module id\n"
+" <path>                       path to file or directory owned by the module\n"
   );
 }
 

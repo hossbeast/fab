@@ -14,20 +14,21 @@ typeof(stats_command) stats_command;
 static void usage(command * restrict cmd)
 {
   printf(
-"stats positional arguments\n"
-" <path>            (optional) select the subject node to show stats for\n"
-"                              with no subject, show global stats e.g. //bm/sys-system\n"
+"bam stats - show nodes stats\n"
+"\n"
+"usage: bam stats <path>... [option]...\n"
+" <path>            (optional) path to target to show\n"
+"                              with no targets, show global stats from //bm/sys-system\n"
 "\n"
 "stats options\n"
 " --reset | -r                 read and clear stats for visited nodes\n"
 " --no-reset         (default) read but do not clear stats\n"
 "\n"
-" --special                    also visit nodes attached via the specials graph\n"
+" --special -s                 also visit nodes attached via the specials graph\n"
 " --no-special       (default) dont traverse into the specials graph\n"
-" -s                           also visit nodes attached via the specials graph\n"
 " -S                           only visit nodes attached via the specials graph\n"
-" --hidden           (default) show files not yet created\n"
-" --no-hidden\n"
+" --hidden           (default) show files which have not yet been created\n"
+" --no-hidden                  dont visit hidden files\n"
 " --follow                     follow symlinks\n"
 " --no-follow        (default) visit, dont follow, symlinks\n"
   );

@@ -33,30 +33,32 @@ static bool any;
 static void usage(command * restrict cmd)
 {
   printf(
-"touch positional arguments\n"
-" <path>                    select targets to visit from\n"
+"bam touch - invalidate nodes\n"
 "\n"
-" if no targets are specified, touch primary files across all modules\n"
+"usage: bam touch <path>... [option]...\n"
+" <path>                         select nodes to visit\n"
+"if no targets are specified, touch primary files across all modules\n"
 "\n"
-" --follow        (default) follow symlinks\n"
-" --no-follow               visit, dont follow, symlinks\n"
-" --hidden        (default) visit files not yet created\n"
+"touch options\n"
+" --hidden           (default) visit files not yet created\n"
 " --no-hidden\n"
-" --recursive | -R          traverse directories recursively\n"
+" --follow           (default) follow symlinks\n"
+" --no-follow                  visit, dont follow, symlinks\n"
+" --recursive | -R             traverse directories recursively\n"
 " --no-recursive\n"
 "\n"
 "recursive options\n"
-" --primary                 select only primary files\n"
-" --no-primary    (default) select even non-primary files\n"
-" --cross-module  (default) traverse across module boundaries\n"
+" --primary                    select only primary files\n"
+" --no-primary    (default)    select even non-primary files\n"
+" --cross-module  (default)    traverse across module boundaries\n"
 " --no-cross-module\n"
-" --cross-fstree  (default) traverse across cross fstree boundaries\n"
+" --cross-fstree  (default)    traverse across cross fstree boundaries\n"
 " --no-cross-fstree\n"
-" --min-distance <uint16>   min visit distance from subject (default = 0)\n"
-"  --min-depth              (alias)\n"
-" --max-distance <uint16>   max visit distance from subject (default = MAX)\n"
-"  --max-depth              (alias)\n"
-);
+" --min-distance <uint16>      min visit distance from subject (default = 0)\n"
+"  --min-depth                 (alias)\n"
+" --max-distance <uint16>      max visit distance from subject (default = MAX)\n"
+"  --max-depth                 (alias)\n"
+  );
 }
 
 //

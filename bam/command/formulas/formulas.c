@@ -10,23 +10,29 @@
 // formula
 //
 
+static void formulas_usage(command * restrict cmd)
+{
+  printf(
+"bam formulas - list formulas\n"
+"\n"
+"usage: bam formulas\n"
+  );
+}
+
 static void formula_usage(command * restrict cmd)
 {
   printf(
-"formula options (none)\n"
+"bam formula - show formula metadata\n"
+"\n"
+"usage: bam formula (<id>|<path>)\n"
+" <id>                         formula id\n"
+" <path>                       path to formula file\n"
   );
 }
 
 //
 // formulas
 //
-
-static void formulas_usage(command * restrict cmd)
-{
-  printf(
-"formulas options (none)\n"
-  );
-}
 
 typeof(formula_command) formula_command = {
     name : "formula"

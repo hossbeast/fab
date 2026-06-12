@@ -16,28 +16,43 @@
 static void fsname_usage(command * restrict cmd)
 {
   printf(
-"fsname options (none)\n"
+"bam fsname - show a fsname\n"
+"\n"
+"usage: bam fsname <id>\n"
+" <id>                         fsname id\n"
   );
 }
 
 static void namespace_fsname_usage(command * restrict cmd)
 {
   printf(
-"namespace fsname options (none)\n"
+"bam namespace fsname - show a namespace fsname\n"
+"\n"
+"usage: bam namespace [<id>|<name>] fsname [<fsname-id>|<fsname-name>]\n"
+" <id>                         namespace id\n"
+" <name>                       namespace name\n"
+" <fsname-id>                  fsname id\n"
+" <fsname-name>                fsname name\n"
   );
 }
 
 static void fsnames_usage(command * restrict cmd)
 {
   printf(
-"fsnames options (none)\n"
+"bam fsnames - list fsnames\n"
+"\n"
+"usage: bam fsnames\n"
   );
 }
 
 static void namespace_fsnames_usage(command * restrict cmd)
 {
   printf(
-"namespace fsnames options (none)\n"
+"bam namespace fsnames - list fsnames in a namespace\n"
+"\n"
+"usage: bam namespace [<id>|<name>] fsnames\n"
+" <id>                         namespace id\n"
+" <name>                       namespace name\n"
   );
 }
 

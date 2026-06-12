@@ -46,7 +46,12 @@ static void __attribute__((constructor)) setup(void)
 static void rma_usage(command * restrict cmd)
 {
   printf(
-"rma options (none)\n"
+"rma positional args\n"
+" <id>                         rma id\n"
+" <name>                       rma name\n"
+"\n"
+"rma subcommands\n"
+" run                          execute rma\n"
   );
 }
 
@@ -352,7 +357,9 @@ static void disconnected(command * restrict cmd)
 static void rma_run_usage(command * restrict cmd)
 {
   printf(
-"rma run options (none)\n"
+"rma run options\n"
+" --paths                      show paths\n"
+" --ids                        show ids\n"
   );
 }
 
@@ -411,7 +418,12 @@ static void module_rma_process(command * restrict cmd, bam_client * restrict cli
 static void module_rma_usage(command * restrict cmd)
 {
   printf(
-"module rma options (none)\n"
+"module rma positional args\n"
+" <id>                         rma id\n"
+" <name>                       rma name\n"
+"\n"
+"module rma subcommands\n"
+" run                          execute rma\n"
   );
 }
 
@@ -492,7 +504,9 @@ static void module_rma_run_process(command * restrict cmd, bam_client * restrict
 static void module_rma_run_usage(command * restrict cmd)
 {
   printf(
-"module rma options (none)\n"
+"module rma run options\n"
+" --paths                      show paths\n"
+" --ids                        show ids\n"
   );
 }
 

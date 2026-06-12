@@ -19,16 +19,17 @@
 static void usage(command * restrict cmd)
 {
   printf(
-"describe positional args\n"
-" <path>                       target to describe\n"
+"bam describe - show nodes metadata\n"
+"\n"
+"usage: bam describe <path>... [option]...\n"
+" <path>                       path to target to describe\n"
 "\n"
 "describe options\n"
-" --special                    also show nodes attached via the specials graph\n"
+" --special | -s               also show nodes attached via the specials graph\n"
 " --no-special       (default) dont traverse into the specials graph\n"
-" -s                           also show nodes attached via the specials graph\n"
 " -S                           only show nodes attached via the specials graph\n"
-" --hidden           (default) show files not yet created\n"
-" --no-hidden\n"
+" --hidden           (default) show files which have not yet been created\n"
+" --no-hidden                  dont visit hidden files\n"
 " --follow                     follow symlinks\n"
 " --no-follow        (default) visit, dont follow, symlinks\n"
   );

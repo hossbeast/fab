@@ -23,7 +23,10 @@ static bool any;
 static void usage(command * restrict cmd)
 {
   printf(
-"plan options (none)\n"
+"bam plan - show the build plan\n"
+"           does not update the buildplan ; use reconcile first, to do that\n"
+"\n"
+"usage: bam plan\n"
   );
 }
 

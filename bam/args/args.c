@@ -53,66 +53,63 @@ static void version()
 
 static void usage(command * restrict cmd)
 {
-  printf(
-"bam %s\n"
-"\n"
-"usage: bam [command | option]..\n"
-"\n"
-    , git_describe
-  );
 
   if(cmd && cmd->usage) {
     cmd->usage(cmd);
   } else {
     printf(
+"usage: bam [command | option]..\n"
+"\n"
 "commands\n"
-" build       (default) carry out the build, mark files fresh\n"
-" autobuild             as build, but remain connected\n"
-" config                show the effective configuration\n"
-" describe              show nodes metadata\n"
-" events                subscribe to and print events\n"
-" goals                 show goals\n"
-" info                  show metadata\n"
-" ls                    show directory listings\n"
-" tree                  show directory listings as a tree\n"
-" plan                  show the stage sequence for the last build\n"
-" reconcile             reload everything\n"
-" stats                 show global, or per-node counters\n"
-" touch                 invalidate nodes\n"
+" build              (default) carry out the build, mark files fresh\n"
+" autobuild                    as build, but remain connected\n"
+" config                       show the effective configuration\n"
+" describe                     show nodes metadata\n"
+" events                       subscribe to and print events\n"
+" goals                        show goals\n"
+" info                         show metadata\n"
+" ls                           show directory listings\n"
+" tree                         show directory listings as a tree\n"
+" plan                         show the stage sequence for the last build\n"
+" reconcile                    reload everything\n"
+" stats                        show global, or per-node counters\n"
+" touch                        invalidate nodes\n"
 "\n"
-" configset(s)          list or show configsets\n"
-" formula(s)            list or show formulas\n"
-" fstree(s)             list or show fstrees\n"
-" module(s)             list or show modules\n"
-" namespace(s)          list or show namespaces\n"
-" plugin(s)             list or show plugins\n"
-" rma(s)                list or show rmas\n"
-" rule(s)               list or show rules\n"
-" ruleset(s)            list or show modules\n"
-" varset(s)             list or show varsets\n"
+"inspect\n"
+" build-record(s)              list or show build records\n"
+" blame <path>                 show the most recent record of updating a file\n"
+" rma <id> run                 run an rma and see its matches\n"
 "\n"
-" build-record(s)       list or show build records\n"
-" show path/to/file     show the most recent record for a file\n"
-" rma id run            run an rma, see its effect\n"
+"objects\n"
+" configset(s)                 list or show configsets\n"
+" formula(s)                   list or show formulas\n"
+" fstree(s)                    list or show fstrees\n"
+" module(s)                    list or show modules\n"
+" namespace(s)                 list or show namespaces\n"
+" plugin(s)                    list or show plugins\n"
+" rma(s)                       list or show rmas\n"
+" rule(s)                      list or show rules\n"
+" ruleset(s)                   list or show modules\n"
+" varset(s)                    list or show varsets\n"
 "\n"
-" adhoc                 issue an adhoc request\n"
-" kill                  kill bamd if its running\n"
-"\n"
-"global options\n"
-" --help | -h           print this message\n"
-" --version | -V        print version information\n"
-" -v                    print more stuff\n"
-" -K                    first kill bamd if its running\n"
-" -m path/to/module     set the context module\n"
-" --no-module           unset the context module\n"
-" --no-color            disable terminal colorization\n"
-#if CONFIG_DEVEL
-" --no-launch           require bamd to already be running\n"
-#endif
+"other\n"
+" adhoc                        issue an adhoc request\n"
+" kill                         kill bamd if its running\n"
     );
   }
-
   printf(
+"\n"
+"global options\n"
+" --help | -h                  print this message\n"
+" --version | -V               print version information\n"
+" -v                           print more stuff\n"
+" -K                           first kill bamd if its running\n"
+" -m path/to/module            set the context module\n"
+" --no-module                  unset the context module\n"
+" --no-color                   disable terminal colorization\n"
+#if CONFIG_DEVEL
+" --no-launch                  require bamd to already be running\n"
+#endif
 "\n"
 "bam client config files\n"
 " %s\n"
@@ -126,11 +123,13 @@ static void usage(command * restrict cmd)
 " BAM_IPC_DIR           the ipc dir\n"
 " XDG_RUNTIME_DIR       else, $XDG_RUNTIME_DIR/bam is the ipc dir\n"
 "\n"
-"build optimally        https://git.sr.ht/~hossbeast/bam\n"
-  , CLIENT_SYSTEM_CONFIG_PATH
-  , CLIENT_USER_CONFIG_PATH
-  , DAEMON_SYSTEM_CONFIG_PATH
-  , DAEMON_USER_CONFIG_PATH
+"bam %s - build optimally\n"
+" https://git.sr.ht/~hossbeast/bam\n"
+    , CLIENT_SYSTEM_CONFIG_PATH
+    , CLIENT_USER_CONFIG_PATH
+    , DAEMON_SYSTEM_CONFIG_PATH
+    , DAEMON_USER_CONFIG_PATH
+    , git_describe
   );
 
   exit(0);

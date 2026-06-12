@@ -150,15 +150,26 @@ static void connected(command * restrict cmd, bam_client * restrict client)
   client_publish(client, msg);
 }
 
-static void disconnected(command * restrict cmd)
+static void usage(command * restrict cmd)
 {
+  printf(
+"bam autobuild - specify goals, create the build plan, enable autorun\n"
+"\n"
+"usage: bam autobuild [path]... [option]...\n"
+" path                  add target(s) to the goals\n"
+"\n"
+"build options (goals)\n"
+" -t <path>             specify transitive build target <path>\n"
+" +t          (default) subsequent non-options are -t <path>\n"
+" -x <path>             specify direct build target <path>\n"
+" +x                    subsequent non-options are -x <arg>\n"
+  );
 }
 
 struct command autobuild_command = {
     name : "autobuild"
   , attached : attached
-  , usage : build_command_usage
+  , usage : usage
   , connected : connected
   , process : process
-  , disconnected : disconnected
 };

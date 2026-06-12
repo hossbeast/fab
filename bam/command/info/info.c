@@ -15,7 +15,9 @@ static bool any;
 static void usage(command * restrict cmd)
 {
   printf(
-"info options (none)\n"
+"bam info - show metadata about this project\n"
+"\n"
+"usage: bam info\n"
   );
 }
 

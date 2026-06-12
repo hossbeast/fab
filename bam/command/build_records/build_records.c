@@ -17,7 +17,11 @@
 static void build_record_usage(command * restrict cmd)
 {
   printf(
-"build-record options (none)\n"
+"bam build-record - show build records\n"
+"\n"
+"usage: bam build-record ([id]|[number])\n"
+" <id>                         build-record id\n"
+" <number>                     build counter (reverse chronological)\n"
   );
 }
 
@@ -134,8 +138,9 @@ static void build_record_disconnected(command * restrict cmd)
 static void build_records_usage(command * restrict cmd)
 {
   printf(
+"bam build-records - list build records\n"
 "\n"
-"build-records options (none)\n"
+"usage: bam build-records\n"
   );
 }
 

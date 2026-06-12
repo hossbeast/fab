@@ -11,43 +11,41 @@
 #include "params.h"
 
 //
-// plugin
+// usage
 //
 
 static void plugin_usage(command * restrict cmd)
 {
   printf(
-"plugin options (none)\n"
+"bam plugin - show plugin metadata\n"
+"\n"
+"usage: bam plugin (<id>|<path>|<name>) [detail]\n"
+"\n"
+"plugin identifiers\n"
+" <id>                         plugin id\n"
+" <path>                       path to plugin (if unique)\n"
+" <name>                       plugin name (if it has one)\n"
+"\n"
+"plugin detail\n"
+" stdin                        show plugin stdin\n"
+" stdout                       show plugin stdout\n"
+" stderr                       show plugin stderr\n"
+" auxout                       show plugin auxout\n"
   );
 }
 
-static void plugin_stdin_usage(command * restrict cmd)
+static void plugins_usage(command * restrict cmd)
 {
   printf(
-"plugin stdin options (none)\n"
+"bam plugins - list plugins\n"
+"\n"
+"usage: bam plugins\n"
   );
 }
 
-static void plugin_stdout_usage(command * restrict cmd)
-{
-  printf(
-"plugin stdout options (none)\n"
-  );
-}
-
-static void plugin_stderr_usage(command * restrict cmd)
-{
-  printf(
-"plugin stderr options (none)\n"
-  );
-}
-
-static void plugin_auxout_usage(command * restrict cmd)
-{
-  printf(
-"plugin auxout options (none)\n"
-  );
-}
+//
+// plugin
+//
 
 static void plugin_build(command * restrict cmd, bacon_writer * restrict builder_writer)
 {
@@ -191,14 +189,6 @@ static void disconnected(command * restrict cmd)
 // plugins
 //
 
-static void plugins_usage(command * restrict cmd)
-{
-  printf(
-"\n"
-"plugins options (none)\n"
-  );
-}
-
 static void plugins_build(command * restrict cmd, bacon_writer * restrict builder_writer)
 {
   { LIST
@@ -298,28 +288,28 @@ typeof(plugin_command) plugin_command = {
 
 typeof(plugin_stdin_command) plugin_stdin_command = {
     name : "plugin-stdin"
-  , usage : plugin_stdin_usage
+  , usage : plugin_usage
   , connected : plugin_stdin_connected
   , process : plugin_detail_process
 };
 
 typeof(plugin_stdout_command) plugin_stdout_command = {
     name : "plugin-stdout"
-  , usage : plugin_stdout_usage
+  , usage : plugin_usage
   , connected : plugin_stdout_connected
   , process : plugin_detail_process
 };
 
 typeof(plugin_stderr_command) plugin_stderr_command = {
     name : "plugin-stderr"
-  , usage : plugin_stderr_usage
+  , usage : plugin_usage
   , connected : plugin_stderr_connected
   , process : plugin_detail_process
 };
 
 typeof(plugin_auxout_command) plugin_auxout_command = {
     name : "plugin-auxout"
-  , usage : plugin_auxout_usage
+  , usage : plugin_usage
   , connected : plugin_auxout_connected
   , process : plugin_detail_process
 };

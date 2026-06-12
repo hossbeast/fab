@@ -10,13 +10,26 @@
 #include "params.h"
 
 //
-// fstree
+// usage
 //
+
+static void fstrees_usage(command * restrict cmd)
+{
+  printf(
+"bam fstrees - list fstrees\n"
+"\n"
+"usage: bam fstrees\n"
+  );
+}
 
 static void fstree_usage(command * restrict cmd)
 {
   printf(
-"fstree options (none)\n"
+"bam fstree - show fstree metadata\n"
+"\n"
+"usage: bam fstree [<id>|<path>]\n"
+" <id>                         fstree id\n"
+" <path>                       path to file or directory owned by the fstree\n"
   );
 }
 
@@ -122,14 +135,6 @@ static void describe_disconnected(command * restrict cmd)
 //
 // fstrees
 //
-
-static void fstrees_usage(command * restrict cmd)
-{
-  printf(
-"\n"
-"fstrees options (none)\n"
-  );
-}
 
 typeof(fstree_command) fstree_command = {
     name : "fstree"

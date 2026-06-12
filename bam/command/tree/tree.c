@@ -36,12 +36,20 @@ static uint16_t tree_targets_x;
 static void usage(command * restrict cmd)
 {
   printf(
-"ls/tree positional arguments\n"
-" <path>                       select the subject node to start listings from\n"
+"bam ls/tree - show the filesystem tree\n"
+"\n"
+"usage: bam ls ([path]|[option])...\n"
+" defaults to --max-distance 1\n"
+"\n"
+"usage: bam tree ([path]|[option])...\n"
+" defaults to --max-distance INTMAX\n"
+"\n"
+"ls/tree arguments\n"
+" <path>                       select nodes to traverse from\n"
 "\n"
 "ls/tree options\n"
 " --graph | -g <graph-type>    graph to traverse\n"
-" --visit | -v <visit-type>\n"
+" --visit <visit-type>\n"
 " --down             (default) from the subject node\n"
 " --up                         upwards from the subject node\n"
 " --both                       both upwards and downwards\n"
@@ -50,7 +58,7 @@ static void usage(command * restrict cmd)
 " --min-distance <uint16>      min visit distance from subject (default = 0)\n"
 "  --min-depth                 (alias)\n"
 " --max-distance <uint16>      max visit distance from subject (default = MAX)\n"
-"  --min-depth                 (alias)\n"
+"  --max-depth                 (alias)\n"
 " --special                    also visit nodes attached via the specials graph\n"
 " --no-special       (default) dont traverse into the specials graph\n"
 " -s                           also visit nodes attached via the specials graph\n"
@@ -64,8 +72,8 @@ static void usage(command * restrict cmd)
 " fs                 (default) filesystem tree\n"
 " depends                      dependency graph\n"
 " special                      specials graph\n"
-" records                      formula records\n"
-" uses                         module -> ruleset graph\n"
+" records                      build records\n"
+" uses                         module / ruleset graph\n"
 "\n"
 "visit types (node type)\n"
 " bpe\n"
@@ -85,7 +93,7 @@ static void usage(command * restrict cmd)
 "visit types (node status)\n"
 " primary                      visit only primary files\n"
 " invalid                      visit only invalid nodes\n"
-);
+  );
 }
 
 static void post_request(bam_client * restrict client)

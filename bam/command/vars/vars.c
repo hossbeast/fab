@@ -23,7 +23,11 @@ static uint16_t texts_len;
 static void usage(command * restrict cmd)
 {
   printf(
-"module vars options\n"
+"bam module vars - show a modules vars\n"
+"\n"
+"usage: bam module [<id>|<path>] vars\n"
+" <id>                    module id\n"
+" <path>                  path to file or directory owned by the module\n"
   );
 }
 

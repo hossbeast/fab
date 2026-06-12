@@ -692,14 +692,19 @@ void build_command_collate_goals(const char * restrict label, uint16_t label_len
 // internal
 //
 
-void build_command_usage(command * restrict cmd)
+static void usage(command * restrict cmd)
 {
   printf(
-"build options\n"
-" -t                    transitive build targets\n"
-" +t          (default) subsequent non-options are -t <arg>\n"
-" -x                    direct build targets\n"
-" +x                    subsequent non-options are -t <arg>\n"
+"bam build - specify goals, create and run the build plan\n"
+"\n"
+"usage: bam build [path]... [option]...\n"
+" path                  add target(s) to the goals\n"
+"\n"
+"build options (goals)\n"
+" -t <path>             specify transitive build target <path>\n"
+" +t          (default) subsequent non-options are -t <path>\n"
+" -x <path>             specify direct build target <path>\n"
+" +x                    subsequent non-options are -x <arg>\n"
   );
 }
 
@@ -796,8 +801,6 @@ void build_command_process_event(bam_client * restrict client, bamipc_message * 
   }
 }
 
-static void disconnected(command * restrict cmd) { }
-
 //
 // public
 //
@@ -828,8 +831,7 @@ void build_command_cleanup()
 command build_command = {
     name : "build"
   , attached : attached
-  , usage : build_command_usage
+  , usage : usage
   , connected : connected
   , process : process
-  , disconnected : disconnected
 };

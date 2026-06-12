@@ -16,7 +16,9 @@ static bool any;
 static void usage(command * restrict cmd)
 {
   printf(
-"adhoc [request]\n"
+"bam adhoc - send commands to bamd\n"
+"\n"
+"usage: bam ahdoc -- command...\n"
   );
 }
 

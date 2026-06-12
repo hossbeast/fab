@@ -19,7 +19,11 @@
 static void ruleset_usage(command * restrict cmd)
 {
   printf(
-"ruleset options (none)\n"
+"bam ruleset - show a ruleset\n"
+"\n"
+"usage: bam ruleset [<id>|<path>]\n"
+" <id>                    ruleset id\n"
+" <path>                  path to ruleset file\n"
   );
 }
 
@@ -30,7 +34,9 @@ static void ruleset_usage(command * restrict cmd)
 static void rulesets_usage(command * restrict cmd)
 {
   printf(
-"rulesets options (none)\n"
+"bam rulesets - list rulesets\n"
+"\n"
+"usage: bam rulesets\n"
   );
 }
 
@@ -41,14 +47,24 @@ static void rulesets_usage(command * restrict cmd)
 static void module_ruleset_usage(command * restrict cmd)
 {
   printf(
-"module ruleset options\n"
+"bam module ruleset - show a module rulesets metadata\n"
+"\n"
+"usage: bam module [<id>|<path>] ruleset [<ruleset-id>|<ruleset-path>]\n"
+" <id>                    module id\n"
+" <path>                  path to file or directory owned by the module\n"
+" <ruleset-id>            ruleset id\n"
+" <ruleset-path>          path to ruleset\n"
   );
 }
 
 static void module_rulesets_usage(command * restrict cmd)
 {
   printf(
-"module rulesets options\n"
+"bam module rulesets - list a modules rulesets\n"
+"\n"
+"usage: bam module [<id>|<path>] vars\n"
+" <id>                    module id\n"
+" <path>                  path to file or directory owned by the module\n"
   );
 }
 
