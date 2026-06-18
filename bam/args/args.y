@@ -287,7 +287,7 @@ utterance
 
 cmdline
   /* build is the default command */
-  : global-arguments build-argument build-argument-list
+  : primary-build-argument build-arguments
   | global-arguments command
   | global-arguments
   ;
@@ -430,7 +430,7 @@ module-arguments
   : global-arguments module-target global-arguments module-subcommand
   | global-arguments module-target global-arguments
   | global-arguments module-subcommand
-  | %empty
+  | global-arguments
   ;
 
 module-target
@@ -770,11 +770,15 @@ build-arguments
 
 build-argument-list
   : build-argument-list build-argument
-  | build-argument-list global-argument
   | build-argument
   ;
 
 build-argument
+  : global-argument
+  | primary-build-argument
+  ;
+
+primary-build-argument
   : build-target
   | sx build-target
   {

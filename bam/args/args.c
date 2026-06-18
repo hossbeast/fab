@@ -237,9 +237,6 @@ void args_parse(int argc, char ** argv)
   int x;
   int r;
 
-  /* defaults */
-  command_set(&build_command);
-
   g_args.context_module_id_len = zcatw(
       g_args.context_module_id
     , sizeof(g_args.context_module_id)
@@ -283,7 +280,11 @@ void args_parse(int argc, char ** argv)
     version();
   }
 
-  RUNTIME_ASSERT(g_cmd);
+  /* defaults */
+  if(g_cmd->name == 0) {
+    command_set(&build_command);
+  }
+
   RUNTIME_ASSERT(g_cmd->name);
 }
 
