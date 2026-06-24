@@ -13,15 +13,17 @@ use File::Basename;
 use Cwd;
 our $repodir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
-use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
 use lib "$repodir/libbacon/perl";
-use bam;
+use lib "$repodir/integ/lib";
+use bam::bam;
+use integ;
 use util;
 
 my $RED = "\x1b\x5b\x33\x31\x6d";
 my $GREEN = "\x1b\x5b\x33\x32\x6d";
 my $NONE = "\x1b\x5b\x30\x3b\x30\x6d";
-my $CONCURRENCY = 20;   # dont have more tests than this in flight at once
+my $CONCURRENCY = 16;   # dont have more tests than this in flight at once
 
 permissions_check();
 
@@ -118,10 +120,6 @@ for my $test (@tests)
 {
   next unless $$test{exit};
   printf("${RED}[%5s]${NONE} %3d $$test{path} @{$$test{args}}\n", "FAIL", $$test{'index'});
-  printf(" %12s : %s\n", "projdir", $$test{projdir});
-  printf(" %12s : %s\n", "ipcdir", $$test{ipcdir});
-  printf(" %12s : %s\n", "run.log", "$$test{ipcdir}/run.log");
-  printf(" %12s : %s (%s)\n", "bamd/stdout", "$$test{ipcdir}/bamd/stdout", (-s "$$test{ipcdir}/bamd/stdout" || 0));
-  printf(" %12s : %s (%s)\n", "bamd/stderr", "$$test{ipcdir}/bamd/stderr", (-s "$$test{ipcdir}/bamd/stderr" || 0));
-  system("grep -A 5 AddressSanitizer $$test{ipcdir}/bamd/stderr");
+  system("grep -A 5 AddressSanitizer $$test{ipcdir}/bamd/stderr 2>/dev/null");
+  system("tail $$test{ipcdir}/run.log");
 }
