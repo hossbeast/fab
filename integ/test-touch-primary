@@ -1,0 +1,205 @@
+#!/usr/bin/env perl
+
+#
+# primary file invalidation vi bam touch cli
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+our $bam_bamd_id;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use integ;
+use bam::bam;
+
+init();
+setup(<<'TREE');
+|-- cores.c <<
+foo
+>>
+|-- module.bam%devel <<
+rule cores.c -> cores.o : ./cp.bam+(.)
+rule cores.o -> cores : ./cp.bam+(.)
+rule cores -> //targets
+>>
+|-- cp.bam << 0777
+#!/usr/bin/env perl
+open A, "<", $ENV{bm_source0} or die $!;
+open B, ">", $ENV{bm_target0} or die $!;
+while(<A>)
+{
+  print B "$_";
+}
+print STDOUT "hello world!";
+>>
+TREE
+
+my $res;
+my $text;
+my @lines;
+
+assert {
+  stats("cores.c", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert {
+  stats("cores.o", {
+    type => 'file'
+  , state => 'uncreated'
+  , stale => 0
+  , fresh => 0
+})};
+assert {
+  stats("cores", {
+    type => 'file'
+  , state => 'uncreated'
+  , stale => 0
+  , fresh => 0
+})};
+
+# build should succeed
+build();
+
+assert {
+  stats("cores.c", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert {
+  stats("cores.o", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+assert {
+  stats("cores", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 0
+  , fresh => 1
+})};
+
+# invalidate primary files
+bam_touch();
+
+# (only) primary files, and subsequents, are now invalid
+# module files, config files, etc, are for example not invalidated
+$res = bam_tree([$bam_basedir]);
+$text = $$res{out};
+@lines = split("\n", $$res{out});
+@lines = grep { /stale/ } @lines;
+$text = join("\n", @lines);
+assert { $#lines == 2 };
+assert { $text =~ /cores.c - file stale/ }; # primary
+assert { $text =~ /cores.o - file stale/ }; # subsequent
+assert { $text =~ /cores - file stale/ };   # subsequent
+
+assert {
+  stats("cores.c", {
+    type => 'file'
+  , state => 'stale'
+  , stale => 1
+  , fresh => 1
+})};
+assert {
+  stats("cores.o", {
+    type => 'file'
+  , state => 'stale'
+  , stale => 1
+  , fresh => 1
+})};
+assert {
+  stats("cores", {
+    type => 'file'
+  , state => 'stale'
+  , stale => 1
+  , fresh => 1
+})};
+
+# primary files (only) freshened by reconcile
+reconcile();
+
+$res = bam_tree([$bam_basedir]);
+$text = $$res{out};
+@lines = split("\n", $$res{out});
+@lines = grep { /stale/ } @lines;
+$text = join("\n", @lines);
+assert { $#lines == 1 };
+assert { $text =~ /cores.o - file stale/ }; # subsequent
+assert { $text =~ /cores - file stale/ };   # subsequent
+
+assert {
+  stats("cores.c", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 2
+})};
+assert {
+  stats("cores.o", {
+    type => 'file'
+  , state => 'stale'
+  , stale => 1
+  , fresh => 1
+})};
+assert {
+  stats("cores", {
+    type => 'file'
+  , state => 'stale'
+  , stale => 1
+  , fresh => 1
+})};
+
+# second build should succeed, subsequent files freshened
+build();
+
+$res = bam_tree([$bam_basedir]);
+$text = $$res{out};
+@lines = split("\n", $$res{out});
+@lines = grep { /stale/ } @lines;
+$text = join("\n", @lines);
+assert { $#lines == -1 };
+
+assert {
+  stats("cores.c", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 2
+})};
+assert {
+  stats("cores.o", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 2
+})};
+assert {
+  stats("cores", {
+    type => 'file'
+  , state => 'fresh'
+  , stale => 1
+  , fresh => 2
+})};
+
+teardown();

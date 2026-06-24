@@ -1,0 +1,119 @@
+#!/usr/bin/env perl
+
+#
+# Exercise rma list and describe from bam cli
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use bam::bam;
+use integ;
+
+init();
+setup(<<TREE);
+|-- module.bam%devel <<
+rulesets myrules%devel
+>>
+|-- myrules%devel <<
+rule { name : foo } a -> b
+>>
+TREE
+
+my $result;
+my $mod_id = bam::identity("module", "$bam_basedir");
+my $rma_id = bam::identity("ruleset", "$bam_basedir/myrules%devel", "rule", "1", "module", "$bam_basedir", "rma");
+
+printf("%10s %s\n", "mod", $mod_id);
+printf("%10s %s\n", "rma 1", $rma_id);
+
+# list rmas
+$result = bam_rmas();
+assert { index($result, $rma_id) > -1 };
+assert { index($result, "foo") > -1 };
+
+# rma stats by id
+assert {
+  stats("//bm/rmas/$rma_id", "--follow", {
+    type => 'rma'
+  , state => "fresh"
+  , fresh => 1
+  , stale => 1
+  , dirs => 1
+  , bpes => 0
+})};
+
+# describe rma by id
+$result = bam_rma($rma_id);
+assert { index($result, $rma_id) > -1 };
+assert { index($result, "foo") > -1 };
+
+# rma stats by name
+assert {
+  stats("//bm/rmas-by/name/foo", "--follow", {
+    type => 'rma'
+  , state => "fresh"
+  , fresh => 1
+  , stale => 1
+  , dirs => 1
+  , bpes => 0
+})};
+
+# describe rma by name
+$result = bam_rma("foo");
+assert { index($result, $rma_id) > -1 };
+assert { index($result, "foo") > -1 };
+
+# list module rmas
+$result = bam_module_rmas($mod_id);
+assert { index($result, $rma_id) > -1 };
+assert { index($result, "foo") > -1 };
+
+# module rma stats by id
+assert {
+  stats("//module/rmas/$rma_id", "--follow", {
+    type => 'rma'
+  , state => "fresh"
+  , fresh => 1
+  , stale => 1
+  , dirs => 1
+  , bpes => 0
+})};
+
+# describe module rma by id
+$result = bam_module_rma($mod_id, $rma_id);
+assert { index($result, $rma_id) > -1 };
+assert { index($result, "foo") > -1 };
+
+# module rma stats by name
+assert {
+  stats("//module/rmas-by/name/foo", "--follow", {
+    type => 'rma'
+  , state => "fresh"
+  , fresh => 1
+  , stale => 1
+  , dirs => 1
+  , bpes => 0
+})};
+
+# describe module rma by nmame
+$result = bam_module_rma($mod_id, "foo");
+assert { index($result, $rma_id) > -1 };
+assert { index($result, "foo") > -1 };
+
+teardown();

@@ -1,0 +1,73 @@
+#!/usr/bin/env perl
+
+#
+# Exercise formula list and describe from bam cli
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use bam::bam;
+use integ;
+
+init();
+setup(<<'TREE');
+|-- module.bam%devel <<
+rule -- boats : ./foo.bam
+rule boats -> //targets
+>>
+|-- foo.bam << 0777
+#!/usr/bin/env perl
+open FH, ">", $ENV{bm_target0} or die $!;
+print FH "foo\n";
+close FH;
+>>
+TREE
+
+my $result;
+my $foo_bam_id = bam::identity("formula", "$bam_basedir/foo.bam");
+
+# check stats
+assert {
+  stats("$bam_basedir/foo.bam", "-S", {
+    type => 'formula'
+  , state => "fresh"
+  , fresh => 1
+  , stale => 1
+  , parse_err => 0
+  , parse_ok => 1
+  , fml_exec_err => 0
+  , fml_exec_ok => 0
+})};
+
+# list formulas
+$result = bam_formulas();
+assert { index($result, $foo_bam_id) > -1 };
+assert { index($result, "$bam_basedir/foo.bam") > -1 };
+
+# describe formula by id
+$result = bam_formula($foo_bam_id);
+assert { index($result, $foo_bam_id) > -1 };
+assert { index($result, "$bam_basedir/foo.bam") > -1 };
+
+# describe formula by path
+$result = bam_formula("foo.bam");
+assert { index($result, $foo_bam_id) > -1 };
+assert { index($result, "$bam_basedir/foo.bam") > -1 };
+
+teardown();

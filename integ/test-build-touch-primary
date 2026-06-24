@@ -12,6 +12,7 @@ use POSIX;
 use File::Basename;
 use Cwd;
 our $repodir;
+our $bam_basedir;
 BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
 use lib "$repodir/integ/lib";
 use lib "$repodir/perl";
@@ -24,7 +25,7 @@ use bam::bam;
 
 # build out the fstree under /tmp
 init();
-my $testdir = setup(<<'TREE');
+setup(<<'TREE');
 |-- cores.c <<
 foo
 >>
@@ -66,8 +67,8 @@ assert { stats("cores", {
 build();
 
 # intermediate and final file were created
-assert_file("$testdir/cores.o", "foo");
-assert_file("$testdir/cores", "foo");
+assert_file("$bam_basedir/cores.o", "foo");
+assert_file("$bam_basedir/cores", "foo");
 
 assert { stats("cores.c", {
     type => 'file'
@@ -89,7 +90,7 @@ assert { stats("cores", {
 })};
 
 # primary file modified
-open my $fh, ">", "$testdir/cores.c" or die $!;
+open my $fh, ">", "$bam_basedir/cores.c" or die $!;
 print $fh <<'TEXT';
 bar
 TEXT

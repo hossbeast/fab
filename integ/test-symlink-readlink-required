@@ -74,7 +74,7 @@ assert {
     , put => 1
 })};
 
-$names = bam_namespace_fsnames($ns_namespace_id);
+$names = bam_namespace_fsnames_map($ns_namespace_id);
 print Dumper $names;
 assert { $$names{A} };
 assert { !$$names{C} };
@@ -134,7 +134,7 @@ assert {
     , put => 4
 })};
 
-$names = bam_namespace_fsnames($ns_namespace_id);
+$names = bam_namespace_fsnames_map($ns_namespace_id);
 print Dumper $names;
 assert { $$names{A} };
 assert { $$names{C} };

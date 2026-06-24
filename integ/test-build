@@ -49,6 +49,7 @@ while(<A>)
 TREE
 
 my $result;
+my $lines;
 
 assert { stats("cores.c", {
     type => 'file'
@@ -95,5 +96,17 @@ assert { stats("cores", {
   , stale => 0
   , fresh => 1
 })};
+
+# check the buildplan
+$result = bam_plan();
+assert { $result =~ m|-> cores.o| };
+assert { $result =~ m|-> cores| };
+assert { $result =~ m|targets| };
+
+# check the formula and formula records
+$result = bam_tree(["//bm/build-records-by/order/00000", "--follow", "--graph", "records"]);
+print("$$result{out}\n");
+$lines = ($$result{out} =~ tr/\n//);
+assert { $lines == 2 };
 
 teardown();

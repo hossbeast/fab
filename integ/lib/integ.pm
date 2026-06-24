@@ -271,7 +271,7 @@ sub bam_bootstrap
 
 sub bam_reconcile
 {
-  run({ @_, cwd => $bam_dir} # , show => 1 }
+  run({ @_, cwd => $bam_dir }
     , $bam_bampath
     , "--no-launch"
     , "reconcile"
@@ -385,16 +385,30 @@ sub bam_metadata
   \%metadata;
 }
 
+sub bam_fstree
+{
+  my $res = run({ cwd => $bam_dir }
+    , $bam_bampath
+    , "--no-launch"
+    , "fstree"
+    , @_
+  );
+
+  return $$res{out};
+}
+
 sub bam_fstrees
 {
   my $arglist = shift;
 
-  run({ @_, cwd => $bam_dir, @_ }
+  my $res = run({ @_, cwd => $bam_dir, @_ }
     , $bam_bampath
     , "--no-launch"
     , "fstrees"
     , @$arglist
   );
+
+  return $$res{out};
 }
 
 sub bam_info
@@ -502,6 +516,29 @@ sub bam_build
   );
 }
 
+sub bam_plan
+{
+  my $res = run({ @_, cwd => $bam_dir }
+    , $bam_bampath
+    , "--no-launch"
+    , "plan"
+  );
+
+  return $$res{out};
+}
+
+sub bam_varset
+{
+  my $res = run({ cwd => $bam_dir }
+    , $bam_bampath
+    , "--no-launch"
+    , "varset"
+    , @_
+  );
+
+  return $$res{out};
+}
+
 sub bam_varsets
 {
   my $res = run({ @_, cwd => $bam_dir }
@@ -513,12 +550,36 @@ sub bam_varsets
   return $$res{out};
 }
 
+sub bam_formula
+{
+  my $res = run({ cwd => $bam_dir }
+    , $bam_bampath
+    , "--no-launch"
+    , "formula"
+    , @_
+  );
+
+  return $$res{out};
+}
+
 sub bam_formulas
 {
   my $res = run({ @_, cwd => $bam_dir }
     , $bam_bampath
     , "--no-launch"
     , "formulas"
+  );
+
+  return $$res{out};
+}
+
+sub bam_configset
+{
+  my $res = run({ cwd => $bam_dir }
+    , $bam_bampath
+    , "--no-launch"
+    , "configset"
+    , @_
   );
 
   return $$res{out};
@@ -558,12 +619,42 @@ sub bam_rule
   return $$res{out};
 }
 
+sub bam_module_rmas
+{
+  my $mod_id = shift;
+  my $res = run({ @_, cwd => $bam_dir }
+    , $bam_bampath
+    , "--no-launch"
+    , "module"
+    , $mod_id
+    , "rmas"
+  );
+
+  return $$res{out};
+}
+
 sub bam_rmas
 {
   my $res = run({ @_, cwd => $bam_dir }
     , $bam_bampath
     , "--no-launch"
     , "rmas"
+  );
+
+  return $$res{out};
+}
+
+sub bam_module_rma
+{
+  my $mod_id = shift;
+  my $rma_id = shift;
+  my $res = run({ cwd => $bam_dir }
+    , $bam_bampath
+    , "--no-launch"
+    , "module"
+    , $mod_id
+    , "rma"
+    , $rma_id
   );
 
   return $$res{out};
@@ -581,12 +672,100 @@ sub bam_rma
   return $$res{out};
 }
 
+sub bam_ruleset
+{
+  my $res = run({ cwd => $bam_dir }
+    , $bam_bampath
+    , "--no-launch"
+    , "ruleset"
+    , @_
+  );
+
+  return $$res{out};
+}
+
 sub bam_rulesets
 {
   my $res = run({ @_, cwd => $bam_dir }
     , $bam_bampath
     , "--no-launch"
     , "rulesets"
+  );
+
+  return $$res{out};
+}
+
+sub bam_namespace
+{
+  my $res = run({ cwd => $bam_dir }
+    , $bam_bampath
+    , "--no-launch"
+    , "namespace"
+    , @_
+  );
+
+  return $$res{out};
+}
+
+sub bam_namespaces
+{
+  my $res = run({ @_, cwd => $bam_dir }
+    , $bam_bampath
+    , "--no-launch"
+    , "namespaces"
+  );
+
+  return $$res{out};
+}
+
+sub bam_fsname
+{
+  my $res = run({ cwd => $bam_dir }
+    , $bam_bampath
+    , "--no-launch"
+    , "fsname"
+    , @_
+  );
+
+  return $$res{out};
+}
+
+sub bam_fsnames
+{
+  my $res = run({ @_, cwd => $bam_dir }
+    , $bam_bampath
+    , "--no-launch"
+    , "fsnames"
+  );
+
+  return $$res{out};
+}
+
+sub bam_namespace_fsname
+{
+  my $ns_id = shift;
+  my $fsname = shift;
+  my $res = run({ @_, cwd => $bam_dir }
+    , $bam_bampath
+    , "--no-launch"
+    , "namespace"
+    , $ns_id
+    , "fsname"
+    , $fsname
+  );
+
+  return $$res{out};
+}
+
+sub bam_namespace_fsnames
+{
+  my $ns_id = shift;
+  my $res = run({ @_, cwd => $bam_dir }
+    , $bam_bampath
+    , "--no-launch"
+    , "namespace"
+    , $ns_id
+    , "fsnames"
   );
 
   return $$res{out};
@@ -599,6 +778,31 @@ sub bam_module_rulesets
     , "--no-launch"
     , "module"
     , "rulesets"
+  );
+
+  return $$res{out};
+}
+
+sub bam_module_varsets
+{
+  my $res = run({ @_, cwd => $bam_dir }
+    , $bam_bampath
+    , "--no-launch"
+    , "module"
+    , "varsets"
+  );
+
+  return $$res{out};
+}
+
+sub bam_module_varset
+{
+  my $res = run({ cwd => $bam_dir }
+    , $bam_bampath
+    , "--no-launch"
+    , "module"
+    , "varset"
+    , @_
   );
 
   return $$res{out};
@@ -664,7 +868,7 @@ sub bam_config
   );
 }
 
-sub bam_namespace_fsnames
+sub bam_namespace_fsnames_map
 {
   my $ns_id = shift;
 

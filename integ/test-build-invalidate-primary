@@ -164,9 +164,4 @@ assert { stats("cores", {
   , fresh => 2
 })};
 
-#assert { stats(undef, {
-#    vertex_stale => 12
-#  , vertex_fresh => 18
-#})};
-
 teardown();

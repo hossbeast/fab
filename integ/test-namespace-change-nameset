@@ -82,7 +82,7 @@ assert {
     , put => 2
 })};
 
-my $names = bam_namespace_fsnames($ns0_namespace_id);
+my $names = bam_namespace_fsnames_map($ns0_namespace_id);
 assert { scalar %$names == 2 };
 assert { $$names{B} };
 assert { $$names{C} };
@@ -136,7 +136,7 @@ assert {
     , put => 4
 })};
 
-$names = bam_namespace_fsnames($ns0_namespace_id);
+$names = bam_namespace_fsnames_map($ns0_namespace_id);
 assert { scalar %$names == 4 };
 assert { $$names{B} };
 assert { $$names{C} };
@@ -186,7 +186,7 @@ assert {
     , put => 4
 })};
 
-$names = bam_namespace_fsnames($ns0_namespace_id);
+$names = bam_namespace_fsnames_map($ns0_namespace_id);
 assert { scalar %$names == 2 };
 assert { $$names{E} };
 assert { $$names{F} };

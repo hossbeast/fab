@@ -56,6 +56,7 @@ TREE
 my $plugin_id = bam::identity("plugin", "$bam_basedir/plugin", 'plugin');
 my $fh;
 my $text;
+my $res;
 
 assert {
   info(undef, {
@@ -131,5 +132,18 @@ assert { stats("//bm/plugins/$plugin_id", "-S", "-S", {
   , commands => 0
   , ready => 1
 })};
+
+# demonstrate reading the plugin detail records
+$res = bam(["plugin", "$plugin_id", "stdin"]);
+print("\n$$res{out}\n\n");
+
+$res = bam(["plugin", "$plugin_id", "stdout"]);
+print("\n$$res{out}\n\n");
+
+$res = bam(["plugin", "$plugin_id", "stderr"]);
+print("\n$$res{out}\n\n");
+
+$res = bam(["plugin", "$plugin_id", "auxout"]);
+print("\n$$res{out}\n\n");
 
 teardown();

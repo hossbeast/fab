@@ -1,0 +1,127 @@
+#!/usr/bin/env perl
+
+#
+# Exercise namespaces and fsnames list and describe from bam cli
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use bam::bam;
+use integ;
+
+init(subdir => 'A');
+setup(<<"TREE");
+|-- B
+|   `-- C
+|       `-- D
+|-- E
+|   `-- F
+|       `-- G
+|-- A
+|   `-- module.bam%devel <<
+>>
+|-- system-config <<
+namespaces : {
+  ns0
+}
+filesystem : {
+  fstrees : {
+    $bam_basedir/B : {
+      mount : true
+      namespaces : {
+        ns0
+      }
+    }
+  }
+}
+>>
+TREE
+
+my $ns0_namespace_id = bam::identity('namespace', "ns0");
+my $fsname_B_id = bam::identity("namespace", "ns0", "fsname", "B");
+my $result;
+my $names;
+
+# check namespace stats
+assert {
+  stats("//bm/namespaces/$ns0_namespace_id", "-S", {
+      type => 'namespace'
+    , count => 2
+    , del => 0
+    , put => 2
+})};
+
+#
+# list namespaces
+#
+$result = bam_namespaces();
+print("$result\n");
+assert { index($result, $ns0_namespace_id) > -1 };
+assert { index($result, "ns0") > -1 };
+
+# describe namespace by id
+$result = bam_namespace($ns0_namespace_id);
+assert { index($result, $ns0_namespace_id) > -1 };
+assert { index($result, "ns0") > -1 };
+
+# describe namespace by name
+$result = bam_namespace("ns0");
+assert { index($result, $ns0_namespace_id) > -1 };
+assert { index($result, "ns0") > -1 };
+
+# check fsname stats
+assert {
+  stats("//bm/fsnames/$fsname_B_id", "--follow", {
+      type => 'fsname'
+    , count => 1
+    , del => 0
+    , put => 1
+})};
+
+#
+# list fsnames
+#
+$result = bam_fsnames();
+assert { index($result, $fsname_B_id) > -1 };
+assert { index($result, "B") > -1 };
+
+# describe fsname by id
+# fsname lookup by name not supported - via namespace/name is though
+$result = bam_fsname($fsname_B_id);
+assert { index($result, $fsname_B_id) > -1 };
+assert { index($result, "B") > -1 };
+
+#
+# list fsnames by namespace
+#
+$result = bam_namespace_fsnames($ns0_namespace_id);
+assert { index($result, $fsname_B_id) > -1 };
+assert { index($result, "B") > -1 };
+
+# describe namespace fsname by id
+$result = bam_namespace_fsname($ns0_namespace_id, $fsname_B_id);
+assert { index($result, $fsname_B_id) > -1 };
+assert { index($result, "B") > -1 };
+
+# describe namespace fsname by name
+$result = bam_namespace_fsname($ns0_namespace_id, "B");
+assert { index($result, $fsname_B_id) > -1 };
+assert { index($result, "B") > -1 };
+
+teardown();

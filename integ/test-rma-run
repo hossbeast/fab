@@ -37,6 +37,7 @@ rule *.o -> [*] exe
 TREE
 
 my $result;
+my $text;
 my $mod_id = bam::identity("module", "$bam_basedir");
 my $rule_1_id = bam::identity("ruleset", "$bam_basedir/module.bam%devel", "rule", "1");
 my $rma_1_id = bam::identity("ruleset", "$bam_basedir/module.bam%devel", "rule", "1", "module", "$bam_basedir", "rma");
@@ -49,34 +50,106 @@ printf("%10s %s\n", "rma 1", $rma_1_id);
 printf("%10s %s\n", "rule 2", $rule_2_id);
 printf("%10s %s\n", "rma 2", $rma_2_id);
 
-assert { stats("a.c", {
+assert {
+  stats("a.c", {
     type => 'file'
   , state => 'fresh'
   , stale => 0
   , fresh => 1
 })};
-assert { stats("a.o", {
+assert {
+  stats("a.o", {
     type => 'file'
   , state => 'uncreated'
   , stale => 0
   , fresh => 0
 })};
-assert { stats("exe", {
+assert {
+  stats("exe", {
     type => 'file'
   , state => 'uncreated'
   , stale => 0
   , fresh => 0
 })};
 
-# describe rmas by id and name
-$result = bam_rma($rma_1_id);
-assert { index($result, $rule_1_id) > -1 };
-assert { index($result, $rma_1_id) > -1 };
+# list rmas
+$text = bam_rma($rma_1_id);
+assert { index($text, $rule_1_id) > -1 };
+assert { index($text, "foo") > -1 };
+assert { index($text, $rma_1_id) > -1 };
 
+# module rma run by id
+$result = bam(["module $mod_id rma $rma_1_id run"]);
+$text = $$result{out};
+print("$text\n");
+assert { $text =~ m|rma-start| };
+assert { $text =~ m|rma-end| };
+assert { $text =~ m|rma-search.*/a.c| };
+assert { $text =~ m|rma-search.*/b.c| };
+assert { $text =~ m|rma-search.*/c.c| };
+assert { $text =~ m|rma-generate.*/a.o| };
+assert { $text =~ m|rma-generate.*/b.o| };
+assert { $text =~ m|rma-generate.*/c.o| };
+
+$result = bam(["module $mod_id rma $rma_2_id run"]);
+$text = $$result{out};
+print("$text\n");
+assert { $text =~ m|rma-start| };
+assert { $text =~ m|rma-end| };
+assert { $text =~ m|rma-search.*/a.o| };
+assert { $text =~ m|rma-search.*/b.o| };
+assert { $text =~ m|rma-search.*/c.o| };
+assert { $text =~ m|rma-generate.*/exe| };
+
+# module rma run by name
+$result = bam(["module $mod_id rma foo run"]);
+$text = $$result{out};
+print("$text\n");
+assert { $text =~ m|rma-start| };
+assert { $text =~ m|rma-end| };
+assert { $text =~ m|rma-search.*/a.c| };
+assert { $text =~ m|rma-search.*/b.c| };
+assert { $text =~ m|rma-search.*/c.c| };
+assert { $text =~ m|rma-generate.*/a.o| };
+assert { $text =~ m|rma-generate.*/b.o| };
+assert { $text =~ m|rma-generate.*/c.o| };
+
+#
+# rma run by id
+#
 $result = bam(["rma $rma_1_id run"]);
-print("$$result{out}\n");
+$text = $$result{out};
+print("$text\n");
+assert { $text =~ m|rma-start| };
+assert { $text =~ m|rma-end| };
+assert { $text =~ m|rma-search.*/a.c| };
+assert { $text =~ m|rma-search.*/b.c| };
+assert { $text =~ m|rma-search.*/c.c| };
+assert { $text =~ m|rma-generate.*/a.o| };
+assert { $text =~ m|rma-generate.*/b.o| };
+assert { $text =~ m|rma-generate.*/c.o| };
 
 $result = bam(["rma $rma_2_id run"]);
-print("$$result{out}\n");
+$text = $$result{out};
+print("$text\n");
+assert { $text =~ m|rma-start| };
+assert { $text =~ m|rma-end| };
+assert { $text =~ m|rma-search.*/a.o| };
+assert { $text =~ m|rma-search.*/b.o| };
+assert { $text =~ m|rma-search.*/c.o| };
+assert { $text =~ m|rma-generate.*/exe| };
+
+# rma run by name
+$result = bam(["rma foo run"]);
+$text = $$result{out};
+print("$text\n");
+assert { $text =~ m|rma-start| };
+assert { $text =~ m|rma-end| };
+assert { $text =~ m|rma-search.*/a.c| };
+assert { $text =~ m|rma-search.*/b.c| };
+assert { $text =~ m|rma-search.*/c.c| };
+assert { $text =~ m|rma-generate.*/a.o| };
+assert { $text =~ m|rma-generate.*/b.o| };
+assert { $text =~ m|rma-generate.*/c.o| };
 
 teardown();

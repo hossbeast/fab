@@ -1,0 +1,94 @@
+#!/usr/bin/env perl
+
+#
+# Exercise configset list and describe from bam cli
+#
+
+use strict;
+use warnings;
+$SIG{__WARN__} = sub { die @_ };
+
+use Carp qw(confess);
+$SIG{__DIE__} = 'confess';
+
+use POSIX;
+use File::Basename;
+use Cwd;
+our $repodir;
+our $bam_basedir;
+BEGIN { $repodir = dirname(Cwd::realpath("$0/..")) }
+use lib "$repodir/integ/lib";
+use lib "$repodir/perl";
+use lib "$repodir/libbacon/perl";
+use util;
+use tree;
+use bam::bam;
+use integ;
+
+init();
+setup(<<'TREE');
+|-- config.bam%devel <<
+build : {
+  concurrency : 42
+}
+>>
+|-- system-config <<
+filesystem : {
+  special : {
+    config.bam%devel
+  }
+}
+>>
+|-- module.bam%devel
+TREE
+
+my $result;
+my $configset_user_id = bam::identity("configset", "$bam_basedir/config.bam%devel");
+my $configset_system_id = bam::identity("configset", "$bam_basedir/system-config");
+
+# check stats
+assert {
+  stats("$bam_basedir/config.bam%devel", "-S", {
+    type => 'configset'
+  , state => "fresh"
+  , fresh => 1
+  , stale => 1
+  , parse_err => 0
+  , parse_ok => 1
+})};
+assert {
+  stats("$bam_basedir/system-config", "-S", {
+    type => 'configset'
+  , state => "fresh"
+  , fresh => 1
+  , stale => 1
+  , parse_err => 0
+  , parse_ok => 2
+})};
+
+# list configsets
+$result = bam_configsets();
+assert { index($result, $configset_user_id) > -1 };
+assert { index($result, "$bam_basedir/config.bam%devel") > -1 };
+assert { index($result, $configset_system_id) > -1 };
+assert { index($result, "$bam_basedir/system-config") > -1 };
+
+# describe configset by id
+$result = bam_configset($configset_user_id);
+assert { index($result, $configset_user_id) > -1 };
+assert { index($result, "$bam_basedir/config.bam%devel") > -1 };
+
+$result = bam_configset($configset_system_id);
+assert { index($result, $configset_system_id) > -1 };
+assert { index($result, "$bam_basedir/system-config") > -1 };
+
+# describe configset by path
+$result = bam_configset("$bam_basedir/config.bam%devel");
+assert { index($result, $configset_user_id) > -1 };
+assert { index($result, "$bam_basedir/config.bam%devel") > -1 };
+
+$result = bam_configset("$bam_basedir/system-config");
+assert { index($result, $configset_system_id) > -1 };
+assert { index($result, "$bam_basedir/system-config") > -1 };
+
+teardown();

@@ -72,7 +72,7 @@ assert {
     , del => 0
     , put => 0
 })};
-$names = bam_namespace_fsnames($ns0_id);
+$names = bam_namespace_fsnames_map($ns0_id);
 assert { scalar %$names == 0 };
 
 assert {
@@ -82,7 +82,7 @@ assert {
     , del => 0
     , put => 0
 })};
-$names = bam_namespace_fsnames($ns1_id);
+$names = bam_namespace_fsnames_map($ns1_id);
 assert { scalar %$names == 0 };
 
 # another C to ns0
@@ -118,7 +118,7 @@ assert {
     , put => 1
 })};
 
-$names = bam_namespace_fsnames($ns0_id);
+$names = bam_namespace_fsnames_map($ns0_id);
 print Dumper $names;
 assert { scalar %$names == 1 };
 assert { $$names{C} };
@@ -156,7 +156,7 @@ assert {
     , del => 0
     , put => 1
 })};
-$names = bam_namespace_fsnames($ns0_id);
+$names = bam_namespace_fsnames_map($ns0_id);
 assert { scalar %$names == 1 };
 assert { $$names{C} };
 
@@ -167,7 +167,7 @@ assert {
     , del => 0
     , put => 1
 })};
-$names = bam_namespace_fsnames($ns1_id);
+$names = bam_namespace_fsnames_map($ns1_id);
 assert { scalar %$names == 1 };
 assert { $$names{C} };
 
@@ -207,7 +207,7 @@ assert {
     , del => 0
     , put => 2
 })};
-$names = bam_namespace_fsnames($ns0_id);
+$names = bam_namespace_fsnames_map($ns0_id);
 assert { scalar %$names == 2 };
 assert { $$names{C} };
 assert { $$names{D} };
@@ -219,7 +219,7 @@ assert {
     , del => 0
     , put => 1
 })};
-$names = bam_namespace_fsnames($ns1_id);
+$names = bam_namespace_fsnames_map($ns1_id);
 assert { scalar %$names == 1 };
 assert { $$names{C} };
 
@@ -260,7 +260,7 @@ assert {
     , del => 0
     , put => 2
 })};
-$names = bam_namespace_fsnames($ns0_id);
+$names = bam_namespace_fsnames_map($ns0_id);
 assert { scalar %$names == 2 };
 assert { $$names{C} };
 assert { $$names{D} };
@@ -272,7 +272,7 @@ assert {
     , del => 0
     , put => 2
 })};
-$names = bam_namespace_fsnames($ns1_id);
+$names = bam_namespace_fsnames_map($ns1_id);
 assert { scalar %$names == 2 };
 assert { $$names{C} };
 assert { $$names{D} };
@@ -306,7 +306,7 @@ TEXT
 close $fh;
 reconcile();
 
-$names = bam_namespace_fsnames($ns0_id);
+$names = bam_namespace_fsnames_map($ns0_id);
 print Dumper $names;
 
 assert {
@@ -316,7 +316,7 @@ assert {
     , del => 1
     , put => 2
 })};
-$names = bam_namespace_fsnames($ns0_id);
+$names = bam_namespace_fsnames_map($ns0_id);
 assert { scalar %$names == 1 };
 assert { $$names{D} };
 
@@ -327,7 +327,7 @@ assert {
     , del => 0
     , put => 2
 })};
-$names = bam_namespace_fsnames($ns1_id);
+$names = bam_namespace_fsnames_map($ns1_id);
 assert { scalar %$names == 2 };
 assert { $$names{C} };
 assert { $$names{D} };
@@ -365,7 +365,7 @@ assert {
     , del => 1
     , put => 2
 })};
-$names = bam_namespace_fsnames($ns0_id);
+$names = bam_namespace_fsnames_map($ns0_id);
 assert { scalar %$names == 1 };
 assert { $$names{D} };
 
@@ -376,7 +376,7 @@ assert {
     , del => 1
     , put => 2
 })};
-$names = bam_namespace_fsnames($ns1_id);
+$names = bam_namespace_fsnames_map($ns1_id);
 assert { scalar %$names == 1 };
 assert { $$names{D} };
 
@@ -412,7 +412,7 @@ assert {
     , del => 2
     , put => 2
 })};
-$names = bam_namespace_fsnames($ns0_id);
+$names = bam_namespace_fsnames_map($ns0_id);
 assert { scalar %$names == 0 };
 
 assert {
@@ -422,7 +422,7 @@ assert {
     , del => 1
     , put => 2
 })};
-$names = bam_namespace_fsnames($ns1_id);
+$names = bam_namespace_fsnames_map($ns1_id);
 assert { scalar %$names == 1 };
 assert { $$names{D} };
 
@@ -455,7 +455,7 @@ assert {
     , del => 2
     , put => 2
 })};
-$names = bam_namespace_fsnames($ns0_id);
+$names = bam_namespace_fsnames_map($ns0_id);
 assert { scalar %$names == 0 };
 
 assert {
@@ -465,7 +465,7 @@ assert {
     , del => 2
     , put => 2
 })};
-$names = bam_namespace_fsnames($ns1_id);
+$names = bam_namespace_fsnames_map($ns1_id);
 assert { scalar %$names == 0 };
 
 # add C and D to ns0 and ns1
@@ -505,7 +505,7 @@ assert {
     , del => 2
     , put => 4
 })};
-$names = bam_namespace_fsnames($ns0_id);
+$names = bam_namespace_fsnames_map($ns0_id);
 assert { scalar %$names == 2 };
 
 assert {
@@ -515,7 +515,7 @@ assert {
     , del => 2
     , put => 4
 })};
-$names = bam_namespace_fsnames($ns1_id);
+$names = bam_namespace_fsnames_map($ns1_id);
 assert { scalar %$names == 2 };
 
 teardown();

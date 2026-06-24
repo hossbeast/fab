@@ -75,7 +75,7 @@ assert {
     , put => 1
 })};
 
-$names = bam_namespace_fsnames($ns_namespace_id);
+$names = bam_namespace_fsnames_map($ns_namespace_id);
 print Dumper $names;
 assert { $$names{A} };
 assert { !$$names{C} };
@@ -99,7 +99,7 @@ assert {
     , put => 3
 })};
 
-$names = bam_namespace_fsnames($ns_namespace_id);
+$names = bam_namespace_fsnames_map($ns_namespace_id);
 print Dumper $names;
 assert { $$names{A} };
 assert { $$names{C} };
@@ -122,7 +122,7 @@ assert {
 $result = bam_tree([$bam_basedir, "--hidden"]);
 print "$$result{out}\n";
 
-$names = bam_namespace_fsnames($ns_namespace_id);
+$names = bam_namespace_fsnames_map($ns_namespace_id);
 print Dumper $names;
 assert { $$names{A} };
 assert { $$names{C} };
