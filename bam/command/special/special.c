@@ -78,7 +78,7 @@ void special_describe_select(command * restrict cmd, bacon_writer * restrict bui
           }
           { MAPPING
             STRING("max-distance")
-            UINT(0)
+            UINT(1)
           }
         }
       }

@@ -69,8 +69,6 @@ static void process(command * restrict cmd, bam_client * restrict client, bamipc
 
   RUNTIME_ASSERT(msg->id == requestid || msg->id == eventsubid);
   RUNTIME_ASSERT(msg->type == BAMIPC_MSG_RESPONSE);
-
-  //g_params.shutdown = true;
 }
 
 //
