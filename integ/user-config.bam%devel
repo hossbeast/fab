@@ -1,0 +1,40 @@
+/* SPDX-License-Identifier: GPL-3.0 */
+/* Copyright (c) 2012-2023 Todd Freed <todd.freed@gmail.com> */
+
+filesystem : {
+  special : {
+    module.bam%devel
+    var.bam%devel
+    config.bam%devel
+    rules.bam%devel
+  }
+
+  exclude : {
+    .git
+    /usr/share/bam/modules
+  }
+
+  fstrees : {
+    / : {
+      invalidation : notify
+      mkdir : false
+    }
+  }
+}
+
+build : {
+  concurrency : 0
+  stdout-buffer-size : 8192
+  stderr-buffer-size : 8192
+  auxout-buffer-size : 8192
+  retention : {
+    max-entries : 16
+  }
+}
+
+plugins : {
+  stdin-buffer-size : 8192
+  stdout-buffer-size : 8192
+  stderr-buffer-size : 8192
+  auxout-buffer-size : 8192
+}
